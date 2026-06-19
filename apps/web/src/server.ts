@@ -10,6 +10,8 @@ import { handleCampaignApiRoute } from "./routes/campaign-api-routes.ts";
 import { handleCampaignPageGet, handleCampaignPagePost } from "./routes/campaign-page-routes.ts";
 import { handleContentItemApiRoute } from "./routes/content-item-api-routes.ts";
 import { handleContentItemPageGet, handleContentItemPagePost } from "./routes/content-item-page-routes.ts";
+import { handleContentPublicationApiRoute } from "./routes/content-publication-api-routes.ts";
+import { handleContentPublicationPageGet, handleContentPublicationPagePost } from "./routes/content-publication-page-routes.ts";
 import { handleLibraryApiRoute } from "./routes/library-api-routes.ts";
 import { handleLibraryPageGet, handleLibraryPagePost, renderNotFoundPage } from "./routes/library-page-routes.ts";
 import { escapeHtml, renderLayout } from "./views/layout.ts";
@@ -44,7 +46,8 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
       const handled =
         (await handleLibraryApiRoute(request, response, pathname)) ||
         (await handleCampaignApiRoute(request, response, pathname)) ||
-        (await handleContentItemApiRoute(request, response, pathname, url));
+        (await handleContentItemApiRoute(request, response, pathname, url)) ||
+        (await handleContentPublicationApiRoute(request, response, pathname));
       if (!handled) {
         sendError(response, 404, "not_found", "Endpoint tidak ditemukan.");
       }
@@ -55,7 +58,8 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
       const handled =
         (await handleLibraryPagePost(request, response, pathname)) ||
         (await handleCampaignPagePost(request, response, pathname)) ||
-        (await handleContentItemPagePost(request, response, pathname));
+        (await handleContentItemPagePost(request, response, pathname)) ||
+        (await handleContentPublicationPagePost(request, response, pathname));
       if (!handled) {
         sendHtml(response, renderNotFoundPage(), 404);
       }
@@ -65,7 +69,8 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
     const handled =
       (await handleLibraryPageGet(response, pathname, url)) ||
       (await handleCampaignPageGet(response, pathname, url)) ||
-      (await handleContentItemPageGet(response, pathname, url));
+      (await handleContentItemPageGet(response, pathname, url)) ||
+      (await handleContentPublicationPageGet(response, pathname, url));
     if (!handled) {
       sendHtml(response, renderNotFoundPage(), 404);
     }

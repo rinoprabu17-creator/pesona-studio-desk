@@ -18,24 +18,31 @@ const requiredPaths = [
   "apps/web/src/campaign-errors.ts",
   "apps/web/src/content-item-service.ts",
   "apps/web/src/content-item-errors.ts",
+  "apps/web/src/content-publication-service.ts",
+  "apps/web/src/content-publication-errors.ts",
   "apps/web/src/http/request.ts",
   "apps/web/src/http/response.ts",
   "apps/web/src/routes/campaign-api-routes.ts",
   "apps/web/src/routes/campaign-page-routes.ts",
   "apps/web/src/routes/content-item-api-routes.ts",
   "apps/web/src/routes/content-item-page-routes.ts",
+  "apps/web/src/routes/content-publication-api-routes.ts",
+  "apps/web/src/routes/content-publication-page-routes.ts",
   "apps/web/src/routes/library-api-routes.ts",
   "apps/web/src/routes/library-page-routes.ts",
   "apps/web/src/views/campaign-pages.ts",
   "apps/web/src/views/content-item-pages.ts",
+  "apps/web/src/views/content-publication-pages.ts",
   "apps/web/src/views/layout.ts",
   "apps/web/src/views/library-pages.ts",
   "apps/web/src/validation/campaign-validation.ts",
   "apps/web/src/validation/content-item-validation.ts",
+  "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/library-validation.ts",
   "migrations/001_phase1a_libraries.sql",
   "migrations/002_phase1b_campaigns.sql",
   "migrations/003_phase1b_content_items.sql",
+  "migrations/004_phase1b_content_publications.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "workers/video/Dockerfile",
@@ -74,7 +81,10 @@ const requiredRoutes = [
   "/api/campaigns",
   "/content-items",
   "/content-items/new",
-  "/api/content-items"
+  "/api/content-items",
+  "/publications/new",
+  "/content-publications",
+  "/publications$"
 ];
 
 const forbiddenPhase1BTables = [
@@ -87,7 +97,8 @@ let failed = false;
 
 const lockedMigrationHashes = {
   "migrations/001_phase1a_libraries.sql": "dc77e3d5bfd4b2208112282e50c5d084f298a83e6ab94d8cf252636c76e1cfef",
-  "migrations/002_phase1b_campaigns.sql": "5beb7f1dd1cf0d5e9f283dd4ad6ac337bbb2af190e519c15832e2cabef4a3525"
+  "migrations/002_phase1b_campaigns.sql": "5beb7f1dd1cf0d5e9f283dd4ad6ac337bbb2af190e519c15832e2cabef4a3525",
+  "migrations/003_phase1b_content_items.sql": "fbbada0084e595ccc1631d8c86293805475145b30790bed928ec942e33429526"
 };
 
 function fail(message) {
@@ -213,6 +224,40 @@ for (const forbiddenField of ["channel", "publication_format", "planned_publish_
     fail(`content_items tidak boleh memiliki field publikasi: ${forbiddenField}`);
   } else {
     pass(`content_items tidak memiliki field publikasi: ${forbiddenField}`);
+  }
+}
+
+const publicationMigrationSource = existsSync("migrations/004_phase1b_content_publications.sql")
+  ? readFileSync("migrations/004_phase1b_content_publications.sql", "utf8")
+  : "";
+if (publicationMigrationSource.includes("CREATE TABLE content_publications")) {
+  pass("Migration Phase 1B.3 membuat content_publications");
+} else {
+  fail("Migration Phase 1B.3 belum membuat content_publications");
+}
+
+for (const requiredText of [
+  "instagram",
+  "facebook",
+  "tiktok",
+  "youtube",
+  "whatsapp_status",
+  "standard_video",
+  "publication_status",
+  "content_publications_item_channel_format_key UNIQUE (content_item_id, channel, publication_format)"
+]) {
+  if (publicationMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 1B.3 memuat aturan: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 1B.3 belum memuat aturan: ${requiredText}`);
+  }
+}
+
+for (const calendarText of ["CREATE TABLE content_calendar", "CREATE TABLE manual_content_calendar", "/content-calendar"]) {
+  if (publicationMigrationSource.includes(calendarText) || webSource.includes(calendarText)) {
+    fail(`Phase 1B.3 tidak boleh membuat calendar: ${calendarText}`);
+  } else {
+    pass(`Phase 1B.3 tidak membuat calendar: ${calendarText}`);
   }
 }
 

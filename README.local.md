@@ -50,7 +50,7 @@ npm run dev:mockup-worker
 npm run check
 ```
 
-Check ini memvalidasi file skeleton, service Compose, rute Phase 1A, rute Campaign, rute Konten, migration bertahap, dan syntax TypeScript.
+Check ini memvalidasi file skeleton, service Compose, rute Phase 1A, rute Campaign, rute Konten, rute Publikasi, migration bertahap, dan syntax TypeScript.
 
 ## Database Phase 1A
 
@@ -107,7 +107,30 @@ Halaman content item:
 - http://localhost:3000/content-items
 - http://localhost:3000/content-items/new
 
-Content code dan sequence dibuat otomatis dari kode campaign. Publication, channel, jadwal posting, dan manual content calendar belum tersedia pada Phase 1B.2.
+Content code dan sequence dibuat otomatis dari kode campaign. Manual content calendar belum tersedia pada Phase 1B.2.
+
+## Content Publication Phase 1B.3
+
+Jalankan migration eksplisit untuk menambahkan tabel publication:
+
+```powershell
+npm run db:migrate
+```
+
+Alur manual:
+
+1. Buat campaign di http://localhost:3000/campaigns/new
+2. Buat content item di http://localhost:3000/content-items/new
+3. Buka detail content item.
+4. Klik Tambah Publikasi untuk membuat rencana channel/format.
+
+Route publication:
+
+- `/content-items/:id/publications/new`
+- `/content-publications/:id`
+- `/content-publications/:id/edit`
+
+Publication mendukung channel Instagram, Facebook, TikTok, YouTube, dan WhatsApp Status. Manual Content Calendar besar, `/content-calendar`, auto posting, scheduler, dan API platform belum tersedia.
 
 ## Folder storage lokal
 

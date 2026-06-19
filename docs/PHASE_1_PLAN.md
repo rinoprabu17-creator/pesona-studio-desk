@@ -44,7 +44,8 @@ Status implementasi bertahap:
 
 - Migration 002: `campaigns` — implemented pada Phase 1B.1.
 - Migration 003: `content_items` — implemented pada Phase 1B.2.
-- Migration 004: `content_publications` — belum diimplementasikan.
+- Migration 004: `content_publications` — implemented pada Phase 1B.3.
+- Manual Content Calendar besar — belum diimplementasikan, direncanakan untuk Phase 1B.4.
 
 ## Keputusan Phase 1B
 
@@ -116,3 +117,64 @@ approved -> archived
 failed -> archived
 archived -> tidak ada next transition
 ```
+
+## Keputusan Phase 1B.3 — Content Publications
+
+Phase 1B.3 hanya mengelola rencana publikasi per content item. Halaman Manual Content Calendar besar, calendar bulanan/mingguan, auto posting, scheduler, dan integrasi platform belum diimplementasikan.
+
+Channel:
+
+- `instagram`
+- `facebook`
+- `tiktok`
+- `youtube`
+- `whatsapp_status`
+
+Format matrix:
+
+- Instagram: `reel`, `feed_video`, `feed_image`, `carousel`
+- Facebook: `reel`, `feed_video`, `feed_image`, `carousel`
+- TikTok: `short_video`
+- YouTube: `short_video`, `standard_video`
+- WhatsApp Status: `status_video`, `status_image`
+
+Catatan YouTube:
+
+- MVP default memakai `youtube + short_video`.
+- `standard_video` hanya disiapkan sebagai struktur masa depan.
+- YouTube wajib memiliki `platform_title` sebelum masuk status `scheduled`, `publishing`, atau `posted`.
+
+Aturan publication:
+
+- Unique: `content_item_id + channel + publication_format`.
+- `planned_publish_at` disimpan sebagai `timestamptz`.
+- UI menafsirkan `datetime-local` sebagai Asia/Jakarta atau UTC+07:00.
+- UI menampilkan waktu dalam timezone Asia/Jakarta.
+- Publication boleh dibuat saat content item belum approved, tetapi belum boleh dijadwalkan.
+- Transition ke `scheduled` dan `publishing` wajib parent content item `production_status = approved`.
+
+Publication status transition:
+
+```text
+planned -> scheduled | cancelled
+scheduled -> publishing | cancelled
+publishing -> posted | failed
+failed -> scheduled | cancelled
+cancelled -> planned
+posted -> tidak ada next transition
+```
+
+`cancelled -> planned` diizinkan karena MVP belum mempunyai DELETE endpoint dan admin perlu mengaktifkan kembali rencana publikasi yang dibatalkan.
+
+Conditional field:
+
+- `scheduled`, `publishing`, dan `posted` membutuhkan `planned_publish_at`.
+- `posted` membutuhkan `published_at`.
+- `failed` membutuhkan `failure_reason`.
+- `published_url` opsional dan harus URL `http` atau `https` bila diisi.
+
+Archive guard:
+
+- Content item tidak boleh diubah ke `archived` jika masih memiliki publication dengan status `planned`, `scheduled`, `publishing`, atau `failed`.
+- Content item boleh diarsipkan jika semua publication sudah `posted` atau `cancelled`.
+- Sistem tidak otomatis membatalkan atau mengubah publication child row.

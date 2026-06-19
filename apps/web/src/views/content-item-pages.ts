@@ -3,6 +3,7 @@ import { listCampaigns } from "../campaign-service.ts";
 import type { ContentItemRow } from "../content-item-service.ts";
 import { listContentItems } from "../content-item-service.ts";
 import { listColors, listOffers, listPainPoints, listProducts, listSchoolLevelColorDefaults } from "../library-service.ts";
+import { renderContentItemPublicationsSection } from "./content-publication-pages.ts";
 import {
   audienceSegments,
   contentPillars,
@@ -343,7 +344,7 @@ function statusActions(item: ContentItemRow): string {
   </div>`;
 }
 
-export function renderContentItemDetailPage(item: ContentItemRow, url: URL): string {
+export async function renderContentItemDetailPage(item: ContentItemRow, url: URL): Promise<string> {
   const rows = [
     ["Content Code", `<strong>${escapeHtml(item.content_code)}</strong>`],
     ["Sequence", escapeHtml(item.sequence_number)],
@@ -377,7 +378,7 @@ export function renderContentItemDetailPage(item: ContentItemRow, url: URL): str
     item.title,
     "Detail Konten",
     "Detail ide/karya utama konten dan status produksi.",
-    `${actions}${renderReadOnlyTable(["Field", "Nilai"], [...rows, ...relationDetailRows(item)])}<section><h2>Aksi Production Status</h2>${statusActions(item)}</section>`
+    `${actions}${renderReadOnlyTable(["Field", "Nilai"], [...rows, ...relationDetailRows(item)])}<section><h2>Aksi Production Status</h2>${statusActions(item)}</section>${await renderContentItemPublicationsSection(item)}`
   );
 }
 
