@@ -111,7 +111,7 @@ export async function handleCampaignPageGet(response: ResponseLike, pathname: st
   if (detailMatch) {
     try {
       const campaign = await getCampaign(detailMatch[1]);
-      sendHtml(response, renderCampaignDetailPage(campaign));
+      sendHtml(response, await renderCampaignDetailPage(campaign));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Campaign tidak ditemukan.";
       sendHtml(response, renderCampaignNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);

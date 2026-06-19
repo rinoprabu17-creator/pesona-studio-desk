@@ -3,6 +3,7 @@ import type { CampaignInput } from "../validation/campaign-validation.ts";
 import { listCampaigns } from "../campaign-service.ts";
 import type { CampaignRow } from "../campaign-service.ts";
 import { listProducts } from "../library-service.ts";
+import { renderCampaignContentItemsSection } from "./content-item-pages.ts";
 import { escapeHtml, renderBadge, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
 
 const statusLabels: Record<string, string> = {
@@ -57,7 +58,7 @@ export async function renderCampaignListPage(url: URL): Promise<string> {
     "/campaigns",
     "Campaign",
     "Phase 1B.1",
-    "Kelola data campaign dasar. Content item dan publikasi belum dibuat pada tahap ini.",
+    "Kelola data campaign dasar dan konten utama yang berada di dalamnya.",
     `${renderMessage(url)}${actions}${table}`
   );
 }
@@ -133,12 +134,12 @@ export async function renderCampaignFormPage(options: {
     "/campaigns",
     title,
     "Campaign Management",
-    "Isi data dasar campaign. Content item belum dibuat pada tahap ini.",
+    "Isi data dasar campaign. Konten dikelola dari halaman Konten.",
     form
   );
 }
 
-export function renderCampaignDetailPage(campaign: CampaignRow): string {
+export async function renderCampaignDetailPage(campaign: CampaignRow): Promise<string> {
   const table = renderReadOnlyTable(
     ["Field", "Nilai"],
     [
@@ -156,9 +157,10 @@ export function renderCampaignDetailPage(campaign: CampaignRow): string {
   const actions = `
     <div class="button-row">
       <a class="button" href="/campaigns/${escapeHtml(campaign.id)}/edit">Edit Campaign</a>
+      <a class="button" href="/content-items/new?campaign_id=${escapeHtml(campaign.id)}">Tambah Konten</a>
       <a class="button button-secondary" href="/campaigns">Kembali</a>
     </div>
-    <p class="hint">Konten campaign akan dikelola pada tahap Manual Content Calendar.</p>
+    <p class="hint">Publikasi channel akan dikelola pada tahap berikutnya.</p>
   `;
 
   return renderLayout(
@@ -166,7 +168,7 @@ export function renderCampaignDetailPage(campaign: CampaignRow): string {
     campaign.name,
     "Detail Campaign",
     "Detail data campaign dasar.",
-    `${actions}${table}`
+    `${actions}${table}${await renderCampaignContentItemsSection(campaign)}`
   );
 }
 

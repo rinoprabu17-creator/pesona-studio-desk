@@ -74,6 +74,62 @@ async function assertActiveProduct(productId: string | null): Promise<void> {
   }
 }
 
+async function contentItemsTableExists(): Promise<boolean> {
+  const rows = await query<{ exists: boolean }>(
+    `SELECT to_regclass('public.content_items') IS NOT NULL AS exists`
+  );
+  return Boolean(rows[0]?.exists);
+}
+
+async function guardCampaignUpdateWithContentItems(id: string, value: Required<CampaignInput>): Promise<void> {
+  if (!(await contentItemsTableExists())) {
+    return;
+  }
+
+  const currentRows = await query<{
+    code: string;
+    start_date: string;
+    end_date: string;
+    content_count: string;
+  }>(
+    `SELECT c.code,
+            c.start_date,
+            c.end_date,
+            COUNT(ci.id)::text AS content_count
+     FROM campaigns c
+     LEFT JOIN content_items ci ON ci.campaign_id = c.id
+     WHERE c.id = $1
+     GROUP BY c.id`,
+    [id]
+  );
+
+  const current = currentRows[0];
+  if (!current) {
+    return;
+  }
+
+  if (Number(current.content_count) === 0) {
+    return;
+  }
+
+  if (current.code !== value.code) {
+    throw new CampaignError("campaign_code_locked", "Kode campaign tidak boleh diubah setelah campaign memiliki konten.", 409);
+  }
+
+  const outsideRows = await query<{ id: string }>(
+    `SELECT id
+     FROM content_items
+     WHERE campaign_id = $1
+       AND (planned_content_date < $2 OR planned_content_date > $3)
+     LIMIT 1`,
+    [id, value.start_date, value.end_date]
+  );
+
+  if (outsideRows[0]) {
+    throw new CampaignError("campaign_period_conflict", "Periode campaign tidak boleh mengecualikan tanggal konten yang sudah ada.", 409);
+  }
+}
+
 function handleCampaignWriteError(error: any): never {
   if (error?.code === "23505") {
     throw new CampaignError("duplicate_campaign_code", "Kode campaign sudah digunakan.", 409);
@@ -135,6 +191,7 @@ export async function updateCampaign(id: string, input: CampaignInput): Promise<
   assertUuid(id);
   const value = validateCampaignInput(input);
   await assertActiveProduct(value.primary_product_id);
+  await guardCampaignUpdateWithContentItems(id, value);
 
   try {
     const rows = await query<{ id: string }>(
