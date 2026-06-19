@@ -30,13 +30,22 @@ Di luar scope Phase 1A:
 - Authentication.
 - Analytics.
 
-## Keputusan Phase 1B
+## Phase 1B — Manual Content Calendar
 
-Catatan ini bukan izin implementasi Phase 1B. Phase 1B harus memakai migration terpisah:
+Phase 1B dipecah menjadi migration bertahap:
 
 ```text
-migrations/002_phase1b_content_calendar.sql
+migrations/002_phase1b_campaigns.sql
+migrations/003_phase1b_content_items.sql
+migrations/004_phase1b_content_publications.sql
 ```
+
+Task Phase 1B.1 hanya mengimplementasikan migration 002 untuk campaign management.
+Migration 003 dan 004 belum diimplementasikan.
+
+## Keputusan Phase 1B
+
+Catatan ini bukan izin untuk mengimplementasikan seluruh Phase 1B sekaligus.
 
 Keputusan yang harus dipertahankan:
 

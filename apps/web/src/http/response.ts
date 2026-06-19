@@ -46,6 +46,17 @@ export function handleApiError(response: ResponseLike, error: unknown): void {
     return;
   }
 
+  if (
+    error instanceof Error &&
+    "statusCode" in error &&
+    "code" in error &&
+    typeof (error as any).statusCode === "number" &&
+    typeof (error as any).code === "string"
+  ) {
+    sendError(response, (error as any).statusCode, (error as any).code, error.message);
+    return;
+  }
+
   const message = error instanceof SyntaxError ? "Body JSON tidak valid." : "Terjadi error pada server.";
   sendError(response, error instanceof SyntaxError ? 400 : 500, error instanceof SyntaxError ? "invalid_json" : "server_error", message);
 }

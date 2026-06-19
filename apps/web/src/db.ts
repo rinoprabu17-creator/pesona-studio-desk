@@ -9,6 +9,17 @@ export const pool = new Pool({
   max: 10
 });
 
+pool.on("error", (error) => {
+  console.error(
+    JSON.stringify({
+      level: "error",
+      service: "web-app",
+      event: "database_pool_error",
+      message: error.message
+    })
+  );
+});
+
 export async function query<T = Record<string, unknown>>(text: string, params: unknown[] = []): Promise<T[]> {
   const result = await pool.query(text, params);
   return result.rows as T[];
