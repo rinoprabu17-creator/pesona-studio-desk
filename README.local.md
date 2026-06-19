@@ -50,7 +50,28 @@ npm run dev:mockup-worker
 npm run check
 ```
 
-Check ini memvalidasi file skeleton, service Compose, rute dashboard, dan syntax TypeScript.
+Check ini memvalidasi file skeleton, service Compose, rute Phase 1A, migration library, dan syntax TypeScript.
+
+## Database Phase 1A
+
+Jalankan migration dan seed secara eksplisit setelah PostgreSQL siap:
+
+```powershell
+npm run db:migrate
+npm run db:seed
+```
+
+Migration runner membuat ledger `schema_migrations`, menjalankan file SQL berdasarkan urutan, dan menolak checksum mismatch.
+
+Seed membaca `configs/campaign_knowledge_base.json` sebagai sumber canonical. Products, offers, dan pain points diperbarui dari JSON. Colors dan rekomendasi warna jenjang hanya ditambahkan jika belum ada agar perubahan admin tidak tertimpa.
+
+Halaman library Phase 1A:
+
+- http://localhost:3000/products
+- http://localhost:3000/colors
+- http://localhost:3000/school-level-color-defaults
+- http://localhost:3000/offers
+- http://localhost:3000/pain-points
 
 ## Folder storage lokal
 
