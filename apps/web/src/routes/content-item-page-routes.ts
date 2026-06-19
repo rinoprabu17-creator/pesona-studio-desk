@@ -153,7 +153,7 @@ export async function handleContentItemPageGet(response: ResponseLike, pathname:
   if (detailMatch) {
     try {
       const item = await getContentItem(detailMatch[1]);
-      sendHtml(response, renderContentItemDetailPage(item, url));
+      sendHtml(response, await renderContentItemDetailPage(item, url));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Konten tidak ditemukan.";
       sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);

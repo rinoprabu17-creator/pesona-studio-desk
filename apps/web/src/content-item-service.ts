@@ -182,6 +182,36 @@ async function assertActivePainPoint(id: string | null): Promise<void> {
   if (!rows[0].active) throw new ContentItemError("inactive_pain_point", "Pain point harus aktif.", 400);
 }
 
+async function contentPublicationsTableExists(): Promise<boolean> {
+  const rows = await query<{ exists: boolean }>(
+    `SELECT to_regclass('public.content_publications') IS NOT NULL AS exists`
+  );
+  return Boolean(rows[0]?.exists);
+}
+
+async function assertNoActivePublications(contentItemId: string): Promise<void> {
+  if (!(await contentPublicationsTableExists())) {
+    return;
+  }
+
+  const rows = await query<{ id: string }>(
+    `SELECT id
+     FROM content_publications
+     WHERE content_item_id = $1
+       AND publication_status NOT IN ('posted', 'cancelled')
+     LIMIT 1`,
+    [contentItemId]
+  );
+
+  if (rows[0]) {
+    throw new ContentItemError(
+      "active_publications_exist",
+      "Konten belum dapat diarsipkan karena masih memiliki publikasi yang belum selesai atau belum dibatalkan.",
+      409
+    );
+  }
+}
+
 function handleWriteError(error: any): never {
   if (error?.code === "23505") {
     throw new ContentItemError("content_code_conflict", "Content code atau sequence sudah digunakan.", 409);
@@ -367,6 +397,10 @@ export async function updateContentItemProductionStatus(id: string, nextStatusIn
 
   if (!allowed.includes(nextStatus)) {
     throw new ContentItemError("invalid_production_transition", "Perubahan production status tidak valid.", 409);
+  }
+
+  if (nextStatus === "archived") {
+    await assertNoActivePublications(id);
   }
 
   const rows = await query<{ id: string }>(
