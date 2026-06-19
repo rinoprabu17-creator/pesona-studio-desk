@@ -195,3 +195,5 @@ Semantik kalender:
 - Publication schedule boleh berbeda dari `planned_content_date` dan tetap tampil sebagai data nested.
 
 Kalender ini masih manual dan read-only untuk data utama. Create/edit/status tetap melalui halaman Campaign, Konten, dan Publikasi yang sudah ada. Belum ada auto posting.
+
+Rencana fase setelah Phase 1 dicatat di `docs/PHASE_2A_PLAN.md`.
