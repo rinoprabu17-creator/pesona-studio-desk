@@ -1,4 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 
 const requiredPaths = [
   "docker-compose.dev.yml",
@@ -11,6 +13,13 @@ const requiredPaths = [
   "apps/web/src/server.ts",
   "apps/web/src/db.ts",
   "apps/web/src/library-service.ts",
+  "apps/web/src/http/request.ts",
+  "apps/web/src/http/response.ts",
+  "apps/web/src/routes/library-api-routes.ts",
+  "apps/web/src/routes/library-page-routes.ts",
+  "apps/web/src/views/layout.ts",
+  "apps/web/src/views/library-pages.ts",
+  "apps/web/src/validation/library-validation.ts",
   "migrations/001_phase1a_libraries.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
@@ -64,6 +73,22 @@ function pass(message) {
   console.log(`[check] OK ${message}`);
 }
 
+function readSources(dir) {
+  if (!existsSync(dir)) {
+    return "";
+  }
+
+  return readdirSync(dir, { withFileTypes: true })
+    .map((entry) => {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        return readSources(path);
+      }
+      return entry.name.endsWith(".ts") ? readFileSync(path, "utf8") : "";
+    })
+    .join("\n");
+}
+
 const nodeMajor = Number(process.versions.node.split(".")[0]);
 if (nodeMajor < 24) {
   fail(`Node >=24 dibutuhkan untuk menjalankan TypeScript skeleton tanpa dependency. Versi saat ini: ${process.version}`);
@@ -88,7 +113,7 @@ for (const service of requiredServices) {
   }
 }
 
-const webSource = existsSync("apps/web/src/server.ts") ? readFileSync("apps/web/src/server.ts", "utf8") : "";
+const webSource = readSources("apps/web/src");
 for (const route of requiredRoutes) {
   if (webSource.includes(route)) {
     pass(`Route Phase 1A tersedia: ${route}`);
