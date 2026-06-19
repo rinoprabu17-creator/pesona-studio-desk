@@ -52,6 +52,14 @@ npm run check
 
 Check ini memvalidasi file skeleton, service Compose, rute Phase 1A, rute Campaign, rute Konten, rute Publikasi, rute Kalender Konten, migration bertahap, dan syntax TypeScript.
 
+Campaign Planner Phase 2A.1 mempunyai test terpisah berbasis fake provider:
+
+```powershell
+npm run test:campaign-planner
+```
+
+Phase 2A.1 masih fake-only. Tidak ada OpenAI dependency, tidak ada OpenAI API key yang diperlukan, dan tidak ada live AI call.
+
 ## Database Phase 1A
 
 Jalankan migration dan seed secara eksplisit setelah PostgreSQL siap:

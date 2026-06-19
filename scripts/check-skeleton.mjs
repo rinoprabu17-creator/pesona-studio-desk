@@ -8,6 +8,7 @@ const requiredPaths = [
   ".env.example",
   ".env.local.example",
   "README.local.md",
+  "docs/PHASE_2A_PLAN.md",
   "package.json",
   "package-lock.json",
   "apps/web/Dockerfile",
@@ -45,6 +46,23 @@ const requiredPaths = [
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
   "apps/web/src/validation/library-validation.ts",
+  "packages/campaign-planner/src/constants.ts",
+  "packages/campaign-planner/src/types.ts",
+  "packages/campaign-planner/src/schema.ts",
+  "packages/campaign-planner/src/strategy.ts",
+  "packages/campaign-planner/src/provider.ts",
+  "packages/campaign-planner/src/fake-provider.ts",
+  "packages/campaign-planner/src/consolidate.ts",
+  "packages/campaign-planner/src/validation.ts",
+  "packages/campaign-planner/src/claim-rules.ts",
+  "packages/campaign-planner/src/index.ts",
+  "tests/campaign-planner/strategy.test.ts",
+  "tests/campaign-planner/schema.test.ts",
+  "tests/campaign-planner/fake-provider.test.ts",
+  "tests/campaign-planner/validation.test.ts",
+  "tests/campaign-planner/claim-rules.test.ts",
+  "tests/campaign-planner/consolidation.test.ts",
+  "tests/fixtures/campaign-planner/input.ts",
   "migrations/001_phase1a_libraries.sql",
   "migrations/002_phase1b_campaigns.sql",
   "migrations/003_phase1b_content_items.sql",
@@ -177,6 +195,8 @@ for (const service of requiredServices) {
 }
 
 const webSource = readSources("apps/web/src");
+const packageSource = readSources("packages/campaign-planner/src");
+const testsSource = readSources("tests/campaign-planner");
 for (const route of requiredRoutes) {
   if (webSource.includes(route)) {
     pass(`Route Phase 1A tersedia: ${route}`);
@@ -276,6 +296,13 @@ if (existsSync("migrations/005_phase1b_content_calendar.sql")) {
   pass("Tidak ada migration 005 untuk Manual Content Calendar");
 }
 
+const migrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("005_"));
+if (migrationFiles.length) {
+  fail(`Phase 2A.1 tidak boleh membuat migration 005: ${migrationFiles.join(", ")}`);
+} else {
+  pass("Phase 2A.1 tidak membuat migration 005");
+}
+
 if (webSource.includes("/content-calendar")) {
   pass("Route page Manual Content Calendar tersedia: /content-calendar");
 } else {
@@ -294,6 +321,77 @@ for (const forbiddenAutomation of ["auto posting", "scheduler worker", "cron", "
   } else {
     pass(`Calendar tidak menambah automation: ${forbiddenAutomation}`);
   }
+}
+
+const packageJson = existsSync("package.json") ? JSON.parse(readFileSync("package.json", "utf8")) : { dependencies: {} };
+const dependencies = packageJson.dependencies || {};
+if (dependencies.zod) {
+  pass("Dependency zod tersedia");
+} else {
+  fail("Dependency zod wajib tersedia untuk Campaign Planner schema");
+}
+
+if (dependencies.openai || dependencies["@openai/agents"]) {
+  fail("Phase 2A.1 tidak boleh menambah dependency OpenAI atau Agents SDK");
+} else {
+  pass("Tidak ada dependency OpenAI atau Agents SDK");
+}
+
+const allMigrations = readdirSync("migrations")
+  .filter((fileName) => fileName.endsWith(".sql"))
+  .map((fileName) => readFileSync(join("migrations", fileName), "utf8"))
+  .join("\n");
+for (const forbiddenTable of [
+  "CREATE TABLE campaign_plan_runs",
+  "CREATE TABLE campaign_plan_generation_batches",
+  "CREATE TABLE campaign_plan_draft_items",
+  "CREATE TABLE campaign_plan_draft_publications"
+]) {
+  if (allMigrations.includes(forbiddenTable)) {
+    fail(`Phase 2A.1 tidak boleh membuat staging table: ${forbiddenTable}`);
+  } else {
+    pass(`Phase 2A.1 belum membuat staging table: ${forbiddenTable.replace("CREATE TABLE ", "")}`);
+  }
+}
+
+for (const forbiddenRoute of ["/campaign-plan", "/campaign-plan-runs", "/api/campaign-plan"]) {
+  if (webSource.includes(forbiddenRoute)) {
+    fail(`Phase 2A.1 tidak boleh membuat Campaign Planner route: ${forbiddenRoute}`);
+  } else {
+    pass(`Tidak ada Campaign Planner route: ${forbiddenRoute}`);
+  }
+}
+
+if (existsSync("workers/campaign-planner")) {
+  fail("Phase 2A.1 tidak boleh membuat Campaign Planner worker");
+} else {
+  pass("Tidak ada Campaign Planner worker");
+}
+
+const trackedLikeSources = [
+  readFileSync("README.local.md", "utf8"),
+  readFileSync("docs/PHASE_2A_PLAN.md", "utf8"),
+  readFileSync("package.json", "utf8"),
+  packageSource,
+  testsSource,
+  webSource
+].join("\n");
+if (trackedLikeSources.includes("OPENAI_API_KEY")) {
+  fail("Phase 2A.1 tidak boleh menambahkan OpenAI API key handling pada tracked source");
+} else {
+  pass("Tidak ada OPENAI_API_KEY pada source Phase 2A.1");
+}
+
+if (packageSource.includes("from \"openai\"") || packageSource.includes("from '@openai/agents'")) {
+  fail("Campaign Planner package tidak boleh import OpenAI pada Phase 2A.1");
+} else {
+  pass("Campaign Planner package tidak import OpenAI");
+}
+
+if (packageSource.includes("content_items") || packageSource.includes("content_publications")) {
+  fail("Campaign Planner package tidak boleh menyentuh operational table Phase 1");
+} else {
+  pass("Campaign Planner package tidak menyentuh operational table Phase 1");
 }
 
 if (failed) {
