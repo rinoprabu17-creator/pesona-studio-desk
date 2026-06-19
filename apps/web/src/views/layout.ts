@@ -7,6 +7,7 @@ const appName = process.env.APP_NAME || "Pesona Studio Desk";
 
 export const navItems: NavItem[] = [
   { href: "/campaigns", label: "Campaign" },
+  { href: "/content-items", label: "Konten" },
   { href: "/products", label: "Product Library" },
   { href: "/colors", label: "Color Library" },
   { href: "/school-level-color-defaults", label: "Rekomendasi Warna" },
@@ -249,7 +250,7 @@ export function renderLayout(activePath: string, title: string, eyebrow: string,
       }
 
       label { color: #34443f; display: grid; font-size: 13px; font-weight: 800; gap: 7px; }
-      input, select {
+      input, select, textarea {
         border: 1px solid var(--line);
         border-radius: 8px;
         color: var(--text);
@@ -257,6 +258,8 @@ export function renderLayout(activePath: string, title: string, eyebrow: string,
         padding: 10px 11px;
         width: 100%;
       }
+
+      textarea { min-height: 110px; resize: vertical; }
 
       .button-row { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
       button, .button {

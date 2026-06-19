@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { readdirSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join } from "node:path";
 
 const requiredPaths = [
@@ -15,19 +16,26 @@ const requiredPaths = [
   "apps/web/src/library-service.ts",
   "apps/web/src/campaign-service.ts",
   "apps/web/src/campaign-errors.ts",
+  "apps/web/src/content-item-service.ts",
+  "apps/web/src/content-item-errors.ts",
   "apps/web/src/http/request.ts",
   "apps/web/src/http/response.ts",
   "apps/web/src/routes/campaign-api-routes.ts",
   "apps/web/src/routes/campaign-page-routes.ts",
+  "apps/web/src/routes/content-item-api-routes.ts",
+  "apps/web/src/routes/content-item-page-routes.ts",
   "apps/web/src/routes/library-api-routes.ts",
   "apps/web/src/routes/library-page-routes.ts",
   "apps/web/src/views/campaign-pages.ts",
+  "apps/web/src/views/content-item-pages.ts",
   "apps/web/src/views/layout.ts",
   "apps/web/src/views/library-pages.ts",
   "apps/web/src/validation/campaign-validation.ts",
+  "apps/web/src/validation/content-item-validation.ts",
   "apps/web/src/validation/library-validation.ts",
   "migrations/001_phase1a_libraries.sql",
   "migrations/002_phase1b_campaigns.sql",
+  "migrations/003_phase1b_content_items.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "workers/video/Dockerfile",
@@ -63,7 +71,10 @@ const requiredRoutes = [
   "/api/school-level-color-defaults",
   "/campaigns",
   "/campaigns/new",
-  "/api/campaigns"
+  "/api/campaigns",
+  "/content-items",
+  "/content-items/new",
+  "/api/content-items"
 ];
 
 const forbiddenPhase1BTables = [
@@ -73,6 +84,11 @@ const forbiddenPhase1BTables = [
 ];
 
 let failed = false;
+
+const lockedMigrationHashes = {
+  "migrations/001_phase1a_libraries.sql": "dc77e3d5bfd4b2208112282e50c5d084f298a83e6ab94d8cf252636c76e1cfef",
+  "migrations/002_phase1b_campaigns.sql": "5beb7f1dd1cf0d5e9f283dd4ad6ac337bbb2af190e519c15832e2cabef4a3525"
+};
 
 function fail(message) {
   failed = true;
@@ -99,6 +115,10 @@ function readSources(dir) {
     .join("\n");
 }
 
+function sha256(source) {
+  return createHash("sha256").update(source).digest("hex");
+}
+
 const nodeMajor = Number(process.versions.node.split(".")[0]);
 if (nodeMajor < 24) {
   fail(`Node >=24 dibutuhkan untuk menjalankan TypeScript skeleton tanpa dependency. Versi saat ini: ${process.version}`);
@@ -111,6 +131,19 @@ for (const path of requiredPaths) {
     pass(`File/folder tersedia: ${path}`);
   } else {
     fail(`File/folder wajib belum ada: ${path}`);
+  }
+}
+
+for (const [path, expectedHash] of Object.entries(lockedMigrationHashes)) {
+  if (!existsSync(path)) {
+    continue;
+  }
+
+  const actualHash = sha256(readFileSync(path, "utf8"));
+  if (actualHash === expectedHash) {
+    pass(`Migration stabil tidak berubah: ${path}`);
+  } else {
+    fail(`Migration stabil berubah: ${path}`);
   }
 }
 
@@ -157,6 +190,29 @@ for (const table of ["CREATE TABLE content_items", "CREATE TABLE content_publica
     fail(`Migration Phase 1B.1 tidak boleh membuat tabel: ${table}`);
   } else {
     pass(`Migration Phase 1B.1 tidak membuat ${table.replace("CREATE TABLE ", "")}`);
+  }
+}
+
+const contentItemMigrationSource = existsSync("migrations/003_phase1b_content_items.sql")
+  ? readFileSync("migrations/003_phase1b_content_items.sql", "utf8")
+  : "";
+if (contentItemMigrationSource.includes("CREATE TABLE content_items")) {
+  pass("Migration Phase 1B.2 membuat content_items");
+} else {
+  fail("Migration Phase 1B.2 belum membuat content_items");
+}
+
+if (contentItemMigrationSource.includes("CREATE TABLE content_publications")) {
+  fail("Migration Phase 1B.2 tidak boleh membuat content_publications");
+} else {
+  pass("Migration Phase 1B.2 tidak membuat content_publications");
+}
+
+for (const forbiddenField of ["channel", "publication_format", "planned_publish_at"]) {
+  if (contentItemMigrationSource.includes(forbiddenField)) {
+    fail(`content_items tidak boleh memiliki field publikasi: ${forbiddenField}`);
+  } else {
+    pass(`content_items tidak memiliki field publikasi: ${forbiddenField}`);
   }
 }
 

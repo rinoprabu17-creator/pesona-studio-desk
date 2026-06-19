@@ -50,7 +50,7 @@ npm run dev:mockup-worker
 npm run check
 ```
 
-Check ini memvalidasi file skeleton, service Compose, rute Phase 1A, migration library, dan syntax TypeScript.
+Check ini memvalidasi file skeleton, service Compose, rute Phase 1A, rute Campaign, rute Konten, migration bertahap, dan syntax TypeScript.
 
 ## Database Phase 1A
 
@@ -86,7 +86,28 @@ Halaman campaign:
 - http://localhost:3000/campaigns
 - http://localhost:3000/campaigns/new
 
-Phase 1B.1 hanya mengelola data campaign. Content item, publication, dan calendar belum dibuat.
+Phase 1B.1 hanya mengelola data campaign. Publication dan calendar belum dibuat.
+
+## Content Item Phase 1B.2
+
+Jalankan migration eksplisit untuk menambahkan tabel content item:
+
+```powershell
+npm run db:migrate
+```
+
+Alur manual:
+
+1. Buat campaign di http://localhost:3000/campaigns/new
+2. Buat konten dari http://localhost:3000/content-items/new
+3. Atau buka detail campaign dan klik Tambah Konten.
+
+Halaman content item:
+
+- http://localhost:3000/content-items
+- http://localhost:3000/content-items/new
+
+Content code dan sequence dibuat otomatis dari kode campaign. Publication, channel, jadwal posting, dan manual content calendar belum tersedia pada Phase 1B.2.
 
 ## Folder storage lokal
 

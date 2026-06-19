@@ -8,6 +8,8 @@ import { handleApiError, sendError, sendHtml, sendJson } from "./http/response.t
 import type { ResponseLike } from "./http/response.ts";
 import { handleCampaignApiRoute } from "./routes/campaign-api-routes.ts";
 import { handleCampaignPageGet, handleCampaignPagePost } from "./routes/campaign-page-routes.ts";
+import { handleContentItemApiRoute } from "./routes/content-item-api-routes.ts";
+import { handleContentItemPageGet, handleContentItemPagePost } from "./routes/content-item-page-routes.ts";
 import { handleLibraryApiRoute } from "./routes/library-api-routes.ts";
 import { handleLibraryPageGet, handleLibraryPagePost, renderNotFoundPage } from "./routes/library-page-routes.ts";
 import { escapeHtml, renderLayout } from "./views/layout.ts";
@@ -41,7 +43,8 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
     if (pathname.startsWith("/api/")) {
       const handled =
         (await handleLibraryApiRoute(request, response, pathname)) ||
-        (await handleCampaignApiRoute(request, response, pathname));
+        (await handleCampaignApiRoute(request, response, pathname)) ||
+        (await handleContentItemApiRoute(request, response, pathname, url));
       if (!handled) {
         sendError(response, 404, "not_found", "Endpoint tidak ditemukan.");
       }
@@ -51,7 +54,8 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
     if (request.method === "POST") {
       const handled =
         (await handleLibraryPagePost(request, response, pathname)) ||
-        (await handleCampaignPagePost(request, response, pathname));
+        (await handleCampaignPagePost(request, response, pathname)) ||
+        (await handleContentItemPagePost(request, response, pathname));
       if (!handled) {
         sendHtml(response, renderNotFoundPage(), 404);
       }
@@ -60,7 +64,8 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
 
     const handled =
       (await handleLibraryPageGet(response, pathname, url)) ||
-      (await handleCampaignPageGet(response, pathname, url));
+      (await handleCampaignPageGet(response, pathname, url)) ||
+      (await handleContentItemPageGet(response, pathname, url));
     if (!handled) {
       sendHtml(response, renderNotFoundPage(), 404);
     }
