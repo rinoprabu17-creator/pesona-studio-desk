@@ -164,6 +164,30 @@ Filter tersedia:
 
 Kalender mengelompokkan content item berdasarkan `planned_content_date`, lalu menampilkan seluruh publication yang relevan sebagai data nested. Kalender belum melakukan posting otomatis dan tidak membuat scheduler baru.
 
+## Campaign Planner Phase 2A.2
+
+Phase 2A.2 menambahkan generation run staging dengan Fake Provider dan worker PostgreSQL polling.
+
+Command:
+
+```powershell
+npm run db:migrate
+npm run worker:campaign-planner
+npm run worker:campaign-planner:once
+npm run test:campaign-planner-runs
+```
+
+Route:
+
+- Generate page: `/campaigns/:id/plan-runs/new`
+- Run detail: `/campaign-plan-runs/:id`
+- API create/list: `/api/campaigns/:id/plan-runs`
+- API detail: `/api/campaign-plan-runs/:id`
+- API retry: `/api/campaign-plan-runs/:id/retry`
+- API cancel: `/api/campaign-plan-runs/:id/cancel`
+
+Phase ini masih fake-only untuk menguji lifecycle, lease, retry, validation, dan staging draft. Belum ada review/edit/approve/import draft, belum ada OpenAI provider, dan belum ada posting otomatis.
+
 ## Folder storage lokal
 
 - `storage/footage`

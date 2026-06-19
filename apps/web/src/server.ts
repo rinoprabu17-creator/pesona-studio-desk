@@ -7,6 +7,8 @@ import type { RequestLike } from "./http/request.ts";
 import { handleApiError, sendError, sendHtml, sendJson } from "./http/response.ts";
 import type { ResponseLike } from "./http/response.ts";
 import { handleCampaignApiRoute } from "./routes/campaign-api-routes.ts";
+import { handleCampaignPlanRunApiRoute } from "./routes/campaign-plan-run-api-routes.ts";
+import { handleCampaignPlanRunPageGet, handleCampaignPlanRunPagePost } from "./routes/campaign-plan-run-page-routes.ts";
 import { handleCampaignPageGet, handleCampaignPagePost } from "./routes/campaign-page-routes.ts";
 import { handleContentCalendarApiRoute } from "./routes/content-calendar-api-routes.ts";
 import { handleContentCalendarPageGet } from "./routes/content-calendar-page-routes.ts";
@@ -48,6 +50,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
       const handled =
         (await handleLibraryApiRoute(request, response, pathname)) ||
         (await handleCampaignApiRoute(request, response, pathname)) ||
+        (await handleCampaignPlanRunApiRoute(request, response, pathname)) ||
         (await handleContentCalendarApiRoute(request, response, pathname, url)) ||
         (await handleContentItemApiRoute(request, response, pathname, url)) ||
         (await handleContentPublicationApiRoute(request, response, pathname));
@@ -61,6 +64,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
       const handled =
         (await handleLibraryPagePost(request, response, pathname)) ||
         (await handleCampaignPagePost(request, response, pathname)) ||
+        (await handleCampaignPlanRunPagePost(request, response, pathname)) ||
         (await handleContentItemPagePost(request, response, pathname)) ||
         (await handleContentPublicationPagePost(request, response, pathname));
       if (!handled) {
@@ -72,6 +76,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
     const handled =
       (await handleLibraryPageGet(response, pathname, url)) ||
       (await handleCampaignPageGet(response, pathname, url)) ||
+      (await handleCampaignPlanRunPageGet(response, pathname, url)) ||
       (await handleContentCalendarPageGet(response, pathname, url)) ||
       (await handleContentItemPageGet(response, pathname, url)) ||
       (await handleContentPublicationPageGet(response, pathname, url));

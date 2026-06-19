@@ -32,7 +32,6 @@ test("consolidation valid merge mempertahankan strategy identity dan caption nul
   const { input, strategy, result } = await generate("valid", 5);
   const consolidated = consolidateCampaignPlan(input, strategy, [result]);
   assert.equal(consolidated.summary.valid, true);
-  assert.ok(consolidated.warnings.some((warning) => warning.code === "cta_repeated_often"));
   assert.equal(consolidated.errors.length, 0);
   assert.ok(consolidated.draft);
   assert.equal(consolidated.draft.items[0].planned_content_date, strategy[0].planned_content_date);

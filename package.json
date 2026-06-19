@@ -11,12 +11,15 @@
     "dev:web": "node --experimental-strip-types apps/web/src/server.ts",
     "dev:video-worker": "node --experimental-strip-types workers/video/src/index.ts",
     "dev:mockup-worker": "node --experimental-strip-types workers/mockup/src/index.ts",
+    "worker:campaign-planner": "node --experimental-strip-types workers/campaign-planner/src/index.ts",
+    "worker:campaign-planner:once": "CAMPAIGN_PLANNER_ONCE=true node --experimental-strip-types workers/campaign-planner/src/index.ts",
     "db:migrate": "node scripts/migrate.mjs",
     "db:seed": "node scripts/seed.mjs",
     "test:campaign-planner": "node --experimental-strip-types --test tests/campaign-planner/*.test.ts",
+    "test:campaign-planner-runs": "node --import ./tests/bootstrap-env.mjs --experimental-strip-types --test tests/campaign-plan-runs/*.test.ts",
     "check:structure": "node scripts/check-skeleton.mjs",
-    "check:syntax": "node --experimental-strip-types --check apps/web/src/server.ts && node --experimental-strip-types --check workers/video/src/index.ts && node --experimental-strip-types --check workers/mockup/src/index.ts && node --experimental-strip-types --check packages/campaign-planner/src/index.ts",
-    "check": "npm run check:structure && npm run check:syntax && npm run test:campaign-planner",
+    "check:syntax": "node --experimental-strip-types --check apps/web/src/server.ts && node --experimental-strip-types --check workers/video/src/index.ts && node --experimental-strip-types --check workers/mockup/src/index.ts && node --experimental-strip-types --check workers/campaign-planner/src/index.ts && node --experimental-strip-types --check packages/campaign-planner/src/index.ts",
+    "check": "npm run check:structure && npm run check:syntax && npm run test:campaign-planner && npm run test:campaign-planner-runs",
     "build": "npm run check"
   },
   "dependencies": {
