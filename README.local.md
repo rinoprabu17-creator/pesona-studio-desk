@@ -73,6 +73,21 @@ Halaman library Phase 1A:
 - http://localhost:3000/offers
 - http://localhost:3000/pain-points
 
+## Campaign Phase 1B.1
+
+Jalankan migration eksplisit untuk menambahkan tabel campaign:
+
+```powershell
+npm run db:migrate
+```
+
+Halaman campaign:
+
+- http://localhost:3000/campaigns
+- http://localhost:3000/campaigns/new
+
+Phase 1B.1 hanya mengelola data campaign. Content item, publication, dan calendar belum dibuat.
+
 ## Folder storage lokal
 
 - `storage/footage`

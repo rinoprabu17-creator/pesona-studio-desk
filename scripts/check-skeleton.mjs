@@ -13,14 +13,21 @@ const requiredPaths = [
   "apps/web/src/server.ts",
   "apps/web/src/db.ts",
   "apps/web/src/library-service.ts",
+  "apps/web/src/campaign-service.ts",
+  "apps/web/src/campaign-errors.ts",
   "apps/web/src/http/request.ts",
   "apps/web/src/http/response.ts",
+  "apps/web/src/routes/campaign-api-routes.ts",
+  "apps/web/src/routes/campaign-page-routes.ts",
   "apps/web/src/routes/library-api-routes.ts",
   "apps/web/src/routes/library-page-routes.ts",
+  "apps/web/src/views/campaign-pages.ts",
   "apps/web/src/views/layout.ts",
   "apps/web/src/views/library-pages.ts",
+  "apps/web/src/validation/campaign-validation.ts",
   "apps/web/src/validation/library-validation.ts",
   "migrations/001_phase1a_libraries.sql",
+  "migrations/002_phase1b_campaigns.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "workers/video/Dockerfile",
@@ -53,7 +60,10 @@ const requiredRoutes = [
   "/api/colors",
   "/api/offers",
   "/api/pain-points",
-  "/api/school-level-color-defaults"
+  "/api/school-level-color-defaults",
+  "/campaigns",
+  "/campaigns/new",
+  "/api/campaigns"
 ];
 
 const forbiddenPhase1BTables = [
@@ -130,6 +140,23 @@ for (const table of forbiddenPhase1BTables) {
     fail(`Migration Phase 1A tidak boleh membuat tabel Phase 1B: ${table}`);
   } else {
     pass(`Migration Phase 1A tidak membuat ${table.replace("CREATE TABLE ", "")}`);
+  }
+}
+
+const campaignMigrationSource = existsSync("migrations/002_phase1b_campaigns.sql")
+  ? readFileSync("migrations/002_phase1b_campaigns.sql", "utf8")
+  : "";
+if (campaignMigrationSource.includes("CREATE TABLE campaigns")) {
+  pass("Migration Phase 1B.1 membuat campaigns");
+} else {
+  fail("Migration Phase 1B.1 belum membuat campaigns");
+}
+
+for (const table of ["CREATE TABLE content_items", "CREATE TABLE content_publications"]) {
+  if (campaignMigrationSource.includes(table)) {
+    fail(`Migration Phase 1B.1 tidak boleh membuat tabel: ${table}`);
+  } else {
+    pass(`Migration Phase 1B.1 tidak membuat ${table.replace("CREATE TABLE ", "")}`);
   }
 }
 

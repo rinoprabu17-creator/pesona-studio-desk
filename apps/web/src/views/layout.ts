@@ -6,6 +6,7 @@ export type NavItem = {
 const appName = process.env.APP_NAME || "Pesona Studio Desk";
 
 export const navItems: NavItem[] = [
+  { href: "/campaigns", label: "Campaign" },
   { href: "/products", label: "Product Library" },
   { href: "/colors", label: "Color Library" },
   { href: "/school-level-color-defaults", label: "Rekomendasi Warna" },
