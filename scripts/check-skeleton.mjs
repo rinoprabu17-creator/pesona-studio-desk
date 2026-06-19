@@ -6,8 +6,14 @@ const requiredPaths = [
   ".env.local.example",
   "README.local.md",
   "package.json",
+  "package-lock.json",
   "apps/web/Dockerfile",
   "apps/web/src/server.ts",
+  "apps/web/src/db.ts",
+  "apps/web/src/library-service.ts",
+  "migrations/001_phase1a_libraries.sql",
+  "scripts/migrate.mjs",
+  "scripts/seed.mjs",
   "workers/video/Dockerfile",
   "workers/video/src/index.ts",
   "workers/mockup/Dockerfile",
@@ -29,13 +35,22 @@ const requiredServices = [
 ];
 
 const requiredRoutes = [
-  "campaign-calendar",
-  "shot-list",
-  "footage-inbox",
-  "draft-videos",
-  "approval-board",
-  "mockup-generator",
-  "lead-log"
+  "/products",
+  "/colors",
+  "/offers",
+  "/pain-points",
+  "/school-level-color-defaults",
+  "/api/products",
+  "/api/colors",
+  "/api/offers",
+  "/api/pain-points",
+  "/api/school-level-color-defaults"
+];
+
+const forbiddenPhase1BTables = [
+  "CREATE TABLE campaigns",
+  "CREATE TABLE content_items",
+  "CREATE TABLE content_publications"
 ];
 
 let failed = false;
@@ -76,9 +91,20 @@ for (const service of requiredServices) {
 const webSource = existsSync("apps/web/src/server.ts") ? readFileSync("apps/web/src/server.ts", "utf8") : "";
 for (const route of requiredRoutes) {
   if (webSource.includes(route)) {
-    pass(`Route dashboard tersedia: /${route}`);
+    pass(`Route Phase 1A tersedia: ${route}`);
   } else {
-    fail(`Route dashboard belum ada: /${route}`);
+    fail(`Route Phase 1A belum ada: ${route}`);
+  }
+}
+
+const migrationSource = existsSync("migrations/001_phase1a_libraries.sql")
+  ? readFileSync("migrations/001_phase1a_libraries.sql", "utf8")
+  : "";
+for (const table of forbiddenPhase1BTables) {
+  if (migrationSource.includes(table)) {
+    fail(`Migration Phase 1A tidak boleh membuat tabel Phase 1B: ${table}`);
+  } else {
+    pass(`Migration Phase 1A tidak membuat ${table.replace("CREATE TABLE ", "")}`);
   }
 }
 
@@ -86,4 +112,4 @@ if (failed) {
   process.exit(1);
 }
 
-console.log("[check] Struktur skeleton local development siap.");
+console.log("[check] Struktur Phase 1A local development siap.");

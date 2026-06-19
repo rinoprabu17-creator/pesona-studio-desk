@@ -11,9 +11,14 @@
     "dev:web": "node --experimental-strip-types apps/web/src/server.ts",
     "dev:video-worker": "node --experimental-strip-types workers/video/src/index.ts",
     "dev:mockup-worker": "node --experimental-strip-types workers/mockup/src/index.ts",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:seed": "node scripts/seed.mjs",
     "check:structure": "node scripts/check-skeleton.mjs",
     "check:syntax": "node --experimental-strip-types --check apps/web/src/server.ts && node --experimental-strip-types --check workers/video/src/index.ts && node --experimental-strip-types --check workers/mockup/src/index.ts",
     "check": "npm run check:structure && npm run check:syntax",
     "build": "npm run check"
+  },
+  "dependencies": {
+    "pg": "^8.22.0"
   }
 }
