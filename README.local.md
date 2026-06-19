@@ -50,7 +50,7 @@ npm run dev:mockup-worker
 npm run check
 ```
 
-Check ini memvalidasi file skeleton, service Compose, rute Phase 1A, rute Campaign, rute Konten, rute Publikasi, migration bertahap, dan syntax TypeScript.
+Check ini memvalidasi file skeleton, service Compose, rute Phase 1A, rute Campaign, rute Konten, rute Publikasi, rute Kalender Konten, migration bertahap, dan syntax TypeScript.
 
 ## Database Phase 1A
 
@@ -130,7 +130,31 @@ Route publication:
 - `/content-publications/:id`
 - `/content-publications/:id/edit`
 
-Publication mendukung channel Instagram, Facebook, TikTok, YouTube, dan WhatsApp Status. Manual Content Calendar besar, `/content-calendar`, auto posting, scheduler, dan API platform belum tersedia.
+Publication mendukung channel Instagram, Facebook, TikTok, YouTube, dan WhatsApp Status. Auto posting, scheduler, dan API platform belum tersedia.
+
+## Manual Content Calendar Phase 1B.4
+
+Alur manual:
+
+1. Buat campaign di http://localhost:3000/campaigns/new
+2. Buat content item di http://localhost:3000/content-items/new
+3. Tambahkan publication dari detail content item.
+4. Pantau agenda content-first di http://localhost:3000/content-calendar
+
+Route calendar:
+
+- Page: `/content-calendar`
+- API: `/api/content-calendar`
+
+Filter tersedia:
+
+- `month` dengan format `YYYY-MM`
+- `campaign_id`
+- `channel`
+- `production_status`
+- `publication_status`
+
+Kalender mengelompokkan content item berdasarkan `planned_content_date`, lalu menampilkan seluruh publication yang relevan sebagai data nested. Kalender belum melakukan posting otomatis dan tidak membuat scheduler baru.
 
 ## Folder storage lokal
 
