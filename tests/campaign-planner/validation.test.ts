@@ -70,12 +70,16 @@ test("duplicate normalization mendeteksi case dan whitespace", async () => {
 
 test("warning tidak selalu memblokir draft object", async () => {
   const { consolidated } = await draftFor("valid");
-  assert.ok(consolidated.draft);
-  assert.equal(consolidated.errors.length, 0);
-  assert.ok(consolidated.warnings.length > 0);
+  const draft = structuredClone(consolidated.draft!);
+  for (const item of draft.items) {
+    item.cta_text = "Chat admin untuk konsultasi kebutuhan sampul sekolah.";
+  }
+  const validation = validateCampaignPlanDraft((await draftFor("valid")).input, draft);
+  assert.equal(validation.errors.length, 0);
+  assert.ok(validation.warnings.length > 0);
   assert.equal(
-    new Set(consolidated.warnings.map((warning) => `${warning.code}:${warning.path || ""}`)).size,
-    consolidated.warnings.length
+    new Set(validation.warnings.map((warning) => `${warning.code}:${warning.path || ""}`)).size,
+    validation.warnings.length
   );
 });
 

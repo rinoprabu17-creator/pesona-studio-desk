@@ -17,6 +17,8 @@ const requiredPaths = [
   "apps/web/src/library-service.ts",
   "apps/web/src/campaign-service.ts",
   "apps/web/src/campaign-errors.ts",
+  "apps/web/src/campaign-plan-run-service.ts",
+  "apps/web/src/campaign-plan-run-errors.ts",
   "apps/web/src/content-item-service.ts",
   "apps/web/src/content-item-errors.ts",
   "apps/web/src/content-publication-service.ts",
@@ -29,6 +31,8 @@ const requiredPaths = [
   "apps/web/src/routes/content-calendar-page-routes.ts",
   "apps/web/src/routes/campaign-api-routes.ts",
   "apps/web/src/routes/campaign-page-routes.ts",
+  "apps/web/src/routes/campaign-plan-run-api-routes.ts",
+  "apps/web/src/routes/campaign-plan-run-page-routes.ts",
   "apps/web/src/routes/content-item-api-routes.ts",
   "apps/web/src/routes/content-item-page-routes.ts",
   "apps/web/src/routes/content-publication-api-routes.ts",
@@ -36,12 +40,14 @@ const requiredPaths = [
   "apps/web/src/routes/library-api-routes.ts",
   "apps/web/src/routes/library-page-routes.ts",
   "apps/web/src/views/campaign-pages.ts",
+  "apps/web/src/views/campaign-plan-run-pages.ts",
   "apps/web/src/views/content-calendar-page.ts",
   "apps/web/src/views/content-item-pages.ts",
   "apps/web/src/views/content-publication-pages.ts",
   "apps/web/src/views/layout.ts",
   "apps/web/src/views/library-pages.ts",
   "apps/web/src/validation/campaign-validation.ts",
+  "apps/web/src/validation/campaign-plan-run-validation.ts",
   "apps/web/src/validation/content-item-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
@@ -62,17 +68,25 @@ const requiredPaths = [
   "tests/campaign-planner/validation.test.ts",
   "tests/campaign-planner/claim-rules.test.ts",
   "tests/campaign-planner/consolidation.test.ts",
+  "tests/campaign-plan-runs/generation-runs.test.ts",
+  "tests/bootstrap-env.mjs",
   "tests/fixtures/campaign-planner/input.ts",
   "migrations/001_phase1a_libraries.sql",
   "migrations/002_phase1b_campaigns.sql",
   "migrations/003_phase1b_content_items.sql",
   "migrations/004_phase1b_content_publications.sql",
+  "migrations/005_phase2a_campaign_plan_staging.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "workers/video/Dockerfile",
   "workers/video/src/index.ts",
   "workers/mockup/Dockerfile",
   "workers/mockup/src/index.ts",
+  "workers/campaign-planner/Dockerfile",
+  "workers/campaign-planner/src/index.ts",
+  "workers/campaign-planner/src/worker.ts",
+  "workers/campaign-planner/src/run-processor.ts",
+  "workers/campaign-planner/src/lease.ts",
   "storage/footage/.gitkeep",
   "storage/draft-videos/.gitkeep",
   "storage/approved-videos/.gitkeep",
@@ -85,6 +99,7 @@ const requiredServices = [
   "redis:",
   "n8n:",
   "web-app:",
+  "campaign-planner-worker:",
   "video-worker:",
   "mockup-worker:"
 ];
@@ -103,6 +118,8 @@ const requiredRoutes = [
   "/campaigns",
   "/campaigns/new",
   "/api/campaigns",
+  "/campaigns/",
+  "/plan-runs/new",
   "/content-calendar",
   "/api/content-calendar",
   "/content-items",
@@ -197,6 +214,16 @@ for (const service of requiredServices) {
 const webSource = readSources("apps/web/src");
 const packageSource = readSources("packages/campaign-planner/src");
 const testsSource = readSources("tests/campaign-planner");
+const planRunTestsSource = readSources("tests/campaign-plan-runs");
+const campaignPlannerWorkerSource = readSources("workers/campaign-planner/src");
+const planRunWebSource = [
+  "apps/web/src/campaign-plan-run-service.ts",
+  "apps/web/src/campaign-plan-run-errors.ts",
+  "apps/web/src/routes/campaign-plan-run-api-routes.ts",
+  "apps/web/src/routes/campaign-plan-run-page-routes.ts",
+  "apps/web/src/views/campaign-plan-run-pages.ts",
+  "apps/web/src/validation/campaign-plan-run-validation.ts"
+].filter(existsSync).map((path) => readFileSync(path, "utf8")).join("\n");
 for (const route of requiredRoutes) {
   if (webSource.includes(route)) {
     pass(`Route Phase 1A tersedia: ${route}`);
@@ -297,10 +324,10 @@ if (existsSync("migrations/005_phase1b_content_calendar.sql")) {
 }
 
 const migrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("005_"));
-if (migrationFiles.length) {
-  fail(`Phase 2A.1 tidak boleh membuat migration 005: ${migrationFiles.join(", ")}`);
+if (migrationFiles.length === 1 && migrationFiles[0] === "005_phase2a_campaign_plan_staging.sql") {
+  pass("Migration 005 Phase 2A staging tersedia");
 } else {
-  pass("Phase 2A.1 tidak membuat migration 005");
+  fail(`Migration 005 Phase 2A harus tepat satu file: ${migrationFiles.join(", ") || "tidak ada"}`);
 }
 
 if (webSource.includes("/content-calendar")) {
@@ -332,40 +359,78 @@ if (dependencies.zod) {
 }
 
 if (dependencies.openai || dependencies["@openai/agents"]) {
-  fail("Phase 2A.1 tidak boleh menambah dependency OpenAI atau Agents SDK");
+  fail("Phase 2A.2 tidak boleh menambah dependency OpenAI atau Agents SDK");
 } else {
   pass("Tidak ada dependency OpenAI atau Agents SDK");
+}
+
+if (dependencies.bullmq || dependencies.ioredis || dependencies.redis) {
+  fail("Phase 2A.2 tidak boleh menambah BullMQ atau Redis client baru untuk Campaign Planner");
+} else {
+  pass("Tidak ada BullMQ atau Redis client baru");
 }
 
 const allMigrations = readdirSync("migrations")
   .filter((fileName) => fileName.endsWith(".sql"))
   .map((fileName) => readFileSync(join("migrations", fileName), "utf8"))
   .join("\n");
-for (const forbiddenTable of [
+const phase2aMigrationSource = existsSync("migrations/005_phase2a_campaign_plan_staging.sql")
+  ? readFileSync("migrations/005_phase2a_campaign_plan_staging.sql", "utf8")
+  : "";
+for (const requiredTable of [
   "CREATE TABLE campaign_plan_runs",
   "CREATE TABLE campaign_plan_generation_batches",
   "CREATE TABLE campaign_plan_draft_items",
   "CREATE TABLE campaign_plan_draft_publications"
 ]) {
-  if (allMigrations.includes(forbiddenTable)) {
-    fail(`Phase 2A.1 tidak boleh membuat staging table: ${forbiddenTable}`);
+  if (phase2aMigrationSource.includes(requiredTable)) {
+    pass(`Phase 2A.2 staging table tersedia: ${requiredTable.replace("CREATE TABLE ", "")}`);
   } else {
-    pass(`Phase 2A.1 belum membuat staging table: ${forbiddenTable.replace("CREATE TABLE ", "")}`);
+    fail(`Phase 2A.2 staging table belum ada: ${requiredTable}`);
   }
 }
 
-for (const forbiddenRoute of ["/campaign-plan", "/campaign-plan-runs", "/api/campaign-plan"]) {
-  if (webSource.includes(forbiddenRoute)) {
-    fail(`Phase 2A.1 tidak boleh membuat Campaign Planner route: ${forbiddenRoute}`);
+for (const requiredText of [
+  "review_status text NOT NULL DEFAULT 'pending_review'",
+  "imported_content_item_id uuid",
+  "imported_publication_id uuid",
+  "campaign_plan_batches_run_batch_key UNIQUE (run_id, batch_number)",
+  "campaign_plan_runs_one_unresolved_per_campaign_idx",
+  "FOR UPDATE SKIP LOCKED",
+  "FakeCampaignPlannerProvider"
+]) {
+  const combined = `${phase2aMigrationSource}\n${campaignPlannerWorkerSource}`;
+  if (combined.includes(requiredText)) {
+    pass(`Phase 2A.2 memuat: ${requiredText}`);
   } else {
-    pass(`Tidak ada Campaign Planner route: ${forbiddenRoute}`);
+    fail(`Phase 2A.2 belum memuat: ${requiredText}`);
+  }
+}
+
+if (phase2aMigrationSource.includes("'edited'")) {
+  fail("Review status Phase 2A.2 tidak boleh memakai edited");
+} else {
+  pass("Review status tidak memakai edited");
+}
+
+for (const requiredRoute of [
+  "/campaigns/",
+  "/plan-runs/new",
+  "/campaign-plan-runs",
+  "api\\/campaigns\\/",
+  "api\\/campaign-plan-runs"
+]) {
+  if (webSource.includes(requiredRoute)) {
+    pass(`Campaign Plan Run route tersedia: ${requiredRoute}`);
+  } else {
+    fail(`Campaign Plan Run route belum ada: ${requiredRoute}`);
   }
 }
 
 if (existsSync("workers/campaign-planner")) {
-  fail("Phase 2A.1 tidak boleh membuat Campaign Planner worker");
+  pass("Campaign Planner worker tersedia");
 } else {
-  pass("Tidak ada Campaign Planner worker");
+  fail("Campaign Planner worker wajib tersedia pada Phase 2A.2");
 }
 
 const trackedLikeSources = [
@@ -374,24 +439,55 @@ const trackedLikeSources = [
   readFileSync("package.json", "utf8"),
   packageSource,
   testsSource,
-  webSource
+  planRunTestsSource,
+  webSource,
+  campaignPlannerWorkerSource
 ].join("\n");
 if (trackedLikeSources.includes("OPENAI_API_KEY")) {
-  fail("Phase 2A.1 tidak boleh menambahkan OpenAI API key handling pada tracked source");
+  fail("Phase 2A.2 tidak boleh menambahkan OpenAI API key handling pada tracked source");
 } else {
-  pass("Tidak ada OPENAI_API_KEY pada source Phase 2A.1");
+  pass("Tidak ada OPENAI_API_KEY pada source Phase 2A.2");
 }
 
-if (packageSource.includes("from \"openai\"") || packageSource.includes("from '@openai/agents'")) {
-  fail("Campaign Planner package tidak boleh import OpenAI pada Phase 2A.1");
+const executablePlannerSources = [packageSource, planRunWebSource, campaignPlannerWorkerSource].join("\n");
+if (executablePlannerSources.includes("from \"openai\"") || executablePlannerSources.includes("from '@openai/agents'") || executablePlannerSources.includes("@openai/agents")) {
+  fail("Campaign Planner tidak boleh import OpenAI pada Phase 2A.2");
 } else {
-  pass("Campaign Planner package tidak import OpenAI");
+  pass("Campaign Planner tidak import OpenAI");
 }
 
 if (packageSource.includes("content_items") || packageSource.includes("content_publications")) {
   fail("Campaign Planner package tidak boleh menyentuh operational table Phase 1");
 } else {
   pass("Campaign Planner package tidak menyentuh operational table Phase 1");
+}
+
+for (const forbiddenText of [
+  "approve all",
+  "Approve All",
+  "/approve",
+  "/import",
+  "importContent",
+  "content_items (",
+  "content_publications ("
+]) {
+  if (planRunWebSource.includes(forbiddenText) || campaignPlannerWorkerSource.includes(forbiddenText)) {
+    fail(`Phase 2A.2 tidak boleh membuat approval/import flow: ${forbiddenText}`);
+  } else {
+    pass(`Tidak ada approval/import flow: ${forbiddenText}`);
+  }
+}
+
+if (executablePlannerSources.toLowerCase().includes("bullmq")) {
+  fail("Phase 2A.2 tidak boleh memakai BullMQ");
+} else {
+  pass("Tidak ada BullMQ");
+}
+
+if (trackedLikeSources.toLowerCase().includes("n8n campaign planner")) {
+  fail("Phase 2A.2 tidak boleh membuat n8n Campaign Planner workflow");
+} else {
+  pass("Tidak ada n8n Campaign Planner workflow");
 }
 
 if (failed) {

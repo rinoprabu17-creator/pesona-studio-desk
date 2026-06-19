@@ -54,9 +54,11 @@ Phase 2A.1 memakai `FakeCampaignPlannerProvider` saja. OpenAI provider ditunda k
 
 `platform_caption` selalu `null` pada Phase 2A. Caption final menjadi scope Copy, Caption & QA Agent pada fase lain.
 
-## Staging Tables Untuk Fase Berikutnya
+## Phase 2A.2 Generation Runs
 
-Migration belum dibuat pada Phase 2A.1. Fase berikutnya direncanakan memakai empat tabel:
+Status: implemented.
+
+Phase 2A.2 membuat migration `005_phase2a_campaign_plan_staging.sql` dengan empat staging table:
 
 1. `campaign_plan_runs`
 2. `campaign_plan_generation_batches`
@@ -64,6 +66,22 @@ Migration belum dibuat pada Phase 2A.1. Fase berikutnya direncanakan memakai emp
 4. `campaign_plan_draft_publications`
 
 Batch table wajib karena generation berjalan per batch, perlu retry per batch, provider response id per batch, usage per batch, error per batch, observability, dan recovery worker.
+
+Implemented scope:
+
+- create run dari campaign owner
+- input snapshot dan strategy snapshot immutable
+- generation batch records ukuran default 5
+- PostgreSQL polling worker
+- `SELECT FOR UPDATE SKIP LOCKED`
+- lease, heartbeat, stale recovery, attempt count
+- Fake Provider execution
+- consolidation dan validation Phase 2A.1
+- draft item/publication masuk staging saat valid
+- manual retry dan cancel
+- minimal generate form dan run status page
+
+Tidak ada write ke `content_items` atau `content_publications`.
 
 ## Run Status
 
@@ -92,15 +110,9 @@ Draft item review status untuk fase berikutnya:
 
 Jangan gunakan `edited` sebagai review status. Gunakan `edited_at nullable` dan `revision_number integer default 0`. Jika item approved diedit, status kembali ke `pending_review` dan revision number bertambah.
 
-## Batch Worker Recommendation
+## Batch Worker
 
-Fase worker belum diimplementasikan. Rekomendasi fase berikutnya:
-
-- PostgreSQL polling
-- `SELECT FOR UPDATE SKIP LOCKED`
-- lease/heartbeat
-- attempt count
-- stale job recovery
+Phase 2A.2 memakai worker `campaign-planner-worker` dengan PostgreSQL polling. Worker dapat berjalan long-running melalui Docker Compose atau one-shot untuk test.
 
 Tidak memakai n8n sebagai core Campaign Planner. Tidak ada background scheduler untuk auto posting.
 
@@ -127,4 +139,4 @@ Phase 2A.1 tidak membutuhkan API key. OpenAI provider deferred ke Phase 2A.5. Sa
 
 ## Explicit Non-Scope
 
-Tidak ada OpenAI dependency, OpenAI API call, migration 005, staging table, route/page, worker, Redis queue/BullMQ, n8n workflow, operational content write, atau auto posting.
+Tidak ada OpenAI dependency, OpenAI API call, Redis queue/BullMQ, n8n workflow, operational content write, import flow, review/edit/approval UI, atau auto posting.

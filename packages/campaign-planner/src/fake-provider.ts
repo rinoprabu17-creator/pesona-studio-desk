@@ -45,8 +45,8 @@ export class FakeCampaignPlannerProvider implements CampaignPlannerProvider {
         target_audience: slot.audience_segment === "agent_marketer" ? "Agen Daerah" : "TU Sekolah",
         hook: `Hook konten ${slot.draft_sequence} untuk ${slot.content_pillar}`,
         angle: `Angle aman untuk ${slot.content_pillar}. ${offerText.angle}`,
-        cta_text: "Chat admin untuk minta mockup awal gratis sebagai preview awal.",
-        cta_keyword: "MOCKUP",
+        cta_text: offerText.cta,
+        cta_keyword: offerText.keyword,
         planning_reason: `Slot ${slot.draft_sequence} mengikuti strategi ${slot.content_pillar}. ${offerText.reason}`,
         youtube_title: hasYoutube ? `YouTube Shorts ${slot.draft_sequence}` : null
       };
@@ -89,52 +89,70 @@ export class FakeCampaignPlannerProvider implements CampaignPlannerProvider {
   }
 }
 
-function creativeTextForOffer(offerCode: string | null): { angle: string; reason: string } {
+function creativeTextForOffer(offerCode: string | null): { angle: string; reason: string; cta: string; keyword: string | null } {
   switch (offerCode) {
     case "mockup_awal_gratis":
       return {
         angle: "Mockup awal dijelaskan sebagai preview awal sebelum penawaran.",
-        reason: "Batasannya tetap sebagai preview awal."
+        reason: "Batasannya tetap sebagai preview awal.",
+        cta: "Chat admin untuk minta mockup awal gratis sebagai preview awal.",
+        keyword: "MOCKUP"
       };
     case "desain_final_gratis":
       return {
         angle: "Desain final gratis disampaikan setelah cocok penawaran dan cocok harga.",
-        reason: "Kondisi desain gratis tetap mengikuti persetujuan penawaran."
+        reason: "Kondisi desain gratis tetap mengikuti persetujuan penawaran.",
+        cta: "Chat admin untuk cek penawaran sampul sekolah.",
+        keyword: "PENAWARAN"
       };
     case "revisi_final_sampai_desain_ok":
       return {
         angle: "Revisi desain final dilakukan sampai Desain OK.",
-        reason: "Revisi dibatasi pada desain final, bukan revisi mockup."
+        reason: "Batas revisi berada pada tahap desain final.",
+        cta: "Chat admin untuk bahas desain final sampai Desain OK.",
+        keyword: "DESAIN"
       };
     case "dp_setelah_desain_ok":
       return {
         angle: "DP dilakukan setelah Desain OK atau desain disetujui.",
-        reason: "Urutan bisnis tetap desain disetujui lalu DP."
+        reason: "Urutan bisnis tetap desain disetujui lalu DP.",
+        cta: "Chat admin untuk susun alur order yang rapi.",
+        keyword: "ORDER"
       };
     case "gratis_ongkir_medan":
       return {
         angle: "Gratis ongkir berlaku untuk Kota Medan.",
-        reason: "Klaim ongkir dibatasi ke Kota Medan."
+        reason: "Klaim ongkir dibatasi ke Kota Medan.",
+        cta: "Chat admin untuk cek pengiriman Kota Medan.",
+        keyword: "MEDAN"
       };
     case "gratis_klise_100_eksemplar":
       return {
         angle: "Gratis klise berlaku di atas 100 eksemplar setelah Desain OK.",
-        reason: "Syarat kuantitas dan Desain OK disebutkan."
+        reason: "Syarat kuantitas dan Desain OK disebutkan.",
+        cta: "Chat admin untuk cek syarat gratis klise.",
+        keyword: "KLISE"
       };
     case "garansi_ganti_baru_cacat_produksi":
       return {
         angle: "Garansi ganti baru hanya untuk cacat produksi.",
-        reason: "Tidak menjamin kesalahan data yang sudah disetujui."
+        reason: "Tidak menjamin kesalahan data yang sudah disetujui.",
+        cta: "Chat admin untuk cek standar produksi.",
+        keyword: "GARANSI"
       };
     case "video_call_workshop_luar_daerah":
       return {
         angle: "Video call workshop tersedia sesuai janji untuk calon pembeli luar daerah.",
-        reason: "Konteks appointment disebutkan."
+        reason: "Konteks appointment disebutkan.",
+        cta: "Chat admin untuk jadwalkan video call sesuai janji.",
+        keyword: "VCALL"
       };
     default:
       return {
         angle: "Menggunakan referensi produk, offer, dan pain point aktif.",
-        reason: "Tidak membuat klaim baru di luar knowledge base."
+        reason: "Tidak membuat klaim baru di luar knowledge base.",
+        cta: "Chat admin untuk konsultasi kebutuhan sampul sekolah.",
+        keyword: "KONSULTASI"
       };
   }
 }

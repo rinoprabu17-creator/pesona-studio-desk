@@ -3,14 +3,11 @@ FROM node:24-alpine
 WORKDIR /app
 
 ENV NODE_ENV=development
-ENV APP_PORT=3000
 
 COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY packages/campaign-planner ./packages/campaign-planner
-COPY apps/web ./apps/web
+COPY workers/campaign-planner ./workers/campaign-planner
 
-EXPOSE 3000
-
-CMD ["node", "--experimental-strip-types", "apps/web/src/server.ts"]
+CMD ["node", "--experimental-strip-types", "workers/campaign-planner/src/index.ts"]

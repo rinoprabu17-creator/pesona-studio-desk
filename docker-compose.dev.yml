@@ -79,6 +79,25 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  campaign-planner-worker:
+    build:
+      context: .
+      dockerfile: workers/campaign-planner/Dockerfile
+    env_file:
+      - .env.local
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://pesona:pesona_dev_password@postgres:5432/pesona_studio}
+      CAMPAIGN_PLANNER_PROVIDER: ${CAMPAIGN_PLANNER_PROVIDER:-fake}
+      CAMPAIGN_PLANNER_FAKE_MODE: ${CAMPAIGN_PLANNER_FAKE_MODE:-valid}
+      CAMPAIGN_PLANNER_POLL_MS: ${CAMPAIGN_PLANNER_POLL_MS:-2000}
+      CAMPAIGN_PLANNER_LEASE_SECONDS: ${CAMPAIGN_PLANNER_LEASE_SECONDS:-60}
+      CAMPAIGN_PLANNER_MAX_ATTEMPTS: ${CAMPAIGN_PLANNER_MAX_ATTEMPTS:-3}
+      CAMPAIGN_PLANNER_BATCH_SIZE: ${CAMPAIGN_PLANNER_BATCH_SIZE:-5}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   video-worker:
     build:
       context: .

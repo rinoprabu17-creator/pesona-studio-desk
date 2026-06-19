@@ -2,7 +2,9 @@ import { campaignStatuses } from "../validation/campaign-validation.ts";
 import type { CampaignInput } from "../validation/campaign-validation.ts";
 import { listCampaigns } from "../campaign-service.ts";
 import type { CampaignRow } from "../campaign-service.ts";
+import { listCampaignPlanRuns } from "../campaign-plan-run-service.ts";
 import { listProducts } from "../library-service.ts";
+import { renderCampaignPlanRunListSection } from "./campaign-plan-run-pages.ts";
 import { renderCampaignContentItemsSection } from "./content-item-pages.ts";
 import { escapeHtml, renderBadge, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
 
@@ -140,6 +142,7 @@ export async function renderCampaignFormPage(options: {
 }
 
 export async function renderCampaignDetailPage(campaign: CampaignRow): Promise<string> {
+  const planRuns = await listCampaignPlanRuns(campaign.id);
   const table = renderReadOnlyTable(
     ["Field", "Nilai"],
     [
@@ -158,6 +161,7 @@ export async function renderCampaignDetailPage(campaign: CampaignRow): Promise<s
     <div class="button-row">
       <a class="button" href="/campaigns/${escapeHtml(campaign.id)}/edit">Edit Campaign</a>
       <a class="button" href="/content-items/new?campaign_id=${escapeHtml(campaign.id)}">Tambah Konten</a>
+      <a class="button" href="/campaigns/${escapeHtml(campaign.id)}/plan-runs/new">Generate Rencana Konten</a>
       <a class="button button-secondary" href="/campaigns">Kembali</a>
     </div>
     <p class="hint">Publikasi channel akan dikelola pada tahap berikutnya.</p>
@@ -168,7 +172,7 @@ export async function renderCampaignDetailPage(campaign: CampaignRow): Promise<s
     campaign.name,
     "Detail Campaign",
     "Detail data campaign dasar.",
-    `${actions}${table}${await renderCampaignContentItemsSection(campaign)}`
+    `${actions}${table}${renderCampaignPlanRunListSection(campaign.id, planRuns)}${await renderCampaignContentItemsSection(campaign)}`
   );
 }
 
