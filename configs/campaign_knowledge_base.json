@@ -1,0 +1,250 @@
+{
+  "products": [
+    {
+      "product_id": "sampul_raport",
+      "label": "Sampul Raport",
+      "active": true
+    },
+    {
+      "product_id": "sampul_ijazah",
+      "label": "Sampul Ijazah",
+      "active": true
+    }
+  ],
+  "offers": [
+    {
+      "offer_id": "free_mockup_initial",
+      "title": "Mockup Awal Gratis",
+      "public_phrase": "Mockup awal gratis",
+      "condition": "Untuk preview awal, tidak ada revisi mockup",
+      "use_for": ["lead_magnet", "comment_to_wa"],
+      "cta": ["MOCKUP"],
+      "risk_note": "Jangan sebut desain final. Mockup hanya preview awal."
+    },
+    {
+      "offer_id": "free_final_design",
+      "title": "Desain Final Gratis",
+      "public_phrase": "Desain final gratis setelah cocok penawaran",
+      "condition": "Customer sudah cocok harga dan data cukup",
+      "use_for": ["trust", "closing_support"],
+      "cta": ["DESAIN", "RAPORT", "IJAZAH"],
+      "risk_note": "Jangan tulis desain final gratis untuk semua orang tanpa syarat."
+    },
+    {
+      "offer_id": "dp_after_design_ok",
+      "title": "DP Setelah Desain OK",
+      "public_phrase": "DP setelah desain disetujui",
+      "condition": "Setelah desain final disetujui customer",
+      "use_for": ["trust", "objection_handling"],
+      "cta": ["RAPORT", "IJAZAH"],
+      "risk_note": "Jangan sebut produksi jalan sebelum DP."
+    },
+    {
+      "offer_id": "free_shipping_medan",
+      "title": "Gratis Ongkir Kota Medan",
+      "public_phrase": "Gratis ongkir untuk Kota Medan",
+      "condition": "Berlaku untuk area Kota Medan",
+      "use_for": ["local_offer"],
+      "cta": ["MEDAN", "RAPORT", "IJAZAH"],
+      "risk_note": "Jangan berlaku-kan ke luar Medan."
+    },
+    {
+      "offer_id": "free_klise_100_plus",
+      "title": "Gratis Klise",
+      "public_phrase": "Gratis klise untuk pemesanan di atas 100 eksemplar",
+      "condition": "Berlaku setelah Desain OK dan jumlah di atas 100 eksemplar",
+      "use_for": ["value_offer", "harga_objection"],
+      "cta": ["HARGA", "RAPORT", "IJAZAH"],
+      "risk_note": "Sebutkan syarat jumlah dan setelah Desain OK."
+    },
+    {
+      "offer_id": "replace_defect_warranty",
+      "title": "Garansi Ganti Baru",
+      "public_phrase": "Produk cacat produksi diganti baru, bukan repair",
+      "condition": "Berlaku untuk cacat produksi, bukan kesalahan data yang sudah disetujui",
+      "use_for": ["trust", "quality"],
+      "cta": ["GARANSI"],
+      "risk_note": "Bedakan dari kesalahan penulisan setelah desain disetujui."
+    },
+    {
+      "offer_id": "workshop_video_call",
+      "title": "Video Call Workshop",
+      "public_phrase": "Pembeli luar daerah bisa video call untuk melihat workshop",
+      "condition": "By appointment / sesuai jam kerja",
+      "use_for": ["distance_trust"],
+      "cta": ["VC", "WORKSHOP"],
+      "risk_note": "Jangan klaim standby 24 jam."
+    }
+  ],
+  "pain_points": [
+    {
+      "pain_id": "late_delivery",
+      "pain": "Pesanan terlambat selesai",
+      "buyer_fear": "Takut sampul belum jadi saat dibutuhkan",
+      "content_angle": "Penyelesaian tepat waktu dan alur produksi jelas",
+      "proof_shots": ["kalender deadline", "packing order", "proses QC", "produk siap kirim"],
+      "safe_claim": "Timeline produksi disepakati di awal dan dipantau sampai kirim",
+      "avoid_claim": "Jangan klaim pasti selalu tercepat tanpa konteks"
+    },
+    {
+      "pain_id": "slow_response",
+      "pain": "Sales atau customer service slow response",
+      "buyer_fear": "Takut chat tidak dibalas saat butuh cepat",
+      "content_angle": "WA langsung ditangani manusia setelah customer masuk",
+      "proof_shots": ["sales membuka WA", "admin cek data sekolah", "alur chat masuk ke sales"],
+      "safe_claim": "Setelah masuk WA, tim sales manusia yang bantu lanjutkan",
+      "avoid_claim": "Jangan klaim 24 jam jika belum benar-benar ada shift 24 jam"
+    },
+    {
+      "pain_id": "foil_fades",
+      "pain": "Foil emas mudah pudar",
+      "buyer_fear": "Takut tulisan emas cepat hilang atau terlihat murah",
+      "content_angle": "Detail finishing foil emas dan QC sebelum kirim",
+      "proof_shots": ["close-up foil emas", "detail emboss/hotprint", "QC visual produk"],
+      "safe_claim": "Finishing dicek sebelum dikirim agar hasil rapi",
+      "avoid_claim": "Jangan klaim anti pudar selamanya"
+    },
+    {
+      "pain_id": "far_buyer_trust",
+      "pain": "Pembeli luar daerah takut vendor tidak jelas",
+      "buyer_fear": "Takut transfer tapi tidak tahu workshop dan prosesnya",
+      "content_angle": "Bisa video call melihat workshop untuk pembeli luar daerah",
+      "proof_shots": ["area workshop", "stok bahan", "proses produksi", "packing luar kota"],
+      "safe_claim": "Bisa video call by appointment untuk melihat workshop",
+      "avoid_claim": "Jangan tampilkan data/order customer tanpa izin"
+    },
+    {
+      "pain_id": "defect_risk",
+      "pain": "Produk cacat saat diterima",
+      "buyer_fear": "Takut kalau rusak hanya diperbaiki seadanya",
+      "content_angle": "Garansi ganti baru untuk cacat produksi",
+      "proof_shots": ["QC produk", "cek sudut sampul", "cek foil", "cek packing"],
+      "safe_claim": "Produk cacat produksi diganti baru, bukan repair",
+      "avoid_claim": "Jangan campur dengan revisi desain atau kesalahan data setelah approval"
+    }
+  ],
+  "colors": [
+    {
+      "color_id": "maroon",
+      "label": "Maroon",
+      "default_for": ["SD"],
+      "product_types": ["sampul_raport", "sampul_ijazah"],
+      "hex_preview": "#6E1F1F",
+      "active": true,
+      "sort_order": 1,
+      "mockup_asset": "cover_maroon_base.png"
+    },
+    {
+      "color_id": "navy",
+      "label": "Navy",
+      "default_for": ["SMP", "SMK"],
+      "product_types": ["sampul_raport", "sampul_ijazah"],
+      "hex_preview": "#0C2340",
+      "active": true,
+      "sort_order": 2,
+      "mockup_asset": "cover_navy_base.png"
+    },
+    {
+      "color_id": "black",
+      "label": "Hitam",
+      "default_for": ["SMA"],
+      "product_types": ["sampul_raport", "sampul_ijazah"],
+      "hex_preview": "#111111",
+      "active": true,
+      "sort_order": 3,
+      "mockup_asset": "cover_black_base.png"
+    },
+    {
+      "color_id": "dark_green",
+      "label": "Hijau Tua",
+      "default_for": ["MI", "MTs", "MA"],
+      "product_types": ["sampul_raport", "sampul_ijazah"],
+      "hex_preview": "#123D2A",
+      "active": true,
+      "sort_order": 4,
+      "mockup_asset": "cover_dark_green_base.png"
+    },
+    {
+      "color_id": "gray",
+      "label": "Abu-abu",
+      "default_for": ["SMA"],
+      "product_types": ["sampul_raport", "sampul_ijazah"],
+      "hex_preview": "#6B7280",
+      "active": true,
+      "sort_order": 5,
+      "mockup_asset": "cover_gray_base.png"
+    },
+    {
+      "color_id": "light_green",
+      "label": "Hijau Muda",
+      "default_for": [],
+      "product_types": ["sampul_raport", "sampul_ijazah"],
+      "hex_preview": "#4ADE80",
+      "active": true,
+      "sort_order": 6,
+      "mockup_asset": "cover_light_green_base.png"
+    },
+    {
+      "color_id": "light_blue",
+      "label": "Biru Muda",
+      "default_for": [],
+      "product_types": ["sampul_raport", "sampul_ijazah"],
+      "hex_preview": "#60A5FA",
+      "active": true,
+      "sort_order": 7,
+      "mockup_asset": "cover_light_blue_base.png"
+    },
+    {
+      "color_id": "brown",
+      "label": "Coklat",
+      "default_for": [],
+      "product_types": ["sampul_raport", "sampul_ijazah"],
+      "hex_preview": "#7C2D12",
+      "active": true,
+      "sort_order": 8,
+      "mockup_asset": "cover_brown_base.png"
+    },
+    {
+      "color_id": "orange",
+      "label": "Orange",
+      "default_for": [],
+      "product_types": ["sampul_raport", "sampul_ijazah"],
+      "hex_preview": "#F97316",
+      "active": true,
+      "sort_order": 9,
+      "mockup_asset": "cover_orange_base.png"
+    }
+  ],
+  "claim_rules": [
+    {
+      "rule_id": "free_shipping_scope",
+      "when_text_contains": "Gratis Ongkir",
+      "must_include_any": ["Kota Medan", "area Medan"],
+      "severity": "error"
+    },
+    {
+      "rule_id": "free_klise_scope",
+      "when_text_contains": "Gratis Klise",
+      "must_include_any": ["di atas 100 eksemplar", ">100 eksemplar", "lebih dari 100 eksemplar"],
+      "severity": "error"
+    },
+    {
+      "rule_id": "free_final_design_scope",
+      "when_text_contains": "Desain Gratis",
+      "must_include_any": ["setelah cocok penawaran", "setelah cocok harga"],
+      "severity": "error"
+    },
+    {
+      "rule_id": "warranty_scope",
+      "when_text_contains": "Garansi",
+      "must_include_any": ["cacat produksi", "produk cacat produksi"],
+      "severity": "warning"
+    },
+    {
+      "rule_id": "dp_after_design_ok",
+      "when_text_contains": "DP",
+      "must_include_any": ["setelah Desain OK", "setelah desain disetujui"],
+      "severity": "warning"
+    }
+  ]
+}

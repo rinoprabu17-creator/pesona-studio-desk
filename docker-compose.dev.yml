@@ -1,0 +1,125 @@
+name: pesona-studio-desk-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pesona_studio}
+      POSTGRES_USER: ${POSTGRES_USER:-pesona}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pesona_dev_password}
+    ports:
+      - "${POSTGRES_EXPOSED_PORT:-5432}:5432"
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_EXPOSED_PORT:-6379}:6379"
+    volumes:
+      - redis_data_dev:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    env_file:
+      - .env.local
+    environment:
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL:-http}
+      N8N_BASIC_AUTH_ACTIVE: ${N8N_BASIC_AUTH_ACTIVE:-true}
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER:-admin}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD:-dev_admin_password}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-dev_change_me_32_chars_minimum_key}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      GENERIC_TIMEZONE: ${GENERIC_TIMEZONE:-Asia/Jakarta}
+    ports:
+      - "${N8N_EXPOSED_PORT:-5678}:5678"
+    volumes:
+      - n8n_data_dev:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web-app:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    env_file:
+      - .env.local
+    environment:
+      APP_PORT: 3000
+      APP_STORAGE_DIR: /app/storage
+      DATABASE_URL: ${DATABASE_URL:-postgresql://pesona:pesona_dev_password@postgres:5432/pesona_studio}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    ports:
+      - "${WEB_APP_EXPOSED_PORT:-3000}:3000"
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  video-worker:
+    build:
+      context: .
+      dockerfile: workers/video/Dockerfile
+    env_file:
+      - .env.local
+    environment:
+      APP_STORAGE_DIR: /app/storage
+      DATABASE_URL: ${DATABASE_URL:-postgresql://pesona:pesona_dev_password@postgres:5432/pesona_studio}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      VIDEO_WORKER_POLL_INTERVAL_MS: ${VIDEO_WORKER_POLL_INTERVAL_MS:-15000}
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mockup-worker:
+    build:
+      context: .
+      dockerfile: workers/mockup/Dockerfile
+    env_file:
+      - .env.local
+    environment:
+      APP_STORAGE_DIR: /app/storage
+      DATABASE_URL: ${DATABASE_URL:-postgresql://pesona:pesona_dev_password@postgres:5432/pesona_studio}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      MOCKUP_WORKER_POLL_INTERVAL_MS: ${MOCKUP_WORKER_POLL_INTERVAL_MS:-15000}
+    volumes:
+      - ./storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data_dev:
+  redis_data_dev:
+  n8n_data_dev:

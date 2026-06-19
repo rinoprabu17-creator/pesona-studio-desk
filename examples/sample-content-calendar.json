@@ -1,0 +1,41 @@
+[
+  {
+    "content_code": "SR-D01-MOCKUP",
+    "planned_date": "2026-06-01",
+    "product_type": "sampul_raport",
+    "pillar": "mockup_magnet",
+    "target_audience": "tu_operator",
+    "hook": "Mau lihat nama sekolahmu tampil di Sampul Raport custom?",
+    "angle": "Mockup awal gratis sebagai lead magnet",
+    "cta_keyword": "MOCKUP",
+    "offer_id": "free_mockup_initial",
+    "pain_id": null,
+    "channel": "instagram"
+  },
+  {
+    "content_code": "SR-D02-DESAIN",
+    "planned_date": "2026-06-02",
+    "product_type": "sampul_raport",
+    "pillar": "trust",
+    "target_audience": "kepala_sekolah",
+    "hook": "Di Pesona, DP setelah desain final OK.",
+    "angle": "Desain final gratis setelah cocok penawaran",
+    "cta_keyword": "DESAIN",
+    "offer_id": "free_final_design",
+    "pain_id": null,
+    "channel": "instagram"
+  },
+  {
+    "content_code": "IJ-D03-GARANSI",
+    "planned_date": "2026-06-03",
+    "product_type": "sampul_ijazah",
+    "pillar": "quality_trust",
+    "target_audience": "sekolah",
+    "hook": "Kalau produk cacat produksi, bukan repair. Kami ganti baru.",
+    "angle": "Garansi ganti baru untuk cacat produksi",
+    "cta_keyword": "GARANSI",
+    "offer_id": "replace_defect_warranty",
+    "pain_id": "defect_risk",
+    "channel": "facebook"
+  }
+]

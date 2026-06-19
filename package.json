@@ -1,0 +1,19 @@
+{
+  "name": "pesona-studio-desk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local development skeleton for Pesona Studio Desk.",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev:web": "node --experimental-strip-types apps/web/src/server.ts",
+    "dev:video-worker": "node --experimental-strip-types workers/video/src/index.ts",
+    "dev:mockup-worker": "node --experimental-strip-types workers/mockup/src/index.ts",
+    "check:structure": "node scripts/check-skeleton.mjs",
+    "check:syntax": "node --experimental-strip-types --check apps/web/src/server.ts && node --experimental-strip-types --check workers/video/src/index.ts && node --experimental-strip-types --check workers/mockup/src/index.ts",
+    "check": "npm run check:structure && npm run check:syntax",
+    "build": "npm run check"
+  }
+}

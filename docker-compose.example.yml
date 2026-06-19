@@ -1,0 +1,80 @@
+services:
+  web:
+    image: pesona-studio-web:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  video-worker:
+    image: pesona-studio-video-worker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.video-worker
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - render_tmp:/tmp/pesona-studio-renders
+    restart: unless-stopped
+
+  mockup-worker:
+    image: pesona-studio-mockup-worker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.mockup-worker
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - render_tmp:/tmp/pesona-studio-renders
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    env_file:
+      - .env
+    environment:
+      - N8N_HOST=${N8N_HOST}
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pesona_studio
+      POSTGRES_USER: pesona
+      POSTGRES_PASSWORD: pesona_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  n8n_data:
+  render_tmp:
