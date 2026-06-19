@@ -45,7 +45,7 @@ Status implementasi bertahap:
 - Migration 002: `campaigns` — implemented pada Phase 1B.1.
 - Migration 003: `content_items` — implemented pada Phase 1B.2.
 - Migration 004: `content_publications` — implemented pada Phase 1B.3.
-- Manual Content Calendar besar — belum diimplementasikan, direncanakan untuk Phase 1B.4.
+- Manual Content Calendar besar — implemented pada Phase 1B.4.
 
 ## Keputusan Phase 1B
 
@@ -178,3 +178,20 @@ Archive guard:
 - Content item tidak boleh diubah ke `archived` jika masih memiliki publication dengan status `planned`, `scheduled`, `publishing`, atau `failed`.
 - Content item boleh diarsipkan jika semua publication sudah `posted` atau `cancelled`.
 - Sistem tidak otomatis membatalkan atau mengubah publication child row.
+
+## Keputusan Phase 1B.4 — Manual Content Calendar
+
+Phase 1B.4 mengimplementasikan `/content-calendar` dan `/api/content-calendar` sebagai aggregate read model. Tidak ada migration baru, tabel kalender, materialized view, scheduler, auto posting, atau integrasi API platform.
+
+Semantik kalender:
+
+- Grouping tanggal memakai `content_items.planned_content_date`.
+- Satu content item hanya tampil satu kali sebagai row/card utama.
+- `content_publications` ditampilkan nested di bawah content item.
+- Timezone eksplisit `Asia/Jakarta`; default bulan dihitung dari timezone ini, bukan timezone host Docker.
+- Filter `campaign_id` dan `production_status` bekerja di level `content_items`.
+- Filter `channel` dan `publication_status` bekerja di level publication; content item hanya tampil bila memiliki publication yang sama-sama memenuhi filter tersebut.
+- Tanpa filter publication, content item tanpa publication tetap tampil.
+- Publication schedule boleh berbeda dari `planned_content_date` dan tetap tampil sebagai data nested.
+
+Kalender ini masih manual dan read-only untuk data utama. Create/edit/status tetap melalui halaman Campaign, Konten, dan Publikasi yang sudah ada. Belum ada auto posting.

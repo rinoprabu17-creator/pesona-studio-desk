@@ -20,8 +20,12 @@ const requiredPaths = [
   "apps/web/src/content-item-errors.ts",
   "apps/web/src/content-publication-service.ts",
   "apps/web/src/content-publication-errors.ts",
+  "apps/web/src/content-calendar-service.ts",
+  "apps/web/src/content-calendar-errors.ts",
   "apps/web/src/http/request.ts",
   "apps/web/src/http/response.ts",
+  "apps/web/src/routes/content-calendar-api-routes.ts",
+  "apps/web/src/routes/content-calendar-page-routes.ts",
   "apps/web/src/routes/campaign-api-routes.ts",
   "apps/web/src/routes/campaign-page-routes.ts",
   "apps/web/src/routes/content-item-api-routes.ts",
@@ -31,6 +35,7 @@ const requiredPaths = [
   "apps/web/src/routes/library-api-routes.ts",
   "apps/web/src/routes/library-page-routes.ts",
   "apps/web/src/views/campaign-pages.ts",
+  "apps/web/src/views/content-calendar-page.ts",
   "apps/web/src/views/content-item-pages.ts",
   "apps/web/src/views/content-publication-pages.ts",
   "apps/web/src/views/layout.ts",
@@ -38,6 +43,7 @@ const requiredPaths = [
   "apps/web/src/validation/campaign-validation.ts",
   "apps/web/src/validation/content-item-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
+  "apps/web/src/validation/content-calendar-validation.ts",
   "apps/web/src/validation/library-validation.ts",
   "migrations/001_phase1a_libraries.sql",
   "migrations/002_phase1b_campaigns.sql",
@@ -79,6 +85,8 @@ const requiredRoutes = [
   "/campaigns",
   "/campaigns/new",
   "/api/campaigns",
+  "/content-calendar",
+  "/api/content-calendar",
   "/content-items",
   "/content-items/new",
   "/api/content-items",
@@ -98,7 +106,8 @@ let failed = false;
 const lockedMigrationHashes = {
   "migrations/001_phase1a_libraries.sql": "dc77e3d5bfd4b2208112282e50c5d084f298a83e6ab94d8cf252636c76e1cfef",
   "migrations/002_phase1b_campaigns.sql": "5beb7f1dd1cf0d5e9f283dd4ad6ac337bbb2af190e519c15832e2cabef4a3525",
-  "migrations/003_phase1b_content_items.sql": "fbbada0084e595ccc1631d8c86293805475145b30790bed928ec942e33429526"
+  "migrations/003_phase1b_content_items.sql": "fbbada0084e595ccc1631d8c86293805475145b30790bed928ec942e33429526",
+  "migrations/004_phase1b_content_publications.sql": "37d0f0a47826a3bdf9012ca6f9956f40998c1ac0ba43410ebe4b945afecd485b"
 };
 
 function fail(message) {
@@ -253,11 +262,37 @@ for (const requiredText of [
   }
 }
 
-for (const calendarText of ["CREATE TABLE content_calendar", "CREATE TABLE manual_content_calendar", "/content-calendar"]) {
-  if (publicationMigrationSource.includes(calendarText) || webSource.includes(calendarText)) {
-    fail(`Phase 1B.3 tidak boleh membuat calendar: ${calendarText}`);
+for (const calendarTableText of ["CREATE TABLE content_calendar", "CREATE TABLE manual_content_calendar", "CREATE TABLE calendar_events"]) {
+  if (publicationMigrationSource.includes(calendarTableText) || contentItemMigrationSource.includes(calendarTableText) || campaignMigrationSource.includes(calendarTableText) || migrationSource.includes(calendarTableText)) {
+    fail(`Calendar tidak boleh membuat tabel baru: ${calendarTableText}`);
   } else {
-    pass(`Phase 1B.3 tidak membuat calendar: ${calendarText}`);
+    pass(`Calendar tidak membuat tabel baru: ${calendarTableText}`);
+  }
+}
+
+if (existsSync("migrations/005_phase1b_content_calendar.sql")) {
+  fail("Tidak boleh ada migration 005 untuk Manual Content Calendar");
+} else {
+  pass("Tidak ada migration 005 untuk Manual Content Calendar");
+}
+
+if (webSource.includes("/content-calendar")) {
+  pass("Route page Manual Content Calendar tersedia: /content-calendar");
+} else {
+  fail("Route page Manual Content Calendar belum tersedia");
+}
+
+if (webSource.includes("/api/content-calendar")) {
+  pass("Route API Manual Content Calendar tersedia: /api/content-calendar");
+} else {
+  fail("Route API Manual Content Calendar belum tersedia");
+}
+
+for (const forbiddenAutomation of ["auto posting", "scheduler worker", "cron", "Campaign Planner Agent"]) {
+  if (webSource.toLowerCase().includes(forbiddenAutomation.toLowerCase())) {
+    fail(`Calendar tidak boleh menambah automation: ${forbiddenAutomation}`);
+  } else {
+    pass(`Calendar tidak menambah automation: ${forbiddenAutomation}`);
   }
 }
 
