@@ -40,6 +40,13 @@ function draftWithOffer(primaryOfferCode: string | null, text: string) {
   } as any;
 }
 
+function draftWithMockupField(field: "title" | "hook" | "angle" | "cta_text" | "planning_reason", text: string) {
+  const safe = "Mockup awal sebagai preview awal.";
+  const draft = draftWithOffer("mockup_awal_gratis", safe);
+  draft.items[0][field] = text;
+  return draft;
+}
+
 test("forbidden claim ditolak", async () => {
   const input = validPlannerInput({ requested_content_count: 3 });
   const strategy = buildCampaignPlanStrategy(input);
@@ -84,6 +91,37 @@ test("required offer condition yang hilang ditolak", async () => {
   result.items[0].hook = "Dapatkan desain gratis untuk semua pemesan.";
   const consolidated = consolidateCampaignPlan(input, strategy, [result]);
   assert.ok(consolidated.errors.some((error) => error.code === "desain_gratis_condition_missing"));
+});
+
+test("mockup revision diagnostic menunjuk field dan excerpt aman", () => {
+  const hookResult = validateClaims(draftWithMockupField("hook", "Mockup bisa direvisi setelah sekolah kirim data."));
+  const hookError = hookResult.errors.find((error) => error.code === "mockup_revision_promise");
+  assert.ok(hookError);
+  assert.equal(hookError.path, "items.0.hook");
+  assert.equal(hookError.details?.draft_sequence, 1);
+  assert.equal(hookError.details?.field, "hook");
+  assert.equal(hookError.details?.rule_code, "mockup_revision_promise");
+  assert.equal(hookError.details?.matched_pattern, "mockup bisa direvisi");
+  assert.ok(hookError.details?.sanitized_excerpt?.includes("mockup bisa direvisi"));
+  assert.ok((hookError.details?.sanitized_excerpt || "").length <= 120);
+
+  const angleResult = validateClaims(draftWithMockupField("angle", "Admin bantu mockup sampai cocok untuk semua sekolah."));
+  const angleError = angleResult.errors.find((error) => error.code === "mockup_revision_promise");
+  assert.ok(angleError);
+  assert.equal(angleError.path, "items.0.angle");
+  assert.equal(angleError.details?.field, "angle");
+  assert.equal(angleError.details?.matched_pattern, "mockup.*sampai cocok");
+
+  const safeResult = validateClaims(draftWithMockupField("hook", "Mockup awal sebagai preview awal, tanpa revisi mockup."));
+  assert.equal(safeResult.errors.some((error) => error.code === "mockup_revision_promise"), false);
+
+  const rawLong = `Mockup bisa direvisi ${"x".repeat(300)} OPENAI_API_KEY=secret sk-testkey`;
+  const diagnosticResult = validateClaims(draftWithMockupField("hook", rawLong));
+  const diagnosticError = diagnosticResult.errors.find((error) => error.code === "mockup_revision_promise");
+  const diagnosticText = JSON.stringify(diagnosticError?.details);
+  assert.equal(diagnosticText.includes("sk-testkey"), false);
+  assert.equal(diagnosticText.includes("OPENAI_API_KEY=secret"), false);
+  assert.ok((diagnosticError?.details?.sanitized_excerpt || "").length <= 120);
 });
 
 test("DP sebelum Desain OK ditolak dan DP setelah approval valid", () => {

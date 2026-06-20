@@ -17,8 +17,8 @@ function combinedText(item: CampaignPlanDraft["items"][number]): string {
   );
 }
 
-function issue(code: string, message: string, path: string): ValidationIssue {
-  return { code, message, path };
+function issue(code: string, message: string, path: string, details?: ValidationIssue["details"]): ValidationIssue {
+  return details ? { code, message, path, details } : { code, message, path };
 }
 
 function dedupeIssues(issues: ValidationIssue[]): ValidationIssue[] {
@@ -44,10 +44,88 @@ function hasMockupNoRevisionContext(text: string): boolean {
 }
 
 function hasMockupRevisionPromise(text: string): boolean {
-  if (!/mockup/.test(text)) return false;
-  const unsafe = hasAny(text, [/mockup bisa direvisi/, /mockup.*bisa.*revisi/, /mockup.*revisi sepuasnya/, /mockup.*sepuasnya/, /mockup.*berkali-kali/, /mockup.*sampai cocok/, /revisi sampai cocok/]);
-  if (unsafe) return true;
-  return hasAny(text, [/revisi mockup/, /mockup.*revisi/]) && !hasMockupNoRevisionContext(text);
+  return Boolean(findMockupRevisionMatch([{ field: null, value: text }]));
+}
+
+type ClaimField = {
+  field: string | null;
+  value: string;
+};
+
+const mockupRevisionPatterns: Array<{ ruleCode: string; pattern: RegExp; matchedPattern: string }> = [
+  { ruleCode: "mockup_revision_promise", pattern: /mockup bisa direvisi/, matchedPattern: "mockup bisa direvisi" },
+  { ruleCode: "mockup_revision_promise", pattern: /mockup.*bisa.*revisi/, matchedPattern: "mockup.*bisa.*revisi" },
+  { ruleCode: "mockup_revision_promise", pattern: /mockup.*revisi sepuasnya/, matchedPattern: "mockup.*revisi sepuasnya" },
+  { ruleCode: "mockup_revision_promise", pattern: /mockup.*sepuasnya/, matchedPattern: "mockup.*sepuasnya" },
+  { ruleCode: "mockup_revision_promise", pattern: /mockup.*berkali-kali/, matchedPattern: "mockup.*berkali-kali" },
+  { ruleCode: "mockup_revision_promise", pattern: /mockup.*sampai cocok/, matchedPattern: "mockup.*sampai cocok" },
+  { ruleCode: "mockup_revision_promise", pattern: /revisi sampai cocok/, matchedPattern: "revisi sampai cocok" }
+];
+
+const contextualMockupRevisionPatterns: Array<{ ruleCode: string; pattern: RegExp; matchedPattern: string }> = [
+  { ruleCode: "mockup_revision_promise", pattern: /revisi mockup/, matchedPattern: "revisi mockup" },
+  { ruleCode: "mockup_revision_promise", pattern: /mockup.*revisi/, matchedPattern: "mockup.*revisi" }
+];
+
+function findMockupRevisionMatch(fields: ClaimField[]): {
+  field: string | null;
+  matchedPattern: string;
+  sanitizedExcerpt: string;
+} | null {
+  for (const field of fields) {
+    const text = normalize(field.value);
+    if (!/mockup/.test(text)) continue;
+    for (const candidate of mockupRevisionPatterns) {
+      const match = candidate.pattern.exec(text);
+      if (match) {
+        return {
+          field: field.field,
+          matchedPattern: candidate.matchedPattern,
+          sanitizedExcerpt: safeExcerpt(text, match.index, match[0].length)
+        };
+      }
+    }
+    for (const candidate of contextualMockupRevisionPatterns) {
+      const match = candidate.pattern.exec(text);
+      if (match && !hasMockupNoRevisionContext(text)) {
+        return {
+          field: field.field,
+          matchedPattern: candidate.matchedPattern,
+          sanitizedExcerpt: safeExcerpt(text, match.index, match[0].length)
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function safeExcerpt(text: string, index: number, length: number): string {
+  const start = Math.max(0, index - 40);
+  const end = Math.min(text.length, index + length + 40);
+  return text
+    .slice(start, end)
+    .replace(/sk-[a-z0-9_-]+/gi, "[api-key]")
+    .replace(/bearer\s+[a-z0-9._-]+/gi, "Bearer [redacted]")
+    .replace(/postgresql:\/\/\S+/gi, "[database-url]")
+    .replace(/[a-z_]*(api_key|database_url)=\S+/gi, "[secret-env]")
+    .replace(/\s+/g, " ")
+    .slice(0, 120);
+}
+
+function claimFields(item: CampaignPlanDraft["items"][number]): ClaimField[] {
+  return [
+    { field: "title", value: item.title },
+    { field: "hook", value: item.hook },
+    { field: "angle", value: item.angle },
+    { field: "cta_text", value: item.cta_text },
+    { field: "planning_reason", value: item.planning_reason },
+    ...item.publications
+      .filter((publication) => publication.platform_title)
+      .map((publication) => ({
+        field: publication.channel === "youtube" ? "youtube_title" : "platform_title",
+        value: publication.platform_title || ""
+      }))
+  ];
 }
 
 function hasOfferAgreementContext(text: string): boolean {
@@ -86,9 +164,16 @@ export function validateClaims(draft: CampaignPlanDraft): { errors: ValidationIs
   draft.items.forEach((item, index) => {
     const path = `items.${index}`;
     const text = combinedText(item);
+    const mockupRevisionMatch = findMockupRevisionMatch(claimFields(item));
 
-    if (hasMockupRevisionPromise(text)) {
-      errors.push(issue("mockup_revision_promise", "Mockup awal tidak boleh dijanjikan dapat direvisi.", path));
+    if (mockupRevisionMatch) {
+      errors.push(issue("mockup_revision_promise", "Mockup awal tidak boleh dijanjikan dapat direvisi.", `${path}.${mockupRevisionMatch.field || "text"}`, {
+        draft_sequence: item.draft_sequence,
+        field: mockupRevisionMatch.field,
+        rule_code: "mockup_revision_promise",
+        matched_pattern: mockupRevisionMatch.matchedPattern,
+        sanitized_excerpt: mockupRevisionMatch.sanitizedExcerpt
+      }));
     }
 
     if (/mockup/.test(text) && !hasMockupPreviewContext(text)) {
