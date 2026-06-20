@@ -40,7 +40,16 @@ function hasMockupPreviewContext(text: string): boolean {
 }
 
 function hasMockupNoRevisionContext(text: string): boolean {
-  return hasAny(text, [/tanpa revisi mockup/, /tidak (memiliki|ada) revisi mockup/, /mockup tidak (memiliki|ada) revisi/]);
+  return hasAny(text, [
+    /tanpa revisi mockup/,
+    /tanpa janji revisi mockup/,
+    /tidak (memiliki|ada) revisi mockup/,
+    /bukan revisi mockup/,
+    /tidak menjanjikan revisi mockup/,
+    /mockup awal tanpa revisi/,
+    /preview awal tanpa revisi/,
+    /mockup tidak (memiliki|ada) revisi/
+  ]);
 }
 
 function hasMockupRevisionPromise(text: string): boolean {
@@ -54,6 +63,7 @@ type ClaimField = {
 
 const mockupRevisionPatterns: Array<{ ruleCode: string; pattern: RegExp; matchedPattern: string }> = [
   { ruleCode: "mockup_revision_promise", pattern: /mockup bisa direvisi/, matchedPattern: "mockup bisa direvisi" },
+  { ruleCode: "mockup_revision_promise", pattern: /mockup dapat direvisi/, matchedPattern: "mockup dapat direvisi" },
   { ruleCode: "mockup_revision_promise", pattern: /mockup.*bisa.*revisi/, matchedPattern: "mockup.*bisa.*revisi" },
   { ruleCode: "mockup_revision_promise", pattern: /mockup.*revisi sepuasnya/, matchedPattern: "mockup.*revisi sepuasnya" },
   { ruleCode: "mockup_revision_promise", pattern: /mockup.*sepuasnya/, matchedPattern: "mockup.*sepuasnya" },
