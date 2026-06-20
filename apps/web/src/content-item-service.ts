@@ -118,7 +118,14 @@ const contentItemSelect = `
 
 function formatDate(value: unknown): string {
   if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(value);
+    const part = (type: string) => parts.find((item) => item.type === type)?.value || "";
+    return `${part("year")}-${part("month")}-${part("day")}`;
   }
   return String(value || "").slice(0, 10);
 }
@@ -143,6 +150,18 @@ function assertWithinCampaignPeriod(date: string, campaign: CampaignPeriod): voi
   }
 }
 
+async function getCampaignPeriodWithClient(client: DatabaseClient, id: string, lock = false): Promise<CampaignPeriod> {
+  const rows = await clientRows<CampaignPeriod>(
+    client,
+    `SELECT id, code, start_date, end_date FROM campaigns WHERE id = $1 ${lock ? "FOR UPDATE" : ""}`,
+    [id]
+  );
+  if (!rows[0]) {
+    throw new ContentItemError("campaign_not_found", "Campaign tidak ditemukan.", 404);
+  }
+  return rows[0];
+}
+
 async function getCampaignPeriod(id: string): Promise<CampaignPeriod> {
   const rows = await query<CampaignPeriod>(
     `SELECT id, code, start_date, end_date FROM campaigns WHERE id = $1`,
@@ -154,32 +173,48 @@ async function getCampaignPeriod(id: string): Promise<CampaignPeriod> {
   return rows[0];
 }
 
-async function assertActiveProduct(id: string | null): Promise<void> {
+async function assertActiveProductWithClient(client: DatabaseClient, id: string | null): Promise<void> {
   if (!id) return;
-  const rows = await query<{ id: string; active: boolean }>(`SELECT id, active FROM products WHERE id = $1`, [id]);
+  const rows = await clientRows<{ id: string; active: boolean }>(client, `SELECT id, active FROM products WHERE id = $1`, [id]);
   if (!rows[0]) throw new ContentItemError("product_not_found", "Produk tidak ditemukan.", 404);
   if (!rows[0].active) throw new ContentItemError("inactive_product", "Produk harus aktif.", 400);
 }
 
-async function assertActiveColor(id: string | null): Promise<void> {
+async function assertActiveProduct(id: string | null): Promise<void> {
+  await assertActiveProductWithClient({ query: async (text: string, params: unknown[] = []) => ({ rows: await query(text, params) }) } as DatabaseClient, id);
+}
+
+async function assertActiveColorWithClient(client: DatabaseClient, id: string | null): Promise<void> {
   if (!id) return;
-  const rows = await query<{ id: string; active: boolean }>(`SELECT id, active FROM colors WHERE id = $1`, [id]);
+  const rows = await clientRows<{ id: string; active: boolean }>(client, `SELECT id, active FROM colors WHERE id = $1`, [id]);
   if (!rows[0]) throw new ContentItemError("color_not_found", "Warna tidak ditemukan.", 404);
   if (!rows[0].active) throw new ContentItemError("inactive_color", "Warna harus aktif.", 400);
 }
 
-async function assertActiveOffer(id: string | null): Promise<void> {
+async function assertActiveColor(id: string | null): Promise<void> {
+  await assertActiveColorWithClient({ query: async (text: string, params: unknown[] = []) => ({ rows: await query(text, params) }) } as DatabaseClient, id);
+}
+
+async function assertActiveOfferWithClient(client: DatabaseClient, id: string | null): Promise<void> {
   if (!id) return;
-  const rows = await query<{ id: string; active: boolean }>(`SELECT id, active FROM offers WHERE id = $1`, [id]);
+  const rows = await clientRows<{ id: string; active: boolean }>(client, `SELECT id, active FROM offers WHERE id = $1`, [id]);
   if (!rows[0]) throw new ContentItemError("offer_not_found", "Offer tidak ditemukan.", 404);
   if (!rows[0].active) throw new ContentItemError("inactive_offer", "Offer harus aktif.", 400);
 }
 
-async function assertActivePainPoint(id: string | null): Promise<void> {
+async function assertActiveOffer(id: string | null): Promise<void> {
+  await assertActiveOfferWithClient({ query: async (text: string, params: unknown[] = []) => ({ rows: await query(text, params) }) } as DatabaseClient, id);
+}
+
+async function assertActivePainPointWithClient(client: DatabaseClient, id: string | null): Promise<void> {
   if (!id) return;
-  const rows = await query<{ id: string; active: boolean }>(`SELECT id, active FROM pain_points WHERE id = $1`, [id]);
+  const rows = await clientRows<{ id: string; active: boolean }>(client, `SELECT id, active FROM pain_points WHERE id = $1`, [id]);
   if (!rows[0]) throw new ContentItemError("pain_point_not_found", "Pain point tidak ditemukan.", 404);
   if (!rows[0].active) throw new ContentItemError("inactive_pain_point", "Pain point harus aktif.", 400);
+}
+
+async function assertActivePainPoint(id: string | null): Promise<void> {
+  await assertActivePainPointWithClient({ query: async (text: string, params: unknown[] = []) => ({ rows: await query(text, params) }) } as DatabaseClient, id);
 }
 
 async function contentPublicationsTableExists(): Promise<boolean> {
@@ -253,68 +288,67 @@ export async function getContentItem(id: string): Promise<ContentItemRow> {
   return mapContentItemRow(rows[0]);
 }
 
-export async function createContentItem(input: ContentItemInput): Promise<ContentItemRow> {
+export async function createContentItemWithClient(
+  client: DatabaseClient,
+  input: ContentItemInput
+): Promise<{ id: string; content_code: string; sequence_number: number }> {
   const value = validateContentItemInput(input, { requireCampaign: true });
-  await assertActiveProduct(value.product_id);
-  await assertActiveColor(value.color_id);
-  await assertActiveOffer(value.primary_offer_id);
-  await assertActivePainPoint(value.primary_pain_point_id);
+  await assertActiveProductWithClient(client, value.product_id);
+  await assertActiveColorWithClient(client, value.color_id);
+  await assertActiveOfferWithClient(client, value.primary_offer_id);
+  await assertActivePainPointWithClient(client, value.primary_pain_point_id);
 
+  const campaign = await getCampaignPeriodWithClient(client, value.campaign_id!, true);
+  assertWithinCampaignPeriod(value.planned_content_date, campaign);
+
+  const sequenceRows = await clientRows<{ max_sequence: number | null }>(
+    client,
+    `SELECT MAX(sequence_number) AS max_sequence FROM content_items WHERE campaign_id = $1`,
+    [campaign.id]
+  );
+  const sequenceNumber = Number(sequenceRows[0]?.max_sequence || 0) + 1;
+  const contentCode = `${campaign.code}-D${String(sequenceNumber).padStart(2, "0")}`;
+
+  const rows = await clientRows<{ id: string }>(
+    client,
+    `INSERT INTO content_items (
+       campaign_id, sequence_number, content_code, title, planned_content_date,
+       product_id, school_level, color_id, audience_segment, target_audience,
+       content_pillar, primary_offer_id, primary_pain_point_id, hook, angle,
+       cta_text, cta_keyword, notes
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+     RETURNING id`,
+    [
+      campaign.id,
+      sequenceNumber,
+      contentCode,
+      value.title,
+      value.planned_content_date,
+      value.product_id,
+      value.school_level,
+      value.color_id,
+      value.audience_segment,
+      value.target_audience,
+      value.content_pillar,
+      value.primary_offer_id,
+      value.primary_pain_point_id,
+      value.hook,
+      value.angle,
+      value.cta_text,
+      value.cta_keyword,
+      value.notes
+    ]
+  );
+
+  return { id: rows[0].id, content_code: contentCode, sequence_number: sequenceNumber };
+}
+
+export async function createContentItem(input: ContentItemInput): Promise<ContentItemRow> {
   try {
     const insertedId = await withTransaction(async (client) => {
-      const campaigns = await clientRows<CampaignPeriod>(
-        client,
-        `SELECT id, code, start_date, end_date FROM campaigns WHERE id = $1 FOR UPDATE`,
-        [value.campaign_id]
-      );
-      if (!campaigns[0]) {
-        throw new ContentItemError("campaign_not_found", "Campaign tidak ditemukan.", 404);
-      }
-
-      const campaign = campaigns[0];
-      assertWithinCampaignPeriod(value.planned_content_date, campaign);
-
-      const sequenceRows = await clientRows<{ max_sequence: number | null }>(
-        client,
-        `SELECT MAX(sequence_number) AS max_sequence FROM content_items WHERE campaign_id = $1`,
-        [campaign.id]
-      );
-      const sequenceNumber = Number(sequenceRows[0]?.max_sequence || 0) + 1;
-      const contentCode = `${campaign.code}-D${String(sequenceNumber).padStart(2, "0")}`;
-
-      const rows = await clientRows<{ id: string }>(
-        client,
-        `INSERT INTO content_items (
-           campaign_id, sequence_number, content_code, title, planned_content_date,
-           product_id, school_level, color_id, audience_segment, target_audience,
-           content_pillar, primary_offer_id, primary_pain_point_id, hook, angle,
-           cta_text, cta_keyword, notes
-         )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-         RETURNING id`,
-        [
-          campaign.id,
-          sequenceNumber,
-          contentCode,
-          value.title,
-          value.planned_content_date,
-          value.product_id,
-          value.school_level,
-          value.color_id,
-          value.audience_segment,
-          value.target_audience,
-          value.content_pillar,
-          value.primary_offer_id,
-          value.primary_pain_point_id,
-          value.hook,
-          value.angle,
-          value.cta_text,
-          value.cta_keyword,
-          value.notes
-        ]
-      );
-
-      return rows[0].id;
+      const created = await createContentItemWithClient(client, input);
+      return created.id;
     });
 
     return getContentItem(insertedId);

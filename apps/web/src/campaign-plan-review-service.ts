@@ -48,6 +48,8 @@ type DraftItemRow = {
   revision_number: number;
   validation_errors: ValidationIssue[];
   validation_warnings: ValidationIssue[];
+  imported_content_item_id: string | null;
+  imported_at: string | null;
   updated_at: string;
 };
 
@@ -59,6 +61,8 @@ type PublicationRow = {
   planned_publish_at: string | null;
   platform_title: string | null;
   platform_caption: null;
+  imported_publication_id: string | null;
+  imported_at: string | null;
   updated_at: string;
 };
 
@@ -110,6 +114,7 @@ function mapItem(row: any): DraftItemRow {
     revision_number: Number(row.revision_number),
     validation_errors: mapJsonArray(row.validation_errors),
     validation_warnings: mapJsonArray(row.validation_warnings),
+    imported_at: iso(row.imported_at),
     edited_at: iso(row.edited_at),
     updated_at: iso(row.updated_at) || ""
   };
@@ -120,6 +125,7 @@ function mapPublication(row: any): PublicationRow {
     ...row,
     planned_publish_at: jakartaPlannerTimestamp(row.planned_publish_at),
     platform_caption: null,
+    imported_at: iso(row.imported_at),
     updated_at: iso(row.updated_at) || ""
   };
 }
@@ -313,6 +319,7 @@ function reviewSummary(items: DraftItemRow[], publications: PublicationRow[]) {
   const approved = items.filter((item) => item.review_status === "approved").length;
   const rejected = items.filter((item) => item.review_status === "rejected").length;
   const pending = items.filter((item) => item.review_status === "pending_review").length;
+  const approvedIds = new Set(items.filter((item) => item.review_status === "approved").map((item) => item.id));
   return {
     total_items: total,
     pending_review: pending,
@@ -321,6 +328,8 @@ function reviewSummary(items: DraftItemRow[], publications: PublicationRow[]) {
     items_with_errors: items.filter((item) => item.validation_errors.length > 0).length,
     items_with_warnings: items.filter((item) => item.validation_warnings.length > 0).length,
     total_publications: publications.length,
+    imported_content_items: items.filter((item: any) => item.review_status === "approved" && item.imported_content_item_id).length,
+    imported_publications: publications.filter((publication: any) => approvedIds.has(publication.draft_item_id) && publication.imported_publication_id).length,
     progress_percent: total ? Math.round(((approved + rejected) / total) * 100) : 0
   };
 }
@@ -346,6 +355,7 @@ async function hydrateRunReview(client: DatabaseClient, runId: string) {
     selected_channels: run.selected_channels || [],
     validation_summary: run.validation_summary,
     approved_at: iso(run.approved_at),
+    imported_at: iso(run.imported_at),
     rejected_at: iso(run.rejected_at),
     created_at: iso(run.created_at),
     updated_at: iso(run.updated_at),

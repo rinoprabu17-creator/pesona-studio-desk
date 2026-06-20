@@ -1,6 +1,6 @@
 # Phase 2A Plan - Campaign Planner Agent
 
-Phase 2A.1 hanya membuat contract, strategy deterministic, fake provider, consolidation, dan validation. Belum ada OpenAI integration, route, staging table, worker, import flow, atau write ke operational tables.
+Phase 2A berjalan bertahap. Phase 2A.1 membuat contract dan fake provider, Phase 2A.2 menambahkan generation run staging dan worker, Phase 2A.3 menambahkan review/approval, dan Phase 2A.4 menambahkan import manual draft approved ke operational calendar. OpenAI provider tetap ditunda ke Phase 2A.5.
 
 ## One Logical Agent
 
@@ -169,9 +169,47 @@ Run approval dan rejection eksplisit:
 - "Tolak Rencana" hanya `ready_for_review -> rejected`
 - rejected run terminal untuk review dan tidak menghapus staging audit
 
-Phase 2A.3 tidak melakukan import ke `content_items` atau `content_publications`, tidak membuat route import, tidak membuat operational content code, dan tidak mengubah run ke `importing`/`imported`.
-
 Phase 2A.3 tetap fake-only. Tidak ada OpenAI dependency, tidak ada env key OpenAI, tidak ada Responses API, tidak ada provider baru, dan tidak ada n8n workflow baru.
+
+## Phase 2A.4 Approved Draft Import
+
+Status: implemented.
+
+Phase 2A.4 menambahkan import manual untuk run berstatus `approved` ke operational tables:
+
+- hanya draft item `approved` yang diimport
+- draft item `rejected` dilewati dan tetap menjadi audit staging
+- `content_items` dibuat dengan `production_status = planned`
+- `content_publications` dibuat dengan `publication_status = planned`
+- `platform_caption`, published fields, dan failure reason tetap `null`
+- staging mapping memakai `imported_content_item_id`, `imported_publication_id`, dan `imported_at`
+- run selesai sebagai `imported` dengan `imported_at`
+
+Import berjalan all-or-nothing dalam satu transaction. Lock order wajib: run `FOR UPDATE`, campaign `FOR UPDATE`, draft items berurut `draft_sequence`, draft publications berurut draft sequence/channel/format, resolve reference live, create operational rows, update mapping staging, lalu finalize run. Jika gagal, insert operational dan mapping staging rollback; run kembali terlihat `approved`.
+
+Import reuse service operational existing:
+
+- `createContentItemWithClient` tetap menjadi source of truth sequence, content code, campaign lock, validation, dan default production status
+- `createContentPublicationWithClient` tetap menjadi source of truth channel/format matrix, duplicate guard, validation, dan default publication status
+- tidak ada content code generator kedua di import service
+
+Guard import:
+
+- run harus `approved`, memiliki `approved_at`, belum `imported`, dan tidak memiliki pending review item
+- minimal satu draft item approved
+- approved item tidak boleh memiliki validation error
+- reference live product/color/offer/pain point harus masih tersedia dan aktif jika digunakan
+- campaign code harus sama dengan snapshot, campaign tidak completed/archived, dan tanggal approved tetap dalam periode campaign current
+- mapping staging parsial pada run approved ditolak sebagai state inconsistent
+
+Import idempotent. Jika run sudah `imported`, API dan page merekonstruksi summary dari mapping staging tanpa membuat row baru. Double-click, retry browser, dan concurrent request pada run sama aman karena lock transaction.
+
+Route:
+
+- Page konfirmasi: `/campaign-plan-runs/:id/import`
+- API import: `POST /api/campaign-plan-runs/:id/import`
+
+Phase 2A.4 tidak menambahkan OpenAI dependency, env key OpenAI, Responses API, provider baru, n8n workflow, auto posting, scheduler publication, atau worker import.
 
 ## Batch Worker
 
@@ -179,20 +217,9 @@ Phase 2A.2 memakai worker `campaign-planner-worker` dengan PostgreSQL polling. W
 
 Tidak memakai n8n sebagai core Campaign Planner. Tidak ada background scheduler untuk auto posting.
 
-## Import Strategy
-
-Import ke operational tables dilakukan pada fase berikutnya setelah owner approval eksplisit. Strategi MVP:
-
-- all-or-nothing transaction
-- lock run dan campaign
-- revalidate active references
-- gunakan logic existing content item untuk sequence dan content code
-- publication masuk dengan `publication_status = planned`
-- retry import tidak boleh membuat duplicate content
-
 ## Security
 
-Phase 2A.1 tidak membutuhkan API key. OpenAI provider deferred ke Phase 2A.5. Saat nanti dibuat:
+Phase 2A.1 sampai Phase 2A.4 tidak membutuhkan API key. OpenAI provider deferred ke Phase 2A.5. Saat nanti dibuat:
 
 - API key hanya dari environment
 - tidak dikirim ke browser
@@ -202,4 +229,4 @@ Phase 2A.1 tidak membutuhkan API key. OpenAI provider deferred ke Phase 2A.5. Sa
 
 ## Explicit Non-Scope
 
-Tidak ada OpenAI dependency, OpenAI API call, Redis queue/BullMQ, n8n workflow, operational content write, import flow, review/edit/approval UI, atau auto posting.
+Tidak ada OpenAI dependency, OpenAI API call, Redis queue/BullMQ, n8n workflow baru, auto posting, publication scheduler, Google Drive integration, video render, mockup render, pricing, quotation, Growth OS Lite integration, authentication, atau analytics dashboard pada Phase 2A.4.

@@ -50,7 +50,7 @@ npm run dev:mockup-worker
 npm run check
 ```
 
-Check ini memvalidasi file skeleton, service Compose, rute Phase 1A, rute Campaign, rute Konten, rute Publikasi, rute Kalender Konten, migration bertahap, dan syntax TypeScript.
+Check ini memvalidasi file skeleton, service Compose, rute Phase 1A, rute Campaign, rute Konten, rute Publikasi, rute Kalender Konten, Campaign Planner staging/review/import, migration bertahap, dan syntax TypeScript.
 
 Campaign Planner Phase 2A.1 mempunyai test terpisah berbasis fake provider:
 
@@ -216,6 +216,37 @@ Alur lokal:
 4. Edit draft, approve/reject item, lalu approve atau reject run secara eksplisit.
 
 Belum ada import ke `content_items` atau `content_publications` pada Phase 2A.3. Fake Provider masih digunakan; belum ada OpenAI provider dan belum ada posting otomatis.
+
+## Campaign Planner Phase 2A.4
+
+Phase 2A.4 menambahkan Approved Draft Import ke Kalender Konten manual.
+
+Command:
+
+```powershell
+npm run test:campaign-plan-import
+```
+
+Route:
+
+- Import confirmation page: `/campaign-plan-runs/:id/import`
+- Import API: `POST /api/campaign-plan-runs/:id/import`
+- Calendar verification: `/content-calendar`
+- Calendar API: `/api/content-calendar?month=YYYY-MM`
+
+Alur lokal:
+
+1. Generate rencana dari `/campaigns/:id/plan-runs/new`.
+2. Jalankan `campaign-planner-worker` sampai run menjadi `Siap Direview`.
+3. Review draft di `/campaign-plan-runs/:id/review`.
+4. Approve/reject item, lalu approve run.
+5. Buka `/campaign-plan-runs/:id/import`.
+6. Klik `Import ke Kalender Konten`.
+7. Verifikasi hasil di `/content-calendar`.
+
+Import hanya mengambil draft berstatus `Disetujui`. Draft `Ditolak` tetap tersimpan di staging dan tidak masuk Kalender Konten. Import berjalan all-or-nothing dan idempotent; retry atau double-click tidak membuat duplicate operational row.
+
+OpenAI belum digunakan pada Phase 2A.4. Tidak ada env key OpenAI, provider OpenAI, Responses API, auto posting, publication scheduler, atau n8n workflow import.
 
 ## Folder storage lokal
 

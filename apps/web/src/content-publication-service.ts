@@ -89,11 +89,15 @@ async function clientRows<T>(client: DatabaseClient, text: string, params: unkno
   return result.rows as T[];
 }
 
-async function assertContentItemExists(contentItemId: string): Promise<void> {
-  const rows = await query<{ id: string }>(`SELECT id FROM content_items WHERE id = $1`, [contentItemId]);
+async function assertContentItemExistsWithClient(client: DatabaseClient, contentItemId: string): Promise<void> {
+  const rows = await clientRows<{ id: string }>(client, `SELECT id FROM content_items WHERE id = $1`, [contentItemId]);
   if (!rows[0]) {
     throw new ContentItemError("content_item_not_found", "Content item tidak ditemukan.", 404);
   }
+}
+
+async function assertContentItemExists(contentItemId: string): Promise<void> {
+  await assertContentItemExistsWithClient({ query: async (text: string, params: unknown[] = []) => ({ rows: await query(text, params) }) } as DatabaseClient, contentItemId);
 }
 
 function handleWriteError(error: any): never {
@@ -145,27 +149,41 @@ export async function getContentPublication(id: string): Promise<ContentPublicat
   return mapPublicationRow(rows[0]);
 }
 
-export async function createContentPublication(contentItemId: string, input: ContentPublicationInput): Promise<ContentPublicationRow> {
+export async function createContentPublicationWithClient(
+  client: DatabaseClient,
+  contentItemId: string,
+  input: ContentPublicationInput
+): Promise<{ id: string }> {
   const value = validateCreatePublicationInput(contentItemId, input);
-  await assertContentItemExists(contentItemId);
+  await assertContentItemExistsWithClient(client, contentItemId);
 
+  const rows = await clientRows<{ id: string }>(
+    client,
+    `INSERT INTO content_publications (
+       content_item_id, channel, publication_format, planned_publish_at, platform_title, platform_caption
+     )
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id`,
+    [
+      value.content_item_id,
+      value.channel,
+      value.publication_format,
+      value.planned_publish_at,
+      value.platform_title,
+      value.platform_caption
+    ]
+  );
+  return { id: rows[0].id };
+}
+
+export async function createContentPublication(contentItemId: string, input: ContentPublicationInput): Promise<ContentPublicationRow> {
   try {
-    const rows = await query<{ id: string }>(
-      `INSERT INTO content_publications (
-         content_item_id, channel, publication_format, planned_publish_at, platform_title, platform_caption
-       )
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id`,
-      [
-        value.content_item_id,
-        value.channel,
-        value.publication_format,
-        value.planned_publish_at,
-        value.platform_title,
-        value.platform_caption
-      ]
+    const created = await createContentPublicationWithClient(
+      { query: async (text: string, params: unknown[] = []) => ({ rows: await query(text, params) }) } as DatabaseClient,
+      contentItemId,
+      input
     );
-    return getContentPublication(rows[0].id);
+    return getContentPublication(created.id);
   } catch (error: any) {
     handleWriteError(error);
   }
