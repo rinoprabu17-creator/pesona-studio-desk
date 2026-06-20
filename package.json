@@ -15,6 +15,7 @@
     "worker:campaign-planner:once": "CAMPAIGN_PLANNER_ONCE=true node --experimental-strip-types workers/campaign-planner/src/index.ts",
     "db:migrate": "node scripts/migrate.mjs",
     "db:seed": "node scripts/seed.mjs",
+    "test:db:prepare": "node scripts/prepare-test-db.mjs",
     "test:campaign-planner": "node --experimental-strip-types --test tests/campaign-planner/*.test.ts",
     "test:campaign-planner-runs": "node --import ./tests/bootstrap-env.mjs --experimental-strip-types --test tests/campaign-plan-runs/*.test.ts",
     "test:campaign-plan-review": "node --import ./tests/bootstrap-env.mjs --experimental-strip-types --test tests/campaign-plan-review/*.test.ts",

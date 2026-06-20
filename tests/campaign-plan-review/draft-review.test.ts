@@ -17,7 +17,7 @@ import { renderCampaignPlanReviewPage } from "../../apps/web/src/views/campaign-
 import { processNextRun } from "../../workers/campaign-planner/src/worker.ts";
 import { loadWorkerConfig } from "../../workers/campaign-planner/src/lease.ts";
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
 const { Pool } = pg;
 const pool = databaseUrl ? new Pool({ connectionString: databaseUrl, max: 8 }) : null;
@@ -25,7 +25,7 @@ const testCampaignPrefix = `REVIEW-${process.pid}-`;
 const campaignIds: string[] = [];
 
 function maybeTest(name: string, fn: Parameters<typeof test>[1]) {
-  test(name, { skip: shouldRun ? false : "DATABASE_URL tidak tersedia." }, fn);
+  test(name, { skip: shouldRun ? false : "TEST_DATABASE_URL tidak tersedia." }, fn);
 }
 
 async function createCampaign(codeSuffix: string) {
@@ -121,17 +121,14 @@ function runInput(count = 30) {
 async function createReadyRun(code: string, count = 30) {
   const campaignId = await createCampaign(code);
   const run = await createCampaignPlanRun(campaignId, runInput(count));
-  let processedTarget = false;
-  for (let attempt = 0; attempt < 10; attempt += 1) {
+  const started = Date.now();
+  while (Date.now() - started < 5000) {
     const processed = await processNextRun(pool!, loadWorkerConfig({ workerId: `review-${code}`, fakeMode: "valid" }));
-    if (processed.runId === run.id && processed.result === "finalized") {
-      processedTarget = true;
-      break;
-    }
-    if (!processed.processed) break;
+    const status = await pool!.query(`SELECT status FROM campaign_plan_runs WHERE id = $1`, [run.id]);
+    if (status.rows[0]?.status === "ready_for_review") return { campaignId, runId: run.id };
+    if (!processed.processed) await new Promise((resolve) => setTimeout(resolve, 25));
   }
-  assert.equal(processedTarget, true);
-  return { campaignId, runId: run.id };
+  assert.fail(`Run ${run.id} tidak mencapai ready_for_review.`);
 }
 
 function editPayload(item: any, overrides: Record<string, unknown> = {}) {

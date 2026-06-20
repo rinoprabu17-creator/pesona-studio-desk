@@ -1,10 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 
 export function loadLocalEnv() {
-  if (process.env.DATABASE_URL) {
-    return;
-  }
-
   const envPath = ".env.local";
   if (!existsSync(envPath)) {
     return;
@@ -31,7 +27,7 @@ export function loadLocalEnv() {
       continue;
     }
 
-    if (key === "DATABASE_URL" && value.includes("@postgres:")) {
+    if ((key === "DATABASE_URL" || key === "TEST_DATABASE_URL") && value.includes("@postgres:")) {
       const exposedPort = parsed.POSTGRES_EXPOSED_PORT || "5432";
       process.env[key] = value.replace("@postgres:5432", `@localhost:${exposedPort}`);
       continue;

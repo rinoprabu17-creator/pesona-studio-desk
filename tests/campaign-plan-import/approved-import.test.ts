@@ -31,7 +31,7 @@ import { renderContentCalendarPage } from "../../apps/web/src/views/content-cale
 import { processNextRun } from "../../workers/campaign-planner/src/worker.ts";
 import { loadWorkerConfig } from "../../workers/campaign-planner/src/lease.ts";
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
 const { Pool } = pg;
 const pool = databaseUrl ? new Pool({ connectionString: databaseUrl, max: 12 }) : null;
@@ -40,7 +40,7 @@ const campaignIds: string[] = [];
 const changedReferenceRows: Array<{ table: string; id: string }> = [];
 
 function maybeTest(name: string, fn: Parameters<typeof test>[1]) {
-  test(name, { skip: shouldRun ? false : "DATABASE_URL tidak tersedia." }, fn);
+  test(name, { skip: shouldRun ? false : "TEST_DATABASE_URL tidak tersedia." }, fn);
 }
 
 async function createCampaign(codeSuffix: string, overrides: Record<string, unknown> = {}) {

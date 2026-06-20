@@ -8,13 +8,13 @@ import { loadWorkerConfig } from "../../workers/campaign-planner/src/lease.ts";
 import { processClaimedRun } from "../../workers/campaign-planner/src/run-processor.ts";
 import { CampaignPlannerProviderError, FakeCampaignPlannerProvider } from "../../packages/campaign-planner/src/index.ts";
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
 const { Pool } = pg;
 const testCampaignPrefix = `PLANRUN-${process.pid}-`;
 
 function maybeTest(name: string, fn: Parameters<typeof test>[1]) {
-  test(name, { skip: shouldRun ? false : "DATABASE_URL tidak tersedia." }, fn);
+  test(name, { skip: shouldRun ? false : "TEST_DATABASE_URL tidak tersedia." }, fn);
 }
 
 const pool = databaseUrl ? new Pool({ connectionString: databaseUrl, max: 6 }) : null;
@@ -121,11 +121,12 @@ async function stagingCounts(runId: string) {
 }
 
 async function processUntilRunStatus(runId: string, status: string, config: ReturnType<typeof loadWorkerConfig>) {
-  for (let attempt = 0; attempt < 10; attempt += 1) {
+  const started = Date.now();
+  while (Date.now() - started < 5000) {
     const processed = await processNextRun(pool!, config);
     const row = await pool!.query(`SELECT status FROM campaign_plan_runs WHERE id = $1`, [runId]);
     if (row.rows[0]?.status === status) return row.rows[0];
-    if (!processed.processed) break;
+    if (!processed.processed) await sleep(25);
   }
   return (await pool!.query(`SELECT status FROM campaign_plan_runs WHERE id = $1`, [runId])).rows[0];
 }
@@ -404,11 +405,19 @@ maybeTest("heartbeat selama slow provider mencegah stale recovery mengambil job 
 
   const processing = processNextRun(pool!, config);
   const generating = await waitFor(
-    () => pool!.query(`SELECT status, lease_expires_at FROM campaign_plan_runs WHERE id = $1`, [run.id]),
-    (result) => result.rows[0]?.status === "generating"
+    () =>
+      pool!.query(
+        `SELECT status, lease_expires_at, heartbeat_at, claimed_at
+         FROM campaign_plan_runs
+         WHERE id = $1`,
+        [run.id]
+      ),
+    (result) =>
+      result.rows[0]?.status === "generating" &&
+      result.rows[0]?.heartbeat_at &&
+      result.rows[0].heartbeat_at > result.rows[0].claimed_at
   );
   assert.equal(generating.rows[0].status, "generating");
-  await sleep(700);
   await recoverStaleJobs(pool!, loadWorkerConfig({ maxAttempts: 3 }));
   const during = await pool!.query(`SELECT status, claimed_by FROM campaign_plan_runs WHERE id = $1`, [run.id]);
   assert.equal(during.rows[0].status, "generating");
