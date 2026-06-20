@@ -52,6 +52,18 @@ npm run check
 
 Check ini memvalidasi file skeleton, service Compose, rute Phase 1A, rute Campaign, rute Konten, rute Publikasi, rute Kalender Konten, Campaign Planner staging/review/import, migration bertahap, dan syntax TypeScript.
 
+Integration test database-backed wajib memakai `TEST_DATABASE_URL`. Test tidak fallback ke `DATABASE_URL` development. Bootstrap test akan membuat database test bila belum ada, menjalankan migration 001-005, menjalankan seed library minimum, lalu mengarahkan koneksi proses test ke database test tersebut. Ini membuat `campaign-planner-worker` Docker yang sedang memakai database development tidak dapat mengambil run dari integration tests.
+
+```powershell
+npm run test:db:prepare
+```
+
+Gunakan nama database berbeda, misalnya:
+
+```powershell
+TEST_DATABASE_URL=postgresql://pesona:***@postgres:5432/pesona_studio_test
+```
+
 Campaign Planner Phase 2A.1 mempunyai test terpisah berbasis fake provider:
 
 ```powershell
