@@ -4,6 +4,7 @@ import {
   buildCampaignPlanStrategy,
   consolidateCampaignPlan,
   FakeCampaignPlannerProvider,
+  validateCampaignPlanDraft,
   validateClaims
 } from "../../packages/campaign-planner/src/index.ts";
 import { validPlannerInput } from "../fixtures/campaign-planner/input.ts";
@@ -44,6 +45,14 @@ function draftWithMockupField(field: "title" | "hook" | "angle" | "cta_text" | "
   const safe = "Mockup awal sebagai preview awal.";
   const draft = draftWithOffer("mockup_awal_gratis", safe);
   draft.items[0][field] = text;
+  return draft;
+}
+
+function draftWithYoutubeTitle(text: string) {
+  const draft = draftWithOffer("mockup_awal_gratis", "Mockup awal sebagai preview awal.");
+  draft.items[0].publications[0].channel = "youtube";
+  draft.items[0].publications[0].publication_format = "short_video";
+  draft.items[0].publications[0].platform_title = text;
   return draft;
 }
 
@@ -115,7 +124,16 @@ test("mockup revision diagnostic menunjuk field dan excerpt aman", () => {
   const safeResult = validateClaims(draftWithMockupField("hook", "Mockup awal sebagai preview awal, tanpa revisi mockup."));
   assert.equal(safeResult.errors.some((error) => error.code === "mockup_revision_promise"), false);
 
+  const internalResult = validateClaims(draftWithMockupField("planning_reason", "Output memakai bahasa revisi mockup sebagai catatan internal."));
+  assert.equal(internalResult.errors.some((error) => error.code === "mockup_revision_promise"), false);
+  const internalWarning = internalResult.warnings.find((warning) => warning.code === "internal_reason_claim_language");
+  assert.ok(internalWarning);
+  assert.equal(internalWarning.path, "items.0.planning_reason");
+  assert.equal(internalWarning.details?.field, "planning_reason");
+  assert.equal(internalWarning.details?.matched_pattern, "revisi mockup");
+
   for (const text of [
+    "Tanpa menyebut revisi mockup, hanya preview awal.",
     "Preview awal dengan bahasa aman tanpa janji revisi mockup.",
     "Mockup awal tanpa revisi untuk memberi gambaran awal.",
     "Tidak ada revisi mockup karena hanya preview awal.",
@@ -130,6 +148,22 @@ test("mockup revision diagnostic menunjuk field dan excerpt aman", () => {
       `${text} harus aman`
     );
   }
+
+  for (const [field, text] of [
+    ["hook", "Revisi mockup untuk sekolah sampai cocok."],
+    ["angle", "Mockup bisa direvisi setelah sekolah kirim data."],
+    ["cta_text", "Chat admin untuk mockup sampai cocok."]
+  ] as const) {
+    const result = validateClaims(draftWithMockupField(field, text));
+    const error = result.errors.find((item) => item.code === "mockup_revision_promise");
+    assert.ok(error, `${field} harus hard error`);
+    assert.equal(error.details?.field, field);
+  }
+
+  const youtubeResult = validateClaims(draftWithYoutubeTitle("Mockup bisa direvisi sampai cocok"));
+  const youtubeError = youtubeResult.errors.find((error) => error.code === "mockup_revision_promise");
+  assert.ok(youtubeError);
+  assert.equal(youtubeError.details?.field, "youtube_title");
 
   for (const text of [
     "Mockup bisa direvisi setelah sekolah kirim data.",
@@ -154,6 +188,32 @@ test("mockup revision diagnostic menunjuk field dan excerpt aman", () => {
   assert.equal(diagnosticText.includes("sk-testkey"), false);
   assert.equal(diagnosticText.includes("OPENAI_API_KEY=secret"), false);
   assert.ok((diagnosticError?.details?.sanitized_excerpt || "").length <= 120);
+});
+
+test("planning_reason claim issue tidak membuat validation invalid", async () => {
+  const input = validPlannerInput({ requested_content_count: 1 });
+  const strategy = buildCampaignPlanStrategy(input);
+  const result = await new FakeCampaignPlannerProvider().generateBatch({
+    run_id: null,
+    batch_index: 1,
+    campaign: input.campaign,
+    knowledge: {
+      products: input.products,
+      colors: input.colors,
+      school_level_defaults: input.school_level_defaults,
+      offers: input.offers,
+      pain_points: input.pain_points
+    },
+    strategy_slots: strategy,
+    owner_brief: null
+  });
+  const consolidated = consolidateCampaignPlan(input, strategy, [result]);
+  assert.ok(consolidated.draft);
+  consolidated.draft.items[0].planning_reason = "Catatan internal menyebut revisi mockup, bukan materi konten customer.";
+
+  const validation = validateCampaignPlanDraft(input, consolidated.draft);
+  assert.equal(validation.errors.some((error) => error.code === "mockup_revision_promise"), false);
+  assert.ok(validation.warnings.some((warning) => warning.code === "internal_reason_claim_language"));
 });
 
 test("DP sebelum Desain OK ditolak dan DP setelah approval valid", () => {

@@ -4,14 +4,13 @@ function normalize(value: string): string {
   return value.toLowerCase().replace(/\s+/g, " ").trim();
 }
 
-function combinedText(item: CampaignPlanDraft["items"][number]): string {
+function customerFacingText(item: CampaignPlanDraft["items"][number]): string {
   return normalize(
     [
       item.title,
       item.hook,
       item.angle,
       item.cta_text,
-      item.planning_reason,
       ...item.publications.map((publication) => publication.platform_title || "")
     ].join(" ")
   );
@@ -128,7 +127,6 @@ function claimFields(item: CampaignPlanDraft["items"][number]): ClaimField[] {
     { field: "hook", value: item.hook },
     { field: "angle", value: item.angle },
     { field: "cta_text", value: item.cta_text },
-    { field: "planning_reason", value: item.planning_reason },
     ...item.publications
       .filter((publication) => publication.platform_title)
       .map((publication) => ({
@@ -173,8 +171,9 @@ export function validateClaims(draft: CampaignPlanDraft): { errors: ValidationIs
 
   draft.items.forEach((item, index) => {
     const path = `items.${index}`;
-    const text = combinedText(item);
+    const text = customerFacingText(item);
     const mockupRevisionMatch = findMockupRevisionMatch(claimFields(item));
+    const internalReasonMatch = findMockupRevisionMatch([{ field: "planning_reason", value: item.planning_reason }]);
 
     if (mockupRevisionMatch) {
       errors.push(issue("mockup_revision_promise", "Mockup awal tidak boleh dijanjikan dapat direvisi.", `${path}.${mockupRevisionMatch.field || "text"}`, {
@@ -183,6 +182,16 @@ export function validateClaims(draft: CampaignPlanDraft): { errors: ValidationIs
         rule_code: "mockup_revision_promise",
         matched_pattern: mockupRevisionMatch.matchedPattern,
         sanitized_excerpt: mockupRevisionMatch.sanitizedExcerpt
+      }));
+    }
+
+    if (internalReasonMatch) {
+      warnings.push(issue("internal_reason_claim_language", "Planning reason memuat bahasa klaim internal yang perlu dicek.", `${path}.planning_reason`, {
+        draft_sequence: item.draft_sequence,
+        field: "planning_reason",
+        rule_code: "mockup_revision_promise",
+        matched_pattern: internalReasonMatch.matchedPattern,
+        sanitized_excerpt: internalReasonMatch.sanitizedExcerpt
       }));
     }
 
