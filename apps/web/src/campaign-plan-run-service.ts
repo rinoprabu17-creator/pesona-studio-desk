@@ -2,7 +2,9 @@ import {
   buildCampaignPlanStrategy,
   CampaignPlannerInputSchema,
   splitStrategyIntoBatches,
-  timezone
+  timezone,
+  fakeModelName,
+  loadCampaignPlannerRuntimeConfig
 } from "../../../packages/campaign-planner/src/index.ts";
 import type { CampaignPlannerInput, CampaignPlanStrategySlot } from "../../../packages/campaign-planner/src/index.ts";
 import { CampaignError } from "./campaign-errors.ts";
@@ -13,8 +15,6 @@ import { assertUuid } from "./validation/library-validation.ts";
 import { validateCampaignPlanRunInput } from "./validation/campaign-plan-run-validation.ts";
 import type { CampaignPlanRunInput } from "./validation/campaign-plan-run-validation.ts";
 
-const promptVersion = "phase-2a2-fake-v1";
-const fakeModel = "fake-campaign-planner-v1";
 const unresolvedStatuses = ["queued", "generating", "validation_failed", "ready_for_review", "approved", "importing", "failed"];
 
 export type CampaignPlanRunSummary = {
@@ -37,6 +37,28 @@ export type CampaignPlanRunSummary = {
   imported_at: string | null;
 };
 
+export function getCampaignPlannerProviderDisplay() {
+  try {
+    const config = loadCampaignPlannerRuntimeConfig();
+    return {
+      provider: config.provider,
+      model: config.provider === "openai" ? config.openaiModel : fakeModelName,
+      prompt_version: config.promptVersion,
+      notice:
+        config.provider === "openai"
+          ? "OpenAI aktif. Proses ini dapat menggunakan kuota API."
+          : "Mode Simulasi: sistem menggunakan Fake Provider dan tidak memanggil API."
+    };
+  } catch {
+    return {
+      provider: "unavailable",
+      model: null,
+      prompt_version: null,
+      notice: "Konfigurasi Campaign Planner provider belum tersedia."
+    };
+  }
+}
+
 type CampaignForPlanner = {
   id: string;
   code: string;
@@ -52,15 +74,18 @@ function safeErrorMessage(message: string): string {
   return message.replace(/postgresql:\/\/\S+/gi, "[database-url]").slice(0, 500);
 }
 
-function configuredProvider(): string {
-  return process.env.CAMPAIGN_PLANNER_PROVIDER || "fake";
-}
-
-function ensureFakeProvider(): void {
-  if (configuredProvider() !== "fake") {
+function configuredRunProvider() {
+  try {
+    const config = loadCampaignPlannerRuntimeConfig();
+    return {
+      provider: config.provider,
+      model: config.provider === "openai" ? config.openaiModel! : fakeModelName,
+      promptVersion: config.promptVersion
+    };
+  } catch {
     throw new CampaignPlanRunError(
       "campaign_planner_provider_unavailable",
-      "Campaign Planner Phase 2A.2 hanya mendukung Fake Provider.",
+      "Konfigurasi Campaign Planner provider belum tersedia.",
       503
     );
   }
@@ -208,10 +233,10 @@ async function insertBatches(
 
 export async function createCampaignPlanRun(campaignId: string, input: Record<string, unknown>) {
   assertUuid(campaignId);
-  ensureFakeProvider();
   const values = validateCampaignPlanRunInput(input);
-  const provider = "fake";
-  const model = fakeModel;
+  const configured = configuredRunProvider();
+  const provider = configured.provider;
+  const model = configured.model;
 
   try {
     const runId = await withTransaction(async (client) => {
@@ -232,7 +257,7 @@ export async function createCampaignPlanRun(campaignId: string, input: Record<st
           campaign.id,
           provider,
           model,
-          promptVersion,
+          configured.promptVersion,
           plannerInput.requested_content_count,
           plannerInput.selected_channels,
           plannerInput.owner_brief,
@@ -306,6 +331,14 @@ export async function getCampaignPlanRun(id: string) {
      WHERE i.run_id = $1`,
     [id]
   );
+  const usageRows = await query<{ input_tokens: string; output_tokens: string; total_tokens: string }>(
+    `SELECT COALESCE(SUM(input_tokens), 0)::text AS input_tokens,
+            COALESCE(SUM(output_tokens), 0)::text AS output_tokens,
+            COALESCE(SUM(total_tokens), 0)::text AS total_tokens
+     FROM campaign_plan_generation_batches
+     WHERE run_id = $1`,
+    [id]
+  );
   const importCounts = await query<{
     approved_draft_items: string;
     rejected_draft_items: string;
@@ -349,6 +382,11 @@ export async function getCampaignPlanRun(id: string) {
     draft_counts: {
       items: Number(draftCounts[0]?.items || 0),
       publications: Number(draftCounts[0]?.publications || 0)
+    },
+    usage: {
+      input_tokens: Number(usageRows[0]?.input_tokens || 0),
+      output_tokens: Number(usageRows[0]?.output_tokens || 0),
+      total_tokens: Number(usageRows[0]?.total_tokens || 0)
     },
     import_summary: {
       approved_draft_items: Number(importCounts[0]?.approved_draft_items || 0),

@@ -34,8 +34,6 @@ services:
 
   n8n:
     image: n8nio/n8n:2.26.7
-    env_file:
-      - .env.local
     environment:
       N8N_HOST: ${N8N_HOST:-localhost}
       N8N_PORT: 5678
@@ -61,13 +59,17 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
-    env_file:
-      - .env.local
     environment:
       APP_PORT: 3000
       APP_STORAGE_DIR: /app/storage
       DATABASE_URL: ${DATABASE_URL:-postgresql://pesona:pesona_dev_password@postgres:5432/pesona_studio}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      CAMPAIGN_PLANNER_PROVIDER: ${CAMPAIGN_PLANNER_PROVIDER:-fake}
+      CAMPAIGN_PLANNER_OPENAI_ENABLED: ${CAMPAIGN_PLANNER_OPENAI_ENABLED:-false}
+      CAMPAIGN_PLANNER_PROMPT_VERSION: ${CAMPAIGN_PLANNER_PROMPT_VERSION:-campaign-planner-v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      OPENAI_TIMEOUT_MS: ${OPENAI_TIMEOUT_MS:-120000}
+      OPENAI_MAX_OUTPUT_TOKENS: ${OPENAI_MAX_OUTPUT_TOKENS:-5000}
     ports:
       - "${WEB_APP_EXPOSED_PORT:-3000}:3000"
     volumes:
@@ -83,16 +85,19 @@ services:
     build:
       context: .
       dockerfile: workers/campaign-planner/Dockerfile
-    env_file:
-      - .env.local
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql://pesona:pesona_dev_password@postgres:5432/pesona_studio}
       CAMPAIGN_PLANNER_PROVIDER: ${CAMPAIGN_PLANNER_PROVIDER:-fake}
+      CAMPAIGN_PLANNER_OPENAI_ENABLED: ${CAMPAIGN_PLANNER_OPENAI_ENABLED:-false}
+      CAMPAIGN_PLANNER_PROMPT_VERSION: ${CAMPAIGN_PLANNER_PROMPT_VERSION:-campaign-planner-v1}
       CAMPAIGN_PLANNER_FAKE_MODE: ${CAMPAIGN_PLANNER_FAKE_MODE:-valid}
       CAMPAIGN_PLANNER_POLL_MS: ${CAMPAIGN_PLANNER_POLL_MS:-2000}
       CAMPAIGN_PLANNER_LEASE_SECONDS: ${CAMPAIGN_PLANNER_LEASE_SECONDS:-60}
       CAMPAIGN_PLANNER_MAX_ATTEMPTS: ${CAMPAIGN_PLANNER_MAX_ATTEMPTS:-3}
       CAMPAIGN_PLANNER_BATCH_SIZE: ${CAMPAIGN_PLANNER_BATCH_SIZE:-5}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      OPENAI_TIMEOUT_MS: ${OPENAI_TIMEOUT_MS:-120000}
+      OPENAI_MAX_OUTPUT_TOKENS: ${OPENAI_MAX_OUTPUT_TOKENS:-5000}
     depends_on:
       postgres:
         condition: service_healthy
@@ -102,8 +107,6 @@ services:
     build:
       context: .
       dockerfile: workers/video/Dockerfile
-    env_file:
-      - .env.local
     environment:
       APP_STORAGE_DIR: /app/storage
       DATABASE_URL: ${DATABASE_URL:-postgresql://pesona:pesona_dev_password@postgres:5432/pesona_studio}
@@ -122,8 +125,6 @@ services:
     build:
       context: .
       dockerfile: workers/mockup/Dockerfile
-    env_file:
-      - .env.local
     environment:
       APP_STORAGE_DIR: /app/storage
       DATABASE_URL: ${DATABASE_URL:-postgresql://pesona:pesona_dev_password@postgres:5432/pesona_studio}

@@ -1,6 +1,6 @@
 import { channels } from "../../../../packages/campaign-planner/src/index.ts";
 import type { CampaignRow } from "../campaign-service.ts";
-import type { CampaignPlanRunSummary } from "../campaign-plan-run-service.ts";
+import { getCampaignPlannerProviderDisplay, type CampaignPlanRunSummary } from "../campaign-plan-run-service.ts";
 import { escapeHtml, renderLayout, renderReadOnlyTable } from "./layout.ts";
 
 const channelLabels: Record<string, string> = {
@@ -92,22 +92,25 @@ export function renderGenerateCampaignPlanPage(options: {
     </label>
   `).join("");
   const error = options.errorMessage ? `<div class="notice error">${escapeHtml(options.errorMessage)}</div>` : "";
+  const providerDisplay = getCampaignPlannerProviderDisplay();
 
   return renderLayout(
     "/campaigns",
     "Generate Rencana Konten",
     "Campaign Planner",
-    "Buat generation run dengan Fake Provider untuk pengujian sistem.",
+    "Buat generation run Campaign Planner.",
     `
       ${error}
-      <div class="notice">Saat ini menggunakan Fake Provider untuk pengujian sistem. Belum menggunakan OpenAI.</div>
+      <div class="notice">${escapeHtml(providerDisplay.notice)}</div>
       ${renderReadOnlyTable([
         "Field",
         "Nilai"
       ], [
         ["Campaign", `${escapeHtml(options.campaign.code)} - ${escapeHtml(options.campaign.name)}`],
         ["Periode", `${escapeHtml(String(options.campaign.start_date).slice(0, 10))} s/d ${escapeHtml(String(options.campaign.end_date).slice(0, 10))}`],
-        ["Target Audiens", escapeHtml(options.campaign.target_audience)]
+        ["Target Audiens", escapeHtml(options.campaign.target_audience)],
+        ["Provider / Model", `${escapeHtml(providerDisplay.provider)} / ${escapeHtml(providerDisplay.model || "-")}`],
+        ["Prompt Version", escapeHtml(providerDisplay.prompt_version || "-")]
       ])}
       <form method="post" action="${escapeHtml(options.action)}">
         <label>Jumlah Konten
@@ -194,6 +197,7 @@ export function renderCampaignPlanRunDetailPage(run: any, url: URL): string {
         ["Run ID", escapeHtml(run.id)],
         ["Status", escapeHtml(statusLabels[run.status] || run.status)],
         ["Provider / Model", `${escapeHtml(run.provider)} / ${escapeHtml(run.model)}`],
+        ["Prompt Version", escapeHtml(run.prompt_version || "-")],
         ["Jumlah Konten", String(run.requested_content_count)],
         ["Channel", escapeHtml(run.selected_channels.map((channel: string) => channelLabels[channel] || channel).join(", "))],
         ["Dibuat", escapeHtml(formatDateTime(run.created_at))],
@@ -203,6 +207,7 @@ export function renderCampaignPlanRunDetailPage(run: any, url: URL): string {
         ["Diimport", escapeHtml(formatDateTime(run.imported_at))],
         ["Progress Batch", `${run.batch_progress.completed}/${run.batch_progress.total} completed`],
         ["Draft", `${run.draft_counts.items} item / ${run.draft_counts.publications} publication`],
+        ["Token Usage", `${run.usage?.input_tokens || 0} input / ${run.usage?.output_tokens || 0} output / ${run.usage?.total_tokens || 0} total`],
         ["Import", `${run.import_summary.content_items_created}/${run.import_summary.approved_draft_items} content item, ${run.import_summary.publications_created} publication`],
         ["Validation", run.validation_summary ? escapeHtml(JSON.stringify(run.validation_summary)) : "-"]
       ])}

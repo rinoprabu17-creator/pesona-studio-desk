@@ -260,6 +260,60 @@ Import hanya mengambil draft berstatus `Disetujui`. Draft `Ditolak` tetap tersim
 
 OpenAI belum digunakan pada Phase 2A.4. Tidak ada env key OpenAI, provider OpenAI, Responses API, auto posting, publication scheduler, atau n8n workflow import.
 
+## Campaign Planner Phase 2A.5A
+
+Phase 2A.5A menambahkan OpenAI Provider sebagai provider tambahan. Default local development dan `docker-compose.dev.yml` tetap Fake Provider dan tidak membutuhkan API key.
+
+Command test mocked tanpa network:
+
+```powershell
+npm run test:campaign-planner-openai
+```
+
+Konfigurasi nonsecret:
+
+```powershell
+CAMPAIGN_PLANNER_PROVIDER=fake
+CAMPAIGN_PLANNER_OPENAI_ENABLED=false
+CAMPAIGN_PLANNER_PROMPT_VERSION=campaign-planner-v1
+OPENAI_MODEL=
+OPENAI_TIMEOUT_MS=120000
+OPENAI_MAX_OUTPUT_TOKENS=5000
+```
+
+Untuk mengaktifkan OpenAI secara manual:
+
+1. Buat secret file lokal:
+
+   ```powershell
+   New-Item -ItemType Directory -Force secrets
+   Set-Content -NoNewline secrets/openai_api_key.txt "<OPENAI_API_KEY>"
+   ```
+
+2. Set `OPENAI_MODEL` di `.env.local`.
+3. Jalankan stack dengan override:
+
+   ```powershell
+   docker compose --env-file .env.local -f docker-compose.dev.yml -f docker-compose.openai.yml up --build
+   ```
+
+API key hanya dimount ke `campaign-planner-worker` sebagai Docker secret. `web-app` hanya menerima provider/model/prompt version nonsecret untuk create-run dan UI notice.
+
+Kembali ke Fake Provider:
+
+```powershell
+docker compose --env-file .env.local -f docker-compose.dev.yml up --build
+```
+
+Manual smoke command tersedia tetapi tidak memanggil API kecuali flag eksplisit diset:
+
+```powershell
+npm run smoke:campaign-planner-openai
+OPENAI_LIVE_SMOKE=1 npm run smoke:campaign-planner-openai
+```
+
+Jangan commit API key. Jangan paste API key ke chat/log. OpenAI request memakai Responses API, Structured Outputs, `store:false`, dan SDK retry dimatikan; retry tetap dikontrol Campaign Planner Worker.
+
 ## Folder storage lokal
 
 - `storage/footage`

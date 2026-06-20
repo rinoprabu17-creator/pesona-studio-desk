@@ -247,7 +247,7 @@ maybeTest("failure fixtures tidak membuat draft setengah jadi", async () => {
   for (const mode of ["refusal", "malformed", "partial_output", "forbidden_claim", "duplicate_hook", "missing_youtube_title"] as const) {
     const campaignId = await createCampaign(`FAIL-${mode}`);
     const run = await createCampaignPlanRun(campaignId, { ...validRunInput(), requested_content_count: 5 });
-    const result = await processNextRun(pool!, loadWorkerConfig({ workerId: `test-${mode}`, fakeMode: mode, maxAttempts: 3 }));
+    const result = await processNextRun(pool!, loadWorkerConfig({ workerId: `test-${mode}`, fakeMode: mode, maxAttempts: 1 }));
     assert.equal(result.runId, run.id);
     const rows = await pool!.query(
       `SELECT r.status,
@@ -497,7 +497,11 @@ maybeTest("partial batch resume tidak mengulang completed batch", async () => {
   await pool!.query(`UPDATE campaign_plan_runs SET next_attempt_at = now() WHERE id = $1`, [run.id]);
   await pool!.query(`UPDATE campaign_plan_generation_batches SET next_attempt_at = now() WHERE run_id = $1`, [run.id]);
 
-  const second = await processNextRun(pool!, loadWorkerConfig({ workerId: "resume-worker-2", maxAttempts: 3, providerFactory }));
+  const resumeConfig = loadWorkerConfig({ workerId: "resume-worker-2", maxAttempts: 3, providerFactory });
+  const second = await waitFor(
+    () => processNextRun(pool!, resumeConfig),
+    (result) => result.runId === run.id && result.result !== "none"
+  );
   assert.equal(second.result, "finalized");
   assert.deepEqual(calls, [1, 2, 3, 3, 4, 5, 6]);
   batches = await pool!.query(

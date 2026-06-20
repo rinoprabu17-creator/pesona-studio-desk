@@ -99,10 +99,6 @@ export async function claimNextRun(pool: pg.Pool, config = loadWorkerConfig()): 
 }
 
 export async function processNextRun(pool: pg.Pool, config = loadWorkerConfig()): Promise<{ processed: boolean; runId: string | null; result: string }> {
-  if (config.provider !== "fake") {
-    throw new Error("campaign_planner_provider_unavailable");
-  }
-
   await recoverStaleJobs(pool, config);
   const run = await claimNextRun(pool, config);
   if (!run) {
