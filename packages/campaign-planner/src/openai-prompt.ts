@@ -46,6 +46,11 @@ function buildStaticInstructions(promptVersion: string): string {
     "Aturan klaim bisnis wajib:",
     "1. Mockup adalah preview awal atau simulasi awal. Mockup tidak ada revisi dan tidak boleh dijanjikan dapat direvisi.",
     "   Jangan menulis klaim bermakna: mockup bisa direvisi, revisi mockup, mockup sampai cocok, mockup berkali-kali, atau mockup sepuasnya.",
+    "   Untuk content_pillar mockup_magnet atau offer mockup awal, hindari kata revisi pada item tersebut.",
+    "   Jangan menulis: mockup dapat disesuaikan sampai cocok, mockup bisa diubah sampai cocok, atau mockup dibuat berulang sampai cocok.",
+    "   Gunakan istilah aman: preview awal, simulasi awal, gambaran awal, contoh tampilan awal.",
+    "   CTA aman: Ketik MOCKUP untuk melihat preview awal. Kirim nama sekolah untuk dibuatkan simulasi awal.",
+    "   Jangan membuat CTA yang menjanjikan revisi mockup atau mockup sampai cocok.",
     "   Jika membahas revisi, wajib hanya untuk revisi desain final, bukan mockup awal.",
     "   Aman: Mockup awal sebagai preview awal. Tidak aman: mockup bisa direvisi sampai cocok.",
     "2. Desain Gratis hanya setelah cocok penawaran atau cocok harga.",
@@ -71,6 +76,10 @@ function buildDynamicInput(input: CampaignPlannerProviderBatchInput, promptVersi
       batch_index: input.batch_index,
       strategy_slots: input.strategy_slots
     },
+    slot_generation_guidance: input.strategy_slots.map((slot) => ({
+      draft_sequence: slot.draft_sequence,
+      guidance: buildSlotGuidance(slot)
+    })),
     selected_channels: Array.from(new Set(input.strategy_slots.flatMap((slot) => slot.publications.map((publication) => publication.channel)))),
     active_products: input.knowledge.products,
     active_colors: input.knowledge.colors,
@@ -86,4 +95,16 @@ function buildDynamicInput(input: CampaignPlannerProviderBatchInput, promptVersi
     input.owner_brief || "",
     "UNTRUSTED OWNER BRIEF END"
   ].join("\n");
+}
+
+function buildSlotGuidance(slot: CampaignPlannerProviderBatchInput["strategy_slots"][number]): string[] {
+  const guidance: string[] = [];
+  if (slot.content_pillar === "mockup_magnet" || slot.primary_offer_code === "mockup_awal_gratis") {
+    guidance.push("Mockup wajib dibingkai sebagai preview awal, simulasi awal, gambaran awal, atau contoh tampilan awal.");
+    guidance.push("Hindari kata revisi pada slot mockup_magnet; jangan tulis revisi mockup, mockup bisa direvisi, mockup sampai cocok, mockup berkali-kali, mockup sepuasnya, atau mockup dapat disesuaikan sampai cocok.");
+    guidance.push("CTA aman: Ketik MOCKUP untuk melihat preview awal.");
+    guidance.push("CTA aman: Kirim nama sekolah untuk dibuatkan simulasi awal.");
+    guidance.push("CTA tidak boleh menjanjikan revisi, perubahan berulang, atau mockup sampai cocok.");
+  }
+  return guidance;
 }

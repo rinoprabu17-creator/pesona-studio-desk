@@ -45,7 +45,7 @@ function hasMockupNoRevisionContext(text: string): boolean {
 
 function hasMockupRevisionPromise(text: string): boolean {
   if (!/mockup/.test(text)) return false;
-  const unsafe = hasAny(text, [/mockup bisa direvisi/, /mockup.*bisa.*revisi/, /mockup.*revisi sepuasnya/, /mockup.*berkali-kali/, /mockup.*sampai cocok/, /revisi sampai cocok/]);
+  const unsafe = hasAny(text, [/mockup bisa direvisi/, /mockup.*bisa.*revisi/, /mockup.*revisi sepuasnya/, /mockup.*sepuasnya/, /mockup.*berkali-kali/, /mockup.*sampai cocok/, /revisi sampai cocok/]);
   if (unsafe) return true;
   return hasAny(text, [/revisi mockup/, /mockup.*revisi/]) && !hasMockupNoRevisionContext(text);
 }

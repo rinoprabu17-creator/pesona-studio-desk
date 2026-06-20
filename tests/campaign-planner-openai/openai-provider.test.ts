@@ -379,8 +379,16 @@ test("OpenAI prompt dan schema tidak memberi ruang strategy identity provider", 
   }
   assert.ok(prompt.instructions.includes("Mockup adalah preview awal"));
   assert.ok(prompt.instructions.includes("Mockup tidak ada revisi"));
+  assert.ok(prompt.instructions.includes("Untuk content_pillar mockup_magnet"));
+  assert.ok(prompt.instructions.includes("hindari kata revisi"));
   assert.ok(prompt.instructions.includes("mockup sampai cocok"));
+  assert.ok(prompt.instructions.includes("mockup dapat disesuaikan sampai cocok"));
+  assert.ok(prompt.instructions.includes("Ketik MOCKUP untuk melihat preview awal"));
+  assert.ok(prompt.instructions.includes("Kirim nama sekolah untuk dibuatkan simulasi awal"));
   assert.ok(prompt.instructions.includes("Jika membahas revisi, wajib hanya untuk revisi desain final, bukan mockup awal"));
+  assert.ok(prompt.input.includes("slot_generation_guidance"));
+  assert.ok(prompt.input.includes("Mockup wajib dibingkai sebagai preview awal"));
+  assert.ok(prompt.input.includes("CTA tidak boleh menjanjikan revisi"));
   assert.ok(prompt.instructions.includes("Garansi hanya cacat produksi"));
   assert.ok(prompt.instructions.includes("Garansi ganti baru untuk cacat produksi"));
   assert.ok(prompt.instructions.includes("Garansi produk bermasalah tanpa konteks cacat produksi"));
@@ -418,6 +426,39 @@ test("OpenAI mocked output tetap melewati claim validation mockup dan garansi", 
   }]);
   assert.ok(mockupResult.errors.some((error) => error.code === "mockup_revision_promise"));
 
+  for (const phrase of [
+    "mockup bisa direvisi",
+    "revisi mockup",
+    "mockup sampai cocok",
+    "mockup berkali-kali",
+    "mockup sepuasnya",
+    "mockup dapat disesuaikan sampai cocok"
+  ]) {
+    const unsafeItems = baseItems.map((item, index) =>
+      index === mockupIndex
+        ? {
+            ...item,
+            title: "Mockup awal sekolah",
+            hook: `Klaim tidak aman: ${phrase}.`,
+            angle: "Mockup awal sebagai preview awal.",
+            cta_text: "Chat admin untuk melihat preview awal.",
+            planning_reason: "Fixture memastikan phrase unsafe tetap ditolak."
+          }
+        : item
+    );
+    const unsafeResult = consolidateCampaignPlan(input, strategy, [{
+      provider_name: "openai",
+      model_name: "gpt-test",
+      response_id: `resp_mockup_${phrase.replace(/\W+/g, "_")}`,
+      usage: null,
+      items: unsafeItems
+    }]);
+    assert.ok(
+      unsafeResult.errors.some((error) => error.code === "mockup_revision_promise"),
+      `${phrase} harus ditolak`
+    );
+  }
+
   const garansiUnsafeItems = baseItems.map((item, index) =>
     index === garansiIndex
       ? {
@@ -444,10 +485,10 @@ test("OpenAI mocked output tetap melewati claim validation mockup dan garansi", 
       return {
         ...item,
         title: "Mockup awal sebagai preview awal",
-        hook: "Mockup awal sebagai preview awal, tanpa revisi mockup.",
-        angle: "Mockup awal sebagai preview awal, tanpa revisi mockup.",
-        cta_text: "Chat admin untuk mockup awal sebagai preview awal.",
-        planning_reason: "Mockup hanya preview awal dan tidak menjanjikan revisi."
+        hook: "Mockup awal sebagai preview awal untuk sekolah.",
+        angle: "Simulasi awal memberi gambaran awal tampilan sampul.",
+        cta_text: "Ketik MOCKUP untuk melihat preview awal.",
+        planning_reason: "Mockup diposisikan sebagai preview awal."
       };
     }
     if (index === garansiIndex) {
@@ -471,6 +512,30 @@ test("OpenAI mocked output tetap melewati claim validation mockup dan garansi", 
   }]);
   assert.equal(safeResult.errors.some((error) => error.code === "mockup_revision_promise"), false);
   assert.equal(safeResult.errors.some((error) => error.code === "garansi_scope_missing"), false);
+
+  const finalRevisionIndex = strategy.findIndex((slot) => slot.primary_offer_code === "revisi_final_sampai_desain_ok");
+  assert.notEqual(finalRevisionIndex, -1);
+  const finalRevisionItems = baseItems.map((item, index) =>
+    index === finalRevisionIndex
+      ? {
+          ...item,
+          title: "Revisi desain final setelah cocok penawaran",
+          hook: "Revisi desain final tersedia setelah cocok penawaran sampai Desain OK.",
+          angle: "Admin membantu revisi desain final hingga Desain OK.",
+          cta_text: "Chat admin untuk bahas revisi desain final setelah cocok penawaran.",
+          planning_reason: "Revisi dibatasi pada desain final dan menyebut Desain OK."
+        }
+      : item
+  );
+  const finalRevisionResult = consolidateCampaignPlan(input, strategy, [{
+    provider_name: "openai",
+    model_name: "gpt-test",
+    response_id: "resp_final_revision_safe",
+    usage: null,
+    items: finalRevisionItems
+  }]);
+  assert.equal(finalRevisionResult.errors.some((error) => error.code === "mockup_revision_promise"), false);
+  assert.equal(finalRevisionResult.errors.some((error) => error.code === "revisi_final_context_missing"), false);
 });
 
 test("secret handling, client config, dan config validation aman", () => {
