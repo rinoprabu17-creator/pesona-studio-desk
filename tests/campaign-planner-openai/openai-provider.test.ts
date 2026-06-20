@@ -434,6 +434,7 @@ test("OpenAI mocked output tetap melewati claim validation mockup dan garansi", 
 
   for (const phrase of [
     "mockup bisa direvisi",
+    "mockup dapat direvisi",
     "revisi mockup",
     "mockup sampai cocok",
     "mockup berkali-kali",

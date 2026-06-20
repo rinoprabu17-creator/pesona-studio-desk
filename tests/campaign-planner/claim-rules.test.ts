@@ -115,6 +115,38 @@ test("mockup revision diagnostic menunjuk field dan excerpt aman", () => {
   const safeResult = validateClaims(draftWithMockupField("hook", "Mockup awal sebagai preview awal, tanpa revisi mockup."));
   assert.equal(safeResult.errors.some((error) => error.code === "mockup_revision_promise"), false);
 
+  for (const text of [
+    "Preview awal dengan bahasa aman tanpa janji revisi mockup.",
+    "Mockup awal tanpa revisi untuk memberi gambaran awal.",
+    "Tidak ada revisi mockup karena hanya preview awal.",
+    "Bukan revisi mockup, hanya contoh tampilan awal.",
+    "Tidak menjanjikan revisi mockup pada preview awal.",
+    "Preview awal tanpa revisi untuk memberi gambaran awal."
+  ]) {
+    const result = validateClaims(draftWithMockupField("planning_reason", text));
+    assert.equal(
+      result.errors.some((error) => error.code === "mockup_revision_promise"),
+      false,
+      `${text} harus aman`
+    );
+  }
+
+  for (const text of [
+    "Mockup bisa direvisi setelah sekolah kirim data.",
+    "Mockup dapat direvisi setelah sekolah kirim data.",
+    "Revisi mockup sepuasnya sampai cocok.",
+    "Mockup dapat disesuaikan sampai cocok.",
+    "Mockup bisa diubah sampai cocok.",
+    "Mockup berkali-kali untuk sekolah.",
+    "Mockup sepuasnya sebelum order."
+  ]) {
+    const result = validateClaims(draftWithMockupField("hook", text));
+    assert.ok(
+      result.errors.some((error) => error.code === "mockup_revision_promise"),
+      `${text} harus ditolak`
+    );
+  }
+
   const rawLong = `Mockup bisa direvisi ${"x".repeat(300)} OPENAI_API_KEY=secret sk-testkey`;
   const diagnosticResult = validateClaims(draftWithMockupField("hook", rawLong));
   const diagnosticError = diagnosticResult.errors.find((error) => error.code === "mockup_revision_promise");
