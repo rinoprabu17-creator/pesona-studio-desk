@@ -97,7 +97,14 @@ type CalendarPublicationRow = {
 
 function formatDate(value: unknown): string {
   if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: calendarTimezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(value);
+    const part = (type: string) => parts.find((item) => item.type === type)?.value || "";
+    return `${part("year")}-${part("month")}-${part("day")}`;
   }
   return String(value || "").slice(0, 10);
 }

@@ -33,6 +33,8 @@ export type CampaignPlanRunSummary = {
   created_at: string;
   started_at: string | null;
   completed_at: string | null;
+  approved_at: string | null;
+  imported_at: string | null;
 };
 
 type CampaignForPlanner = {
@@ -65,7 +67,16 @@ function ensureFakeProvider(): void {
 }
 
 function mapDate(value: unknown): string {
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (value instanceof Date) {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Jakarta",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).formatToParts(value);
+    const part = (type: string) => parts.find((item) => item.type === type)?.value || "";
+    return `${part("year")}-${part("month")}-${part("day")}`;
+  }
   return String(value || "").slice(0, 10);
 }
 
@@ -76,7 +87,9 @@ function mapRun(row: any): CampaignPlanRunSummary {
     selected_channels: row.selected_channels || [],
     created_at: row.created_at instanceof Date ? row.created_at.toISOString() : String(row.created_at),
     started_at: row.started_at ? (row.started_at instanceof Date ? row.started_at.toISOString() : String(row.started_at)) : null,
-    completed_at: row.completed_at ? (row.completed_at instanceof Date ? row.completed_at.toISOString() : String(row.completed_at)) : null
+    completed_at: row.completed_at ? (row.completed_at instanceof Date ? row.completed_at.toISOString() : String(row.completed_at)) : null,
+    approved_at: row.approved_at ? (row.approved_at instanceof Date ? row.approved_at.toISOString() : String(row.approved_at)) : null,
+    imported_at: row.imported_at ? (row.imported_at instanceof Date ? row.imported_at.toISOString() : String(row.imported_at)) : null
   };
 }
 
@@ -248,7 +261,8 @@ export async function listCampaignPlanRuns(campaignId: string): Promise<Campaign
   const rows = await query<any>(
     `SELECT r.id, r.campaign_id, c.code AS campaign_code, c.name AS campaign_name,
             r.status, r.provider, r.model, r.requested_content_count, r.selected_channels,
-            r.validation_summary, r.error_code, r.error_message, r.created_at, r.started_at, r.completed_at
+            r.validation_summary, r.error_code, r.error_message, r.created_at, r.started_at, r.completed_at,
+            r.approved_at, r.imported_at
      FROM campaign_plan_runs r
      JOIN campaigns c ON c.id = r.campaign_id
      WHERE r.campaign_id = $1
@@ -264,7 +278,8 @@ export async function getCampaignPlanRun(id: string) {
     `SELECT r.id, r.campaign_id, c.code AS campaign_code, c.name AS campaign_name,
             r.status, r.provider, r.model, r.prompt_version, r.requested_content_count,
             r.selected_channels, r.plan_summary, r.validation_summary,
-            r.error_code, r.error_message, r.created_at, r.started_at, r.completed_at
+            r.error_code, r.error_message, r.created_at, r.started_at, r.completed_at,
+            r.approved_at, r.imported_at
      FROM campaign_plan_runs r
      JOIN campaigns c ON c.id = r.campaign_id
      WHERE r.id = $1`,
@@ -286,6 +301,21 @@ export async function getCampaignPlanRun(id: string) {
   const draftCounts = await query<{ items: string; publications: string }>(
     `SELECT COUNT(DISTINCT i.id)::text AS items,
             COUNT(p.id)::text AS publications
+     FROM campaign_plan_draft_items i
+     LEFT JOIN campaign_plan_draft_publications p ON p.draft_item_id = i.id
+     WHERE i.run_id = $1`,
+    [id]
+  );
+  const importCounts = await query<{
+    approved_draft_items: string;
+    rejected_draft_items: string;
+    imported_content_items: string;
+    imported_publications: string;
+  }>(
+    `SELECT COUNT(DISTINCT i.id) FILTER (WHERE i.review_status = 'approved')::text AS approved_draft_items,
+            COUNT(DISTINCT i.id) FILTER (WHERE i.review_status = 'rejected')::text AS rejected_draft_items,
+            COUNT(DISTINCT i.imported_content_item_id) FILTER (WHERE i.review_status = 'approved')::text AS imported_content_items,
+            COUNT(p.imported_publication_id) FILTER (WHERE i.review_status = 'approved')::text AS imported_publications
      FROM campaign_plan_draft_items i
      LEFT JOIN campaign_plan_draft_publications p ON p.draft_item_id = i.id
      WHERE i.run_id = $1`,
@@ -320,12 +350,20 @@ export async function getCampaignPlanRun(id: string) {
       items: Number(draftCounts[0]?.items || 0),
       publications: Number(draftCounts[0]?.publications || 0)
     },
+    import_summary: {
+      approved_draft_items: Number(importCounts[0]?.approved_draft_items || 0),
+      rejected_draft_items: Number(importCounts[0]?.rejected_draft_items || 0),
+      content_items_created: Number(importCounts[0]?.imported_content_items || 0),
+      publications_created: Number(importCounts[0]?.imported_publications || 0)
+    },
     validation_summary: run.validation_summary,
     error: run.error_code ? { code: run.error_code, message: run.error_message || "Plan run gagal." } : null,
     plan_summary: run.plan_summary,
     created_at: run.created_at instanceof Date ? run.created_at.toISOString() : String(run.created_at),
     started_at: run.started_at ? (run.started_at instanceof Date ? run.started_at.toISOString() : String(run.started_at)) : null,
-    completed_at: run.completed_at ? (run.completed_at instanceof Date ? run.completed_at.toISOString() : String(run.completed_at)) : null
+    completed_at: run.completed_at ? (run.completed_at instanceof Date ? run.completed_at.toISOString() : String(run.completed_at)) : null,
+    approved_at: run.approved_at ? (run.approved_at instanceof Date ? run.approved_at.toISOString() : String(run.approved_at)) : null,
+    imported_at: run.imported_at ? (run.imported_at instanceof Date ? run.imported_at.toISOString() : String(run.imported_at)) : null
   };
 }
 

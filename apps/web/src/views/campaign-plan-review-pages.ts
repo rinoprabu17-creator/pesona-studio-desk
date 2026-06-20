@@ -148,6 +148,7 @@ export function renderCampaignPlanReviewPage(run: any, url: URL): string {
     success ? `<div class="notice success">${escapeHtml(success)}</div>` : "",
     error ? `<div class="notice error">${escapeHtml(error)}</div>` : "",
     run.status === "approved" ? `<div class="notice success">Rencana telah disetujui dan menunggu proses import.</div>` : "",
+    run.status === "imported" ? `<div class="notice success">Rencana telah berhasil diimpor.</div>` : "",
     run.status === "rejected" ? `<div class="notice error">Rencana telah ditolak.</div>` : ""
   ].join("");
   const readOnly = run.status !== "ready_for_review";
@@ -166,6 +167,15 @@ export function renderCampaignPlanReviewPage(run: any, url: URL): string {
       <button class="button-danger" type="submit">Tolak Rencana</button>
     </form>
   `;
+  const importButton = run.status === "approved"
+    ? `<a class="button" href="/campaign-plan-runs/${escapeHtml(run.id)}/import">Import ke Kalender Konten</a>`
+    : "";
+  const importedLinks = run.status === "imported"
+    ? `
+      <a class="button" href="/content-calendar">Buka Kalender Konten</a>
+      <a class="button button-secondary" href="/campaign-plan-runs/${escapeHtml(run.id)}/import">Lihat Hasil Import</a>
+    `
+    : "";
 
   return renderLayout(
     "/campaigns",
@@ -176,6 +186,8 @@ export function renderCampaignPlanReviewPage(run: any, url: URL): string {
       ${message}
       <div class="button-row">
         ${actionButtons}
+        ${importButton}
+        ${importedLinks}
         <a class="button button-secondary" href="/campaign-plan-runs/${escapeHtml(run.id)}">Kembali ke Run Status</a>
       </div>
       ${renderReadOnlyTable(["Field", "Nilai"], [
@@ -186,6 +198,9 @@ export function renderCampaignPlanReviewPage(run: any, url: URL): string {
         ["Selected Channels", escapeHtml(run.selected_channels.map((channel: string) => channelLabels[channel] || channel).join(", "))],
         ["Run Status", escapeHtml(runStatusLabels[run.status] || run.status)],
         ["Validation Summary", run.validation_summary ? escapeHtml(JSON.stringify(run.validation_summary)) : "-"],
+        ["Approved At", escapeHtml(formatDateTime(run.approved_at))],
+        ["Imported At", escapeHtml(formatDateTime(run.imported_at))],
+        ["Import Summary", `${escapeHtml(run.summary.imported_content_items || 0)} content item / ${escapeHtml(run.summary.imported_publications || 0)} publication`],
         ["Progress Review", `${escapeHtml(run.summary.progress_percent)}%`]
       ])}
       ${summaryCards(run.summary)}

@@ -427,8 +427,8 @@ maybeTest("final consolidation atomic dan idempotent tanpa duplicate draft", asy
     fakeMode: "valid",
     finalizeFailAfterDraftItems: 3
   });
-  const failed = await processNextRun(pool!, failConfig);
-  assert.equal(failed.result, "failed");
+  const failed = await processUntilRunStatus(run.id, "failed", failConfig);
+  assert.equal(failed.status, "failed");
   let row = await pool!.query(`SELECT status FROM campaign_plan_runs WHERE id = $1`, [run.id]);
   assert.equal(row.rows[0].status, "failed");
   let counts = await stagingCounts(run.id);
@@ -436,8 +436,12 @@ maybeTest("final consolidation atomic dan idempotent tanpa duplicate draft", asy
   assert.equal(counts.publications, 0);
 
   await retryCampaignPlanRun(run.id);
-  const valid = await processNextRun(pool!, loadWorkerConfig({ workerId: "atomic-valid", fakeMode: "valid" }));
-  assert.equal(valid.result, "finalized");
+  const valid = await processUntilRunStatus(
+    run.id,
+    "ready_for_review",
+    loadWorkerConfig({ workerId: "atomic-valid", fakeMode: "valid" })
+  );
+  assert.equal(valid.status, "ready_for_review");
   counts = await stagingCounts(run.id);
   assert.equal(counts.items, 30);
   assert.equal(counts.publications, 150);
@@ -512,7 +516,10 @@ maybeTest("cancel race tidak menyimpan output setelah provider selesai", async (
     heartbeatIntervalMs: 100,
     providerFactory: () => validProvider(500)
   });
-  const processing = processNextRun(pool!, config);
+  const claimed = await claimNextRun(pool!, config);
+  assert.equal(claimed.id, run.id);
+  const client = await pool!.connect();
+  const processing = processClaimedRun(client, claimed, config).finally(() => client.release());
   await waitFor(
     () => pool!.query(`SELECT status FROM campaign_plan_generation_batches WHERE run_id = $1 ORDER BY batch_number LIMIT 1`, [run.id]),
     (result) => result.rows[0]?.status === "generating"
@@ -520,7 +527,7 @@ maybeTest("cancel race tidak menyimpan output setelah provider selesai", async (
   const cancelled = await cancelCampaignPlanRun(run.id);
   assert.equal(cancelled.status, "cancelled");
   const result = await processing;
-  assert.ok(["lost_lease", "cancelled"].includes(result.result));
+  assert.ok(["lost_lease", "cancelled"].includes(result));
 
   const row = await pool!.query(
     `SELECT r.status,

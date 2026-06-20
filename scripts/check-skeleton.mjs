@@ -21,6 +21,8 @@ const requiredPaths = [
   "apps/web/src/campaign-plan-run-errors.ts",
   "apps/web/src/campaign-plan-review-service.ts",
   "apps/web/src/campaign-plan-review-errors.ts",
+  "apps/web/src/campaign-plan-import-service.ts",
+  "apps/web/src/campaign-plan-import-errors.ts",
   "apps/web/src/content-item-service.ts",
   "apps/web/src/content-item-errors.ts",
   "apps/web/src/content-publication-service.ts",
@@ -37,6 +39,8 @@ const requiredPaths = [
   "apps/web/src/routes/campaign-plan-run-page-routes.ts",
   "apps/web/src/routes/campaign-plan-review-api-routes.ts",
   "apps/web/src/routes/campaign-plan-review-page-routes.ts",
+  "apps/web/src/routes/campaign-plan-import-api-routes.ts",
+  "apps/web/src/routes/campaign-plan-import-page-routes.ts",
   "apps/web/src/routes/content-item-api-routes.ts",
   "apps/web/src/routes/content-item-page-routes.ts",
   "apps/web/src/routes/content-publication-api-routes.ts",
@@ -46,6 +50,7 @@ const requiredPaths = [
   "apps/web/src/views/campaign-pages.ts",
   "apps/web/src/views/campaign-plan-run-pages.ts",
   "apps/web/src/views/campaign-plan-review-pages.ts",
+  "apps/web/src/views/campaign-plan-import-pages.ts",
   "apps/web/src/views/content-calendar-page.ts",
   "apps/web/src/views/content-item-pages.ts",
   "apps/web/src/views/content-publication-pages.ts",
@@ -76,6 +81,7 @@ const requiredPaths = [
   "tests/campaign-planner/consolidation.test.ts",
   "tests/campaign-plan-runs/generation-runs.test.ts",
   "tests/campaign-plan-review/draft-review.test.ts",
+  "tests/campaign-plan-import/approved-import.test.ts",
   "tests/bootstrap-env.mjs",
   "tests/fixtures/campaign-planner/input.ts",
   "migrations/001_phase1a_libraries.sql",
@@ -240,6 +246,14 @@ const reviewWebSource = [
   "apps/web/src/validation/campaign-plan-review-validation.ts"
 ].filter(existsSync).map((path) => readFileSync(path, "utf8")).join("\n");
 const reviewTestsSource = readSources("tests/campaign-plan-review");
+const importWebSource = [
+  "apps/web/src/campaign-plan-import-service.ts",
+  "apps/web/src/campaign-plan-import-errors.ts",
+  "apps/web/src/routes/campaign-plan-import-api-routes.ts",
+  "apps/web/src/routes/campaign-plan-import-page-routes.ts",
+  "apps/web/src/views/campaign-plan-import-pages.ts"
+].filter(existsSync).map((path) => readFileSync(path, "utf8")).join("\n");
+const importTestsSource = readSources("tests/campaign-plan-import");
 for (const route of requiredRoutes) {
   if (webSource.includes(route)) {
     pass(`Route Phase 1A tersedia: ${route}`);
@@ -512,13 +526,9 @@ for (const requiredRoute of [
 }
 
 for (const forbiddenReviewText of [
-  "/import",
-  "approve-import",
   "approveAndImport",
   "createContentItem",
   "createContentPublication",
-  "status = 'importing'",
-  "status = 'imported'",
   "OPENAI_API_KEY",
   "from \"openai\"",
   "@openai/agents"
@@ -543,6 +553,82 @@ for (const forbiddenOperationalInsert of [
   }
 }
 
+for (const requiredImportText of [
+  "CampaignPlanImportError",
+  "importApprovedCampaignPlanRun",
+  "getCampaignPlanImportPreview",
+  "api\\/campaign-plan-runs",
+  "/import",
+  "approved",
+  "importing",
+  "imported",
+  "imported_content_item_id",
+  "imported_publication_id",
+  "imported_at",
+  "withTransaction",
+  "FOR UPDATE",
+  "createContentItemWithClient",
+  "createContentPublicationWithClient",
+  "campaign_plan_reference_unavailable",
+  "campaign_plan_campaign_changed",
+  "campaign_plan_date_outside_campaign",
+  "campaign_plan_import_state_inconsistent",
+  "campaign_plan_import_conflict",
+  "already_imported"
+]) {
+  if (importWebSource.includes(requiredImportText) || importTestsSource.includes(requiredImportText)) {
+    pass(`Phase 2A.4 import memuat: ${requiredImportText}`);
+  } else {
+    fail(`Phase 2A.4 import belum memuat: ${requiredImportText}`);
+  }
+}
+
+for (const requiredImportTestText of [
+  "after_content_items",
+  "after_publications",
+  "before_mapping",
+  "before_finalize",
+  "campaign_plan_reference_unavailable",
+  "campaign_plan_campaign_changed",
+  "campaign_plan_date_outside_campaign",
+  "campaign_plan_run_not_importable",
+  "campaign_plan_import_state_inconsistent",
+  "already_imported",
+  "getContentCalendar",
+  "renderCampaignPlanImportPage"
+]) {
+  if (importTestsSource.includes(requiredImportTestText)) {
+    pass(`Phase 2A.4 test memuat: ${requiredImportTestText}`);
+  } else {
+    fail(`Phase 2A.4 test belum memuat: ${requiredImportTestText}`);
+  }
+}
+
+const migration006Files = readdirSync("migrations").filter((fileName) => fileName.startsWith("006_"));
+if (migration006Files.length) {
+  fail(`Phase 2A.4 tidak boleh membuat migration 006: ${migration006Files.join(", ")}`);
+} else {
+  pass("Tidak ada migration 006 untuk Phase 2A.4");
+}
+
+if (importWebSource.includes("contentCode") || importWebSource.includes("padStart(2")) {
+  fail("Import service tidak boleh membuat content code generator kedua");
+} else {
+  pass("Import service tidak membuat content code generator kedua");
+}
+
+if (campaignPlannerWorkerSource.includes("importApprovedCampaignPlanRun") || campaignPlannerWorkerSource.includes("campaign-plan-import")) {
+  fail("Campaign Planner worker tidak boleh menjalankan import operational");
+} else {
+  pass("Tidak ada import worker Campaign Planner");
+}
+
+if (webSource.includes("OPENAI_API_KEY") || webSource.includes("from \"openai\"") || importWebSource.includes("@openai/agents")) {
+  fail("Phase 2A.4 tidak boleh menambahkan OpenAI provider/key/call");
+} else {
+  pass("Tidak ada OpenAI pada Phase 2A.4");
+}
+
 const trackedLikeSources = [
   readFileSync("README.local.md", "utf8"),
   readFileSync("docs/PHASE_2A_PLAN.md", "utf8"),
@@ -550,9 +636,17 @@ const trackedLikeSources = [
   packageSource,
   testsSource,
   planRunTestsSource,
+  reviewTestsSource,
+  importTestsSource,
   webSource,
   campaignPlannerWorkerSource
 ].join("\n");
+
+if (trackedLikeSources.toLowerCase().includes("n8n import workflow")) {
+  fail("Phase 2A.4 tidak boleh membuat n8n import workflow");
+} else {
+  pass("Tidak ada n8n import workflow");
+}
 if (trackedLikeSources.includes("OPENAI_API_KEY")) {
   fail("Phase 2A.2 tidak boleh menambahkan OpenAI API key handling pada tracked source");
 } else {
@@ -576,7 +670,6 @@ for (const forbiddenText of [
   "approve all",
   "Approve All",
   "/approve",
-  "/import",
   "importContent",
   "content_items (",
   "content_publications ("

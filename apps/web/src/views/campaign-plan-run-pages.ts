@@ -144,11 +144,23 @@ export function renderCampaignPlanRunDetailPage(run: any, url: URL): string {
   const approvedNote = run.status === "approved"
     ? `<div class="notice success">Rencana telah disetujui dan menunggu proses import.</div>`
     : "";
+  const importedNote = run.status === "imported"
+    ? `<div class="notice success">Rencana telah berhasil diimpor.</div>`
+    : "";
   const rejectedNote = run.status === "rejected"
     ? `<div class="notice error">Rencana telah ditolak.</div>`
     : "";
   const reviewButton = run.status === "ready_for_review"
     ? `<a class="button" href="/campaign-plan-runs/${escapeHtml(run.id)}/review">Review Draft Konten</a>`
+    : "";
+  const importButton = run.status === "approved"
+    ? `<a class="button" href="/campaign-plan-runs/${escapeHtml(run.id)}/import">Import ke Kalender Konten</a>`
+    : "";
+  const importedLinks = run.status === "imported"
+    ? `
+      <a class="button" href="/content-calendar">Buka Kalender Konten</a>
+      <a class="button button-secondary" href="/campaign-plan-runs/${escapeHtml(run.id)}/import">Lihat Hasil Import</a>
+    `
     : "";
   const error = run.error ? `<div class="notice error">${escapeHtml(run.error.code)}: ${escapeHtml(run.error.message)}</div>` : "";
 
@@ -169,10 +181,12 @@ export function renderCampaignPlanRunDetailPage(run: any, url: URL): string {
     "Generation Run",
     "Status generation run Campaign Planner.",
     `
-      ${successHtml}${readyNote}${approvedNote}${rejectedNote}${error}
+      ${successHtml}${readyNote}${approvedNote}${importedNote}${rejectedNote}${error}
       <div class="button-row">
         <a class="button button-secondary" href="/campaigns/${escapeHtml(run.campaign.id)}">Kembali ke Campaign</a>
         ${reviewButton}
+        ${importButton}
+        ${importedLinks}
         ${retryButton}${cancelButton}
       </div>
       ${renderReadOnlyTable(["Field", "Nilai"], [
@@ -185,8 +199,11 @@ export function renderCampaignPlanRunDetailPage(run: any, url: URL): string {
         ["Dibuat", escapeHtml(formatDateTime(run.created_at))],
         ["Mulai", escapeHtml(formatDateTime(run.started_at))],
         ["Selesai", escapeHtml(formatDateTime(run.completed_at))],
+        ["Disetujui", escapeHtml(formatDateTime(run.approved_at))],
+        ["Diimport", escapeHtml(formatDateTime(run.imported_at))],
         ["Progress Batch", `${run.batch_progress.completed}/${run.batch_progress.total} completed`],
         ["Draft", `${run.draft_counts.items} item / ${run.draft_counts.publications} publication`],
+        ["Import", `${run.import_summary.content_items_created}/${run.import_summary.approved_draft_items} content item, ${run.import_summary.publications_created} publication`],
         ["Validation", run.validation_summary ? escapeHtml(JSON.stringify(run.validation_summary)) : "-"]
       ])}
       <h2>Batch Progress</h2>
