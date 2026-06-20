@@ -1,0 +1,25 @@
+services:
+  web-app:
+    environment:
+      CAMPAIGN_PLANNER_PROVIDER: openai
+      CAMPAIGN_PLANNER_OPENAI_ENABLED: "true"
+      CAMPAIGN_PLANNER_PROMPT_VERSION: ${CAMPAIGN_PLANNER_PROMPT_VERSION:-campaign-planner-v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:?OPENAI_MODEL wajib diset untuk OpenAI override}
+      OPENAI_TIMEOUT_MS: ${OPENAI_TIMEOUT_MS:-120000}
+      OPENAI_MAX_OUTPUT_TOKENS: ${OPENAI_MAX_OUTPUT_TOKENS:-5000}
+
+  campaign-planner-worker:
+    environment:
+      CAMPAIGN_PLANNER_PROVIDER: openai
+      CAMPAIGN_PLANNER_OPENAI_ENABLED: "true"
+      CAMPAIGN_PLANNER_PROMPT_VERSION: ${CAMPAIGN_PLANNER_PROMPT_VERSION:-campaign-planner-v1}
+      OPENAI_MODEL: ${OPENAI_MODEL:?OPENAI_MODEL wajib diset untuk OpenAI override}
+      OPENAI_TIMEOUT_MS: ${OPENAI_TIMEOUT_MS:-120000}
+      OPENAI_MAX_OUTPUT_TOKENS: ${OPENAI_MAX_OUTPUT_TOKENS:-5000}
+      OPENAI_API_KEY_FILE: /run/secrets/openai_api_key
+    secrets:
+      - openai_api_key
+
+secrets:
+  openai_api_key:
+    file: ./secrets/openai_api_key.txt

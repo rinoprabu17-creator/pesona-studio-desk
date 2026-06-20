@@ -1,4 +1,5 @@
 import { hostname } from "node:os";
+import { loadCampaignPlannerRuntimeConfig } from "../../../packages/campaign-planner/src/index.ts";
 
 export type CampaignPlannerWorkerConfig = {
   provider: string;
@@ -8,8 +9,11 @@ export type CampaignPlannerWorkerConfig = {
   batchSize: number;
   workerId: string;
   fakeMode: string;
+  openaiEnabled: boolean;
+  openaiTimeoutMs: number;
+  openaiMaxOutputTokens: number;
   heartbeatIntervalMs: number;
-  providerFactory?: (mode: string) => {
+  providerFactory?: (context: { provider: string; model: string; promptVersion: string; fakeMode: string }) => {
     providerName: string;
     generateBatch(input: any): Promise<any>;
   };
@@ -45,10 +49,12 @@ function integerEnv(name: string, fallback: number, options: { min?: number; max
 }
 
 export function loadWorkerConfig(overrides: Partial<CampaignPlannerWorkerConfig> = {}): CampaignPlannerWorkerConfig {
-  const provider = overrides.provider ?? process.env.CAMPAIGN_PLANNER_PROVIDER ?? "fake";
-  if (provider !== "fake") {
-    throw new Error("campaign_planner_provider_unavailable");
-  }
+  const runtime = loadCampaignPlannerRuntimeConfig({
+    provider: overrides.provider as any,
+    openaiEnabled: overrides.openaiEnabled,
+    openaiTimeoutMs: overrides.openaiTimeoutMs,
+    openaiMaxOutputTokens: overrides.openaiMaxOutputTokens
+  });
 
   const fakeMode = overrides.fakeMode ?? process.env.CAMPAIGN_PLANNER_FAKE_MODE ?? "valid";
   if (!fakeModes.has(fakeMode)) {
@@ -59,13 +65,16 @@ export function loadWorkerConfig(overrides: Partial<CampaignPlannerWorkerConfig>
   const heartbeatIntervalMs = overrides.heartbeatIntervalMs ?? Math.max(100, Math.floor((leaseSeconds * 1000) / 3));
 
   return {
-    provider,
+    provider: runtime.provider,
     pollMs: overrides.pollMs ?? integerEnv("CAMPAIGN_PLANNER_POLL_MS", 2000),
     leaseSeconds,
     maxAttempts: overrides.maxAttempts ?? integerEnv("CAMPAIGN_PLANNER_MAX_ATTEMPTS", 3),
     batchSize: overrides.batchSize ?? integerEnv("CAMPAIGN_PLANNER_BATCH_SIZE", 5, { min: 1, max: 10 }),
     workerId: overrides.workerId ?? workerId(),
     fakeMode,
+    openaiEnabled: runtime.openaiEnabled,
+    openaiTimeoutMs: runtime.openaiTimeoutMs,
+    openaiMaxOutputTokens: runtime.openaiMaxOutputTokens,
     heartbeatIntervalMs,
     providerFactory: overrides.providerFactory,
     finalizeFailAfterDraftItems: overrides.finalizeFailAfterDraftItems ?? null

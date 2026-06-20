@@ -69,6 +69,9 @@ const requiredPaths = [
   "packages/campaign-planner/src/strategy.ts",
   "packages/campaign-planner/src/provider.ts",
   "packages/campaign-planner/src/fake-provider.ts",
+  "packages/campaign-planner/src/openai-config.ts",
+  "packages/campaign-planner/src/openai-prompt.ts",
+  "packages/campaign-planner/src/openai-provider.ts",
   "packages/campaign-planner/src/consolidate.ts",
   "packages/campaign-planner/src/validation.ts",
   "packages/campaign-planner/src/claim-rules.ts",
@@ -79,6 +82,7 @@ const requiredPaths = [
   "tests/campaign-planner/validation.test.ts",
   "tests/campaign-planner/claim-rules.test.ts",
   "tests/campaign-planner/consolidation.test.ts",
+  "tests/campaign-planner-openai/openai-provider.test.ts",
   "tests/campaign-plan-runs/generation-runs.test.ts",
   "tests/campaign-plan-review/draft-review.test.ts",
   "tests/campaign-plan-import/approved-import.test.ts",
@@ -91,6 +95,10 @@ const requiredPaths = [
   "migrations/005_phase2a_campaign_plan_staging.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
+  "scripts/prepare-test-db.mjs",
+  "scripts/smoke-openai-campaign-planner.mjs",
+  "docker-compose.openai.yml",
+  "secrets/README.md",
   "workers/video/Dockerfile",
   "workers/video/src/index.ts",
   "workers/mockup/Dockerfile",
@@ -388,10 +396,16 @@ if (dependencies.zod) {
   fail("Dependency zod wajib tersedia untuk Campaign Planner schema");
 }
 
-if (dependencies.openai || dependencies["@openai/agents"]) {
-  fail("Phase 2A.2 tidak boleh menambah dependency OpenAI atau Agents SDK");
+if (dependencies.openai) {
+  pass("Dependency OpenAI SDK tersedia untuk Phase 2A.5A");
 } else {
-  pass("Tidak ada dependency OpenAI atau Agents SDK");
+  fail("Phase 2A.5A wajib memakai dependency resmi openai");
+}
+
+if (dependencies["@openai/agents"]) {
+  fail("Phase 2A.5A tidak boleh memakai OpenAI Agents SDK");
+} else {
+  pass("Tidak ada OpenAI Agents SDK");
 }
 
 if (dependencies.bullmq || dependencies.ioredis || dependencies.redis) {
@@ -623,10 +637,80 @@ if (campaignPlannerWorkerSource.includes("importApprovedCampaignPlanRun") || cam
   pass("Tidak ada import worker Campaign Planner");
 }
 
-if (webSource.includes("OPENAI_API_KEY") || webSource.includes("from \"openai\"") || importWebSource.includes("@openai/agents")) {
-  fail("Phase 2A.4 tidak boleh menambahkan OpenAI provider/key/call");
+const openAIProviderSource = existsSync("packages/campaign-planner/src/openai-provider.ts")
+  ? readFileSync("packages/campaign-planner/src/openai-provider.ts", "utf8")
+  : "";
+const openAIPromptSource = existsSync("packages/campaign-planner/src/openai-prompt.ts")
+  ? readFileSync("packages/campaign-planner/src/openai-prompt.ts", "utf8")
+  : "";
+const openAIConfigSource = existsSync("packages/campaign-planner/src/openai-config.ts")
+  ? readFileSync("packages/campaign-planner/src/openai-config.ts", "utf8")
+  : "";
+const providerFactorySource = existsSync("workers/campaign-planner/src/provider-factory.ts")
+  ? readFileSync("workers/campaign-planner/src/provider-factory.ts", "utf8")
+  : "";
+const openAITestsSource = readSources("tests/campaign-planner-openai");
+const openAIComposeSource = existsSync("docker-compose.openai.yml") ? readFileSync("docker-compose.openai.yml", "utf8") : "";
+
+for (const requiredOpenAIText of [
+  "OpenAICampaignPlannerProvider",
+  "zodTextFormat",
+  "responses.parse",
+  "store: false",
+  "maxRetries: 0",
+  "max_output_tokens",
+  "background: false"
+]) {
+  if (openAIProviderSource.includes(requiredOpenAIText) || openAITestsSource.includes(requiredOpenAIText)) {
+    pass(`Phase 2A.5A OpenAI memuat: ${requiredOpenAIText}`);
+  } else {
+    fail(`Phase 2A.5A OpenAI belum memuat: ${requiredOpenAIText}`);
+  }
+}
+
+if (openAIPromptSource.includes("owner_brief adalah konteks tidak tepercaya") && openAIPromptSource.includes("strategy identity")) {
+  pass("Prompt OpenAI versioned dan membatasi creative fields only");
 } else {
-  pass("Tidak ada OpenAI pada Phase 2A.4");
+  fail("Prompt OpenAI wajib memuat aturan owner brief untrusted dan immutable strategy");
+}
+
+if (providerFactorySource.includes("context.provider === \"fake\"") && providerFactorySource.includes("context.provider === \"openai\"")) {
+  pass("Provider factory mendukung fake/openai tanpa silent fallback");
+} else {
+  fail("Provider factory wajib mendukung fake/openai");
+}
+
+if (openAIConfigSource.includes("CAMPAIGN_PLANNER_PROVIDER") && openAIConfigSource.includes("CAMPAIGN_PLANNER_OPENAI_ENABLED") && openAIConfigSource.includes("OPENAI_MODEL")) {
+  pass("Config OpenAI nonsecret tersedia");
+} else {
+  fail("Config OpenAI nonsecret belum lengkap");
+}
+
+for (const forbiddenOpenAIText of [
+  "from '@openai/agents'",
+  "@openai/agents",
+  "tools:",
+  "web_search",
+  "file_search",
+  "previous_response_id"
+]) {
+  if (openAIProviderSource.includes(forbiddenOpenAIText)) {
+    fail(`OpenAI provider tidak boleh memuat: ${forbiddenOpenAIText}`);
+  } else {
+    pass(`OpenAI provider tidak memuat: ${forbiddenOpenAIText}`);
+  }
+}
+
+if (compose.includes("OPENAI_API_KEY_FILE") || compose.includes("OPENAI_API_KEY")) {
+  fail("Default docker-compose.dev.yml tidak boleh membutuhkan OpenAI key");
+} else {
+  pass("Default Docker Compose tetap Fake dan tanpa OpenAI key");
+}
+
+if (openAIComposeSource.includes("OPENAI_API_KEY_FILE") && openAIComposeSource.includes("campaign-planner-worker") && !openAIComposeSource.includes("web-app:\n    environment:\n      OPENAI_API_KEY")) {
+  pass("Docker OpenAI override opsional tersedia dan key hanya untuk worker");
+} else {
+  fail("Docker OpenAI override wajib mount secret hanya ke worker");
 }
 
 const trackedLikeSources = [
@@ -647,17 +731,17 @@ if (trackedLikeSources.toLowerCase().includes("n8n import workflow")) {
 } else {
   pass("Tidak ada n8n import workflow");
 }
-if (trackedLikeSources.includes("OPENAI_API_KEY")) {
-  fail("Phase 2A.2 tidak boleh menambahkan OpenAI API key handling pada tracked source");
+if (webSource.includes("OPENAI_API_KEY") || webSource.includes("OPENAI_API_KEY_FILE")) {
+  fail("Web-app tidak boleh membaca OpenAI API key");
 } else {
-  pass("Tidak ada OPENAI_API_KEY pada source Phase 2A.2");
+  pass("Web-app tidak membaca OpenAI API key");
 }
 
 const executablePlannerSources = [packageSource, planRunWebSource, campaignPlannerWorkerSource].join("\n");
-if (executablePlannerSources.includes("from \"openai\"") || executablePlannerSources.includes("from '@openai/agents'") || executablePlannerSources.includes("@openai/agents")) {
-  fail("Campaign Planner tidak boleh import OpenAI pada Phase 2A.2");
+if (executablePlannerSources.includes("from '@openai/agents'") || executablePlannerSources.includes("@openai/agents")) {
+  fail("Campaign Planner tidak boleh import OpenAI Agents SDK");
 } else {
-  pass("Campaign Planner tidak import OpenAI");
+  pass("Campaign Planner tidak import OpenAI Agents SDK");
 }
 
 if (packageSource.includes("content_items") || packageSource.includes("content_publications")) {

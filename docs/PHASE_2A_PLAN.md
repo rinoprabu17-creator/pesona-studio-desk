@@ -1,6 +1,6 @@
 # Phase 2A Plan - Campaign Planner Agent
 
-Phase 2A berjalan bertahap. Phase 2A.1 membuat contract dan fake provider, Phase 2A.2 menambahkan generation run staging dan worker, Phase 2A.3 menambahkan review/approval, dan Phase 2A.4 menambahkan import manual draft approved ke operational calendar. OpenAI provider tetap ditunda ke Phase 2A.5.
+Phase 2A berjalan bertahap. Phase 2A.1 membuat contract dan fake provider, Phase 2A.2 menambahkan generation run staging dan worker, Phase 2A.3 menambahkan review/approval, Phase 2A.4 menambahkan import manual draft approved ke operational calendar, dan Phase 2A.5A menambahkan OpenAI provider tanpa live API pada automated test.
 
 ## One Logical Agent
 
@@ -48,7 +48,7 @@ Provider hanya mengisi creative fields: title, school level, color suggestion, t
 
 Provider tidak boleh menentukan tanggal, pillar, product, offer, pain point, channel, format, atau publish time.
 
-Phase 2A.1 memakai `FakeCampaignPlannerProvider` saja. OpenAI provider ditunda ke Phase 2A.5.
+Phase 2A.1 memakai `FakeCampaignPlannerProvider` saja. Phase 2A.5A menambahkan `OpenAICampaignPlannerProvider` sebagai provider tambahan yang harus diaktifkan eksplisit; default tetap Fake.
 
 ## No Caption Generation
 
@@ -211,6 +211,55 @@ Route:
 
 Phase 2A.4 tidak menambahkan OpenAI dependency, env key OpenAI, Responses API, provider baru, n8n workflow, auto posting, scheduler publication, atau worker import.
 
+## Phase 2A.5A OpenAI Provider
+
+Status: implemented.
+
+Phase 2A.5A menambahkan OpenAI Campaign Planner Provider tanpa mengubah review, approval, import, atau kalender manual. Fake Provider tetap default untuk local development dan Docker Compose standar.
+
+Implemented scope:
+
+- Official `openai` JavaScript/TypeScript SDK
+- Responses API melalui `client.responses.parse()`
+- Structured Outputs via `zodTextFormat`
+- `store: false`
+- `background: false`
+- tanpa tools, web search, file search, function calling, conversation state, streaming, atau previous response
+- prompt builder versioned dengan default `campaign-planner-v1`
+- provider factory `fake` / `openai` tanpa silent fallback
+- provider/model/prompt version dipersist pada run dan batch
+- existing run memakai provider/model/prompt version yang tersimpan walaupun environment berubah
+- SDK retry dimatikan dengan `maxRetries: 0`; retry tetap dikontrol worker lease/max attempts
+- typed error classification untuk timeout, network, rate limit, auth, request invalid, model unavailable, refusal, incomplete, dan invalid structured output
+- token usage dan provider response ID dipetakan ke `campaign_plan_generation_batches`
+- automated tests memakai mocked OpenAI client tanpa network dan tanpa API key nyata
+
+OpenAI Provider tetap hanya menghasilkan creative fields:
+
+- `title`
+- `school_level`
+- `color_code`
+- `target_audience`
+- `hook`
+- `angle`
+- `cta_text`
+- `cta_keyword`
+- `planning_reason`
+- `youtube_title`
+
+Strategy identity tetap authority deterministic builder dan consolidation:
+
+- `draft_sequence`
+- `planned_content_date`
+- `product_code`
+- `audience_segment`
+- `content_pillar`
+- `primary_offer_code`
+- `primary_pain_point_code`
+- publication `channel`, `publication_format`, dan `planned_publish_at`
+
+Manual review/import tetap unchanged. Tidak ada auto posting, scheduler publication, n8n workflow, OpenAI Agents SDK, multi-agent framework, pricing, quotation, Growth OS Lite integration, Google Drive integration, video render, atau mockup render pada Phase 2A.5A.
+
 ## Batch Worker
 
 Phase 2A.2 memakai worker `campaign-planner-worker` dengan PostgreSQL polling. Worker dapat berjalan long-running melalui Docker Compose atau one-shot untuk test.
@@ -219,9 +268,10 @@ Tidak memakai n8n sebagai core Campaign Planner. Tidak ada background scheduler 
 
 ## Security
 
-Phase 2A.1 sampai Phase 2A.4 tidak membutuhkan API key. OpenAI provider deferred ke Phase 2A.5. Saat nanti dibuat:
+Phase 2A.1 sampai Phase 2A.4 tidak membutuhkan API key. Phase 2A.5A membuat OpenAI provider optional:
 
-- API key hanya dari environment
+- API key hanya dibaca server-side oleh worker
+- prioritas `OPENAI_API_KEY_FILE` lalu `OPENAI_API_KEY`
 - tidak dikirim ke browser
 - tidak disimpan di database
 - tidak dicetak ke log

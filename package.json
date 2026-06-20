@@ -20,12 +20,15 @@
     "test:campaign-planner-runs": "node --import ./tests/bootstrap-env.mjs --experimental-strip-types --test tests/campaign-plan-runs/*.test.ts",
     "test:campaign-plan-review": "node --import ./tests/bootstrap-env.mjs --experimental-strip-types --test tests/campaign-plan-review/*.test.ts",
     "test:campaign-plan-import": "node --import ./tests/bootstrap-env.mjs --experimental-strip-types --test tests/campaign-plan-import/*.test.ts",
+    "test:campaign-planner-openai": "node --import ./tests/bootstrap-env.mjs --experimental-strip-types --test tests/campaign-planner-openai/*.test.ts",
+    "smoke:campaign-planner-openai": "node --experimental-strip-types scripts/smoke-openai-campaign-planner.mjs",
     "check:structure": "node scripts/check-skeleton.mjs",
     "check:syntax": "node --experimental-strip-types --check apps/web/src/server.ts && node --experimental-strip-types --check workers/video/src/index.ts && node --experimental-strip-types --check workers/mockup/src/index.ts && node --experimental-strip-types --check workers/campaign-planner/src/index.ts && node --experimental-strip-types --check packages/campaign-planner/src/index.ts",
-    "check": "npm run check:structure && npm run check:syntax && npm run test:campaign-planner && npm run test:campaign-planner-runs && npm run test:campaign-plan-review && npm run test:campaign-plan-import",
+    "check": "npm run check:structure && npm run check:syntax && npm run test:campaign-planner && npm run test:campaign-planner-openai && npm run test:campaign-planner-runs && npm run test:campaign-plan-review && npm run test:campaign-plan-import",
     "build": "npm run check"
   },
   "dependencies": {
+    "openai": "^6.44.0",
     "pg": "^8.22.0",
     "zod": "^4.4.3"
   }

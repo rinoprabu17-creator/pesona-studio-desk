@@ -1,6 +1,5 @@
 import {
   consolidateCampaignPlan,
-  FakeCampaignPlannerProvider,
   ProviderBatchResultSchema
 } from "../../../packages/campaign-planner/src/index.ts";
 import { CampaignPlannerProviderError } from "../../../packages/campaign-planner/src/index.ts";
@@ -13,6 +12,7 @@ import type {
 } from "../../../packages/campaign-planner/src/index.ts";
 import type pg from "pg";
 import type { CampaignPlannerWorkerConfig } from "./lease.ts";
+import { createProviderForRun } from "./provider-factory.ts";
 
 type Client = pg.PoolClient;
 
@@ -280,9 +280,15 @@ async function processBatch(client: Client, run: any, batch: any, config: Campai
 
   const stopHeartbeat = startHeartbeat(client, runClaim, batchClaim, config);
   try {
-    const provider = config.providerFactory
-      ? config.providerFactory(config.fakeMode)
-      : new FakeCampaignPlannerProvider({ mode: config.fakeMode as any });
+    const provider = createProviderForRun(
+      {
+        provider: run.provider,
+        model: run.model,
+        promptVersion: run.prompt_version,
+        fakeMode: config.fakeMode
+      },
+      config
+    );
     const result = await provider.generateBatch({
       run_id: run.id,
       batch_index: claimed.batch_number,
@@ -356,8 +362,8 @@ async function processBatch(client: Client, run: any, batch: any, config: Campai
     }
     const code = error instanceof CampaignPlannerProviderError ? error.code : "provider_batch_failed";
     const message = error instanceof Error ? error.message : "Batch generation gagal.";
-    const isTimeout = code === "provider_timeout";
-    if (isTimeout && claimed.attempt_count < config.maxAttempts) {
+    const retryable = error instanceof CampaignPlannerProviderError && error.retryable;
+    if (retryable && claimed.attempt_count < config.maxAttempts) {
       await resetBatchForRetry(client, runClaim, batchClaim, code, message);
       const resetRun = await client.query(
         `UPDATE campaign_plan_runs
@@ -379,7 +385,7 @@ async function processBatch(client: Client, run: any, batch: any, config: Campai
       return "retry";
     }
 
-    const status = isTimeout ? "failed" : "validation_failed";
+    const status = retryable ? "failed" : "validation_failed";
     await markBatchFailure(client, runClaim, batchClaim, status, code, message);
     await markRunFailure(client, runClaim, status, code, message);
     return "failed";
