@@ -75,13 +75,57 @@ const result = await provider.generateBatch({
 });
 const consolidated = consolidateCampaignPlan(input, strategy, [result]);
 const validation = consolidated.draft ? validateCampaignPlanDraft(input, consolidated.draft) : null;
+const validationPass = Boolean(validation && validation.errors.length === 0);
 
-console.log(JSON.stringify({
+const output = {
   provider: result.provider_name,
   model: result.model_name,
   response_id: result.response_id,
   item_count: result.items.length,
   usage: result.usage,
   latency_ms: Date.now() - started,
-  validation_pass: Boolean(validation && validation.errors.length === 0)
-}, null, 2));
+  validation_pass: validationPass
+};
+
+if (!validationPass && process.env.SMOKE_SHOW_VALIDATION === "1") {
+  output.validation_errors = summarizeIssues(consolidated.errors);
+  output.validation_warnings = summarizeIssues(consolidated.warnings);
+}
+
+console.log(JSON.stringify(output, null, 2));
+
+function summarizeIssues(issues) {
+  return issues.map((issue) => ({
+    code: issue.code,
+    draft_sequence: draftSequenceFromPath(issue.path),
+    field: fieldFromPath(issue.path),
+    message: safeMessage(issue.message)
+  }));
+}
+
+function draftSequenceFromPath(path) {
+  if (!path) return null;
+  const itemMatch = path.match(/^items\.(\d+)(?:\.|$)/);
+  if (itemMatch) return Number(itemMatch[1]) + 1;
+  const sequenceMatch = path.match(/^draft_sequence\.(\d+)$/);
+  if (sequenceMatch) return Number(sequenceMatch[1]);
+  return null;
+}
+
+function fieldFromPath(path) {
+  if (!path) return null;
+  const segments = path.split(".").filter(Boolean);
+  const last = segments[segments.length - 1];
+  if (!last || /^\d+$/.test(last)) return null;
+  if (last === "items" || last === "draft_sequence") return null;
+  return last;
+}
+
+function safeMessage(message) {
+  return String(message || "")
+    .replace(/\s+/g, " ")
+    .replace(/sk-[A-Za-z0-9_-]+/g, "[api-key]")
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, "Bearer [redacted]")
+    .replace(/postgresql:\/\/\S+/gi, "[database-url]")
+    .slice(0, 160);
+}
