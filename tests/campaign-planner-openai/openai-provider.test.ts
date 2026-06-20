@@ -188,6 +188,37 @@ function mockResponse(items: any[], overrides: Record<string, any> = {}) {
   };
 }
 
+async function rejectOpenAIResponse(response: any, input = inputFixture(1)) {
+  const strategy = buildCampaignPlanStrategy(input as any);
+  const provider = new OpenAICampaignPlannerProvider({
+    model: "gpt-test",
+    promptVersion: "campaign-planner-v1",
+    maxOutputTokens: 5000,
+    timeoutMs: 120000,
+    client: { responses: { async parse() { return response; } } }
+  });
+  try {
+    await provider.generateBatch({
+      run_id: null,
+      batch_index: 1,
+      campaign: input.campaign,
+      knowledge: {
+        products: input.products as any,
+        colors: input.colors as any,
+        school_level_defaults: input.school_level_defaults as any,
+        offers: input.offers as any,
+        pain_points: input.pain_points as any
+      },
+      strategy_slots: strategy,
+      owner_brief: input.owner_brief
+    });
+    assert.fail("expected provider rejection");
+  } catch (error) {
+    assert.ok(error instanceof CampaignPlannerProviderError);
+    return error;
+  }
+}
+
 async function cleanup() {
   if (!pool) return;
   const tracked = await pool.query<{ id: string }>(
@@ -543,6 +574,37 @@ test("OpenAI response refusal, incomplete, missing parsed, dan malformed ditolak
   await expectReject(mockResponse([{ ...openAIItems(strategy)[0], extra: true }]), "invalid_structured_output");
   await expectReject(mockResponse([{ ...openAIItems(strategy)[0], youtube_title: undefined }]), "invalid_structured_output");
   await expectReject(mockResponse([{ ...openAIItems(strategy)[0], title: null }]), "invalid_structured_output");
+});
+
+test("OpenAI structured output diagnostic aman tanpa raw output", async () => {
+  const input = inputFixture(1);
+  const strategy = buildCampaignPlanStrategy(input as any);
+  const validItem = openAIItems(strategy)[0];
+  const missingNullable = { ...validItem };
+  delete (missingNullable as any).youtube_title;
+
+  const missingError = await rejectOpenAIResponse(mockResponse([missingNullable]), input);
+  assert.equal(missingError.code, "invalid_structured_output");
+  assert.equal(missingError.retryable, false);
+  const missingIssues = (missingError.details?.structured_output_issues || []) as Array<Record<string, unknown>>;
+  assert.ok(missingIssues.some((issue) => issue.path === "items.0.youtube_title"));
+  assert.ok(missingIssues.every((issue) => typeof issue.path === "string" && typeof issue.code === "string" && typeof issue.message === "string"));
+
+  const extraError = await rejectOpenAIResponse(
+    { ...mockResponse(openAIItems(strategy)), output_parsed: { items: openAIItems(strategy), raw_secret_payload: "SHOULD_NOT_LEAK" } },
+    input
+  );
+  assert.equal(extraError.code, "invalid_structured_output");
+  const extraIssues = (extraError.details?.structured_output_issues || []) as Array<Record<string, unknown>>;
+  assert.ok(extraIssues.some((issue) => issue.code === "unrecognized_keys"));
+
+  const detailsText = JSON.stringify([missingError.details, extraError.details]);
+  assert.equal(detailsText.includes("OpenAI Draft"), false);
+  assert.equal(detailsText.includes("SHOULD_NOT_LEAK"), false);
+  assert.equal(detailsText.includes(input.owner_brief), false);
+  assert.equal(detailsText.includes("sk-"), false);
+  assert.equal(detailsText.includes("OPENAI_API_KEY"), false);
+  assert.equal(detailsText.includes("DATABASE_URL"), false);
 });
 
 test("OpenAI provider requirement matrix granular", async (t) => {

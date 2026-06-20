@@ -12,12 +12,14 @@ export type CampaignPlannerProviderBatchInput = {
 export class CampaignPlannerProviderError extends Error {
   code: string;
   retryable: boolean;
+  details: Record<string, unknown> | null;
 
-  constructor(code: string, message: string, options: { retryable?: boolean } = {}) {
+  constructor(code: string, message: string, options: { retryable?: boolean; details?: Record<string, unknown> } = {}) {
     super(message);
     this.name = "CampaignPlannerProviderError";
     this.code = code;
     this.retryable = Boolean(options.retryable);
+    this.details = options.details || null;
   }
 }
 

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
+import { ZodError } from "zod";
 import { ProviderBatchResultSchema } from "./schema.ts";
 import { CampaignPlannerProviderError } from "./provider.ts";
 import { buildOpenAIPrompt, OpenAIProviderBatchOutputSchema } from "./openai-prompt.ts";
@@ -99,11 +100,23 @@ export class OpenAICampaignPlannerProvider implements CampaignPlannerProvider {
 function parseStructuredOutput(output: unknown): { items: ProviderBatchResult["items"] } {
   try {
     return OpenAIProviderBatchOutputSchema.parse(output);
-  } catch {
+  } catch (error) {
     throw new CampaignPlannerProviderError("invalid_structured_output", "Provider menghasilkan output terstruktur tidak valid.", {
-      retryable: false
+      retryable: false,
+      details: buildStructuredOutputDetails(error)
     });
   }
+}
+
+function buildStructuredOutputDetails(error: unknown): Record<string, unknown> | undefined {
+  if (!(error instanceof ZodError)) return undefined;
+  return {
+    structured_output_issues: error.issues.slice(0, 20).map((issue) => ({
+      path: issue.path.join("."),
+      code: issue.code,
+      message: safeProviderMessage(issue.message)
+    }))
+  };
 }
 
 function mapUsage(usage: any): ProviderBatchResult["usage"] {

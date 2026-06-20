@@ -1,6 +1,7 @@
 import {
   buildCampaignPlanStrategy,
   CampaignPlannerInputSchema,
+  CampaignPlannerProviderError,
   OpenAICampaignPlannerProvider,
   loadCampaignPlannerRuntimeConfig,
   timezone,
@@ -59,20 +60,44 @@ const provider = new OpenAICampaignPlannerProvider({
 });
 
 const started = Date.now();
-const result = await provider.generateBatch({
-  run_id: null,
-  batch_index: 1,
-  campaign: input.campaign,
-  knowledge: {
-    products: input.products,
-    colors: input.colors,
-    school_level_defaults: input.school_level_defaults,
-    offers: input.offers,
-    pain_points: input.pain_points
-  },
-  strategy_slots: strategy,
-  owner_brief: input.owner_brief
-});
+let result;
+try {
+  result = await provider.generateBatch({
+    run_id: null,
+    batch_index: 1,
+    campaign: input.campaign,
+    knowledge: {
+      products: input.products,
+      colors: input.colors,
+      school_level_defaults: input.school_level_defaults,
+      offers: input.offers,
+      pain_points: input.pain_points
+    },
+    strategy_slots: strategy,
+    owner_brief: input.owner_brief
+  });
+} catch (error) {
+  if (error instanceof CampaignPlannerProviderError) {
+    const output = {
+      provider: "openai",
+      model: config.openaiModel,
+      latency_ms: Date.now() - started,
+      provider_error: {
+        code: error.code,
+        message: safeMessage(error.message),
+        retryable: error.retryable
+      }
+    };
+    if (error.code === "invalid_structured_output" && process.env.SMOKE_SHOW_VALIDATION === "1") {
+      output.provider_error.structured_output_issues = summarizeStructuredOutputIssues(
+        error.details?.structured_output_issues
+      );
+    }
+    console.log(JSON.stringify(output, null, 2));
+    process.exit(1);
+  }
+  throw error;
+}
 const consolidated = consolidateCampaignPlan(input, strategy, [result]);
 const validation = consolidated.draft ? validateCampaignPlanDraft(input, consolidated.draft) : null;
 const validationPass = Boolean(validation && validation.errors.length === 0);
@@ -103,6 +128,15 @@ function summarizeIssues(issues) {
   }));
 }
 
+function summarizeStructuredOutputIssues(issues) {
+  if (!Array.isArray(issues)) return [];
+  return issues.slice(0, 20).map((issue) => ({
+    path: safeDiagnosticText(issue?.path, 120),
+    code: safeDiagnosticText(issue?.code, 80),
+    message: safeMessage(issue?.message)
+  }));
+}
+
 function draftSequenceFromPath(path) {
   if (!path) return null;
   const itemMatch = path.match(/^items\.(\d+)(?:\.|$)/);
@@ -122,10 +156,14 @@ function fieldFromPath(path) {
 }
 
 function safeMessage(message) {
-  return String(message || "")
+  return safeDiagnosticText(message, 160);
+}
+
+function safeDiagnosticText(value, maxLength) {
+  return String(value || "")
     .replace(/\s+/g, " ")
     .replace(/sk-[A-Za-z0-9_-]+/g, "[api-key]")
     .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, "Bearer [redacted]")
     .replace(/postgresql:\/\/\S+/gi, "[database-url]")
-    .slice(0, 160);
+    .slice(0, maxLength);
 }
