@@ -39,6 +39,17 @@ function hasMockupPreviewContext(text: string): boolean {
   return hasAny(text, [/preview awal/, /mockup awal/, /sebelum penawaran/]);
 }
 
+function hasMockupNoRevisionContext(text: string): boolean {
+  return hasAny(text, [/tanpa revisi mockup/, /tidak (memiliki|ada) revisi mockup/, /mockup tidak (memiliki|ada) revisi/]);
+}
+
+function hasMockupRevisionPromise(text: string): boolean {
+  if (!/mockup/.test(text)) return false;
+  const unsafe = hasAny(text, [/mockup bisa direvisi/, /mockup.*bisa.*revisi/, /mockup.*revisi sepuasnya/, /mockup.*berkali-kali/, /mockup.*sampai cocok/, /revisi sampai cocok/]);
+  if (unsafe) return true;
+  return hasAny(text, [/revisi mockup/, /mockup.*revisi/]) && !hasMockupNoRevisionContext(text);
+}
+
 function hasOfferAgreementContext(text: string): boolean {
   return hasAny(text, [/cocok penawaran/, /cocok harga/, /setelah.*penawaran/, /setelah.*harga/]);
 }
@@ -76,7 +87,7 @@ export function validateClaims(draft: CampaignPlanDraft): { errors: ValidationIs
     const path = `items.${index}`;
     const text = combinedText(item);
 
-    if (/mockup/.test(text) && hasAny(text, [/revisi mockup/, /mockup.*revisi/, /revisi sampai cocok/])) {
+    if (hasMockupRevisionPromise(text)) {
       errors.push(issue("mockup_revision_promise", "Mockup awal tidak boleh dijanjikan dapat direvisi.", path));
     }
 
