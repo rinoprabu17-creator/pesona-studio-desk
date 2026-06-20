@@ -188,6 +188,35 @@ Route:
 
 Phase ini masih fake-only untuk menguji lifecycle, lease, retry, validation, dan staging draft. Belum ada review/edit/approve/import draft, belum ada OpenAI provider, dan belum ada posting otomatis.
 
+## Campaign Planner Phase 2A.3
+
+Phase 2A.3 menambahkan review draft staging sebelum import operational.
+
+Command:
+
+```powershell
+npm run test:campaign-plan-review
+```
+
+Route:
+
+- Review run: `/campaign-plan-runs/:id/review`
+- Edit draft item: `/campaign-plan-draft-items/:id/edit`
+- API review run: `/api/campaign-plan-runs/:id/review`
+- API draft item: `/api/campaign-plan-draft-items/:id`
+- API approve/reject item: `/api/campaign-plan-draft-items/:id/approve`, `/api/campaign-plan-draft-items/:id/reject`
+- API approve all: `/api/campaign-plan-runs/:id/approve-all`
+- API approve/reject run: `/api/campaign-plan-runs/:id/approve`, `/api/campaign-plan-runs/:id/reject`
+
+Alur lokal:
+
+1. Generate rencana dari `/campaigns/:id/plan-runs/new`.
+2. Jalankan worker sampai run menjadi `Siap Direview`.
+3. Buka `/campaign-plan-runs/:id/review`.
+4. Edit draft, approve/reject item, lalu approve atau reject run secara eksplisit.
+
+Belum ada import ke `content_items` atau `content_publications` pada Phase 2A.3. Fake Provider masih digunakan; belum ada OpenAI provider dan belum ada posting otomatis.
+
 ## Folder storage lokal
 
 - `storage/footage`

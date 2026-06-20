@@ -110,6 +110,69 @@ Draft item review status untuk fase berikutnya:
 
 Jangan gunakan `edited` sebagai review status. Gunakan `edited_at nullable` dan `revision_number integer default 0`. Jika item approved diedit, status kembali ke `pending_review` dan revision number bertambah.
 
+## Phase 2A.3 Draft Review & Approval
+
+Status: implemented.
+
+Phase 2A.3 menambahkan review UI dan API untuk staging draft hasil generation run. Review hanya dapat dilakukan ketika run berstatus `ready_for_review`; run `approved` dan `rejected` menjadi read-only dan tidak kembali ke `ready_for_review`.
+
+Editable creative fields:
+
+- `title`
+- `school_level`
+- `color_code`
+- `target_audience`
+- `hook`
+- `angle`
+- `cta_text`
+- `cta_keyword`
+- `planning_reason`
+- `owner_notes`
+- YouTube `platform_title`
+
+Strategy identity tetap immutable:
+
+- `run_id`
+- `draft_sequence`
+- `planned_content_date`
+- `product_code`
+- `audience_segment`
+- `content_pillar`
+- `primary_offer_code`
+- `primary_pain_point_code`
+- publication `channel`, `publication_format`, `planned_publish_at`, dan `platform_caption`
+
+Setiap edit dan review action item memakai `expected_revision_number`. Creative edit menaikkan `revision_number`, mengisi `edited_at`, dan mengembalikan `review_status` menjadi `pending_review`. Owner notes saja tidak menaikkan revision number dan tidak mengubah review status.
+
+Setiap creative edit merekonstruksi `CampaignPlanDraft` dari staging rows, lalu menjalankan validasi package Campaign Planner: schema/runtime validation, reference/business validation, claim validation, duplicate title/hook validation, diversity warnings, dan YouTube title validation. Hard error menolak save dan rollback; warning disimpan dan tidak memblokir approval.
+
+Review action item:
+
+- approve item hanya untuk run `ready_for_review`, wajib revision cocok, dan tidak boleh ada `validation_errors`
+- reject item hanya untuk run `ready_for_review`, wajib revision cocok, dan boleh membawa owner notes
+- approve/reject item tidak menaikkan `revision_number`
+
+Approve all semantics:
+
+- action "Setujui Semua yang Siap" lock run dan seluruh item
+- revalidate seluruh draft
+- pending valid menjadi `approved`
+- rejected tetap `rejected`
+- pending dengan hard error tetap `pending_review`
+- run tetap `ready_for_review`
+
+Run approval dan rejection eksplisit:
+
+- "Setujui Rencana" hanya `ready_for_review -> approved`
+- approval run membutuhkan tidak ada pending, minimal satu approved, dan approved item bebas validation error
+- approved run menunggu import pada Phase 2A.4
+- "Tolak Rencana" hanya `ready_for_review -> rejected`
+- rejected run terminal untuk review dan tidak menghapus staging audit
+
+Phase 2A.3 tidak melakukan import ke `content_items` atau `content_publications`, tidak membuat route import, tidak membuat operational content code, dan tidak mengubah run ke `importing`/`imported`.
+
+Phase 2A.3 tetap fake-only. Tidak ada OpenAI dependency, tidak ada env key OpenAI, tidak ada Responses API, tidak ada provider baru, dan tidak ada n8n workflow baru.
+
 ## Batch Worker
 
 Phase 2A.2 memakai worker `campaign-planner-worker` dengan PostgreSQL polling. Worker dapat berjalan long-running melalui Docker Compose atau one-shot untuk test.
