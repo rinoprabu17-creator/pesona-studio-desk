@@ -19,6 +19,8 @@ const requiredPaths = [
   "apps/web/src/campaign-errors.ts",
   "apps/web/src/campaign-plan-run-service.ts",
   "apps/web/src/campaign-plan-run-errors.ts",
+  "apps/web/src/campaign-plan-review-service.ts",
+  "apps/web/src/campaign-plan-review-errors.ts",
   "apps/web/src/content-item-service.ts",
   "apps/web/src/content-item-errors.ts",
   "apps/web/src/content-publication-service.ts",
@@ -33,6 +35,8 @@ const requiredPaths = [
   "apps/web/src/routes/campaign-page-routes.ts",
   "apps/web/src/routes/campaign-plan-run-api-routes.ts",
   "apps/web/src/routes/campaign-plan-run-page-routes.ts",
+  "apps/web/src/routes/campaign-plan-review-api-routes.ts",
+  "apps/web/src/routes/campaign-plan-review-page-routes.ts",
   "apps/web/src/routes/content-item-api-routes.ts",
   "apps/web/src/routes/content-item-page-routes.ts",
   "apps/web/src/routes/content-publication-api-routes.ts",
@@ -41,6 +45,7 @@ const requiredPaths = [
   "apps/web/src/routes/library-page-routes.ts",
   "apps/web/src/views/campaign-pages.ts",
   "apps/web/src/views/campaign-plan-run-pages.ts",
+  "apps/web/src/views/campaign-plan-review-pages.ts",
   "apps/web/src/views/content-calendar-page.ts",
   "apps/web/src/views/content-item-pages.ts",
   "apps/web/src/views/content-publication-pages.ts",
@@ -48,6 +53,7 @@ const requiredPaths = [
   "apps/web/src/views/library-pages.ts",
   "apps/web/src/validation/campaign-validation.ts",
   "apps/web/src/validation/campaign-plan-run-validation.ts",
+  "apps/web/src/validation/campaign-plan-review-validation.ts",
   "apps/web/src/validation/content-item-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
@@ -69,6 +75,7 @@ const requiredPaths = [
   "tests/campaign-planner/claim-rules.test.ts",
   "tests/campaign-planner/consolidation.test.ts",
   "tests/campaign-plan-runs/generation-runs.test.ts",
+  "tests/campaign-plan-review/draft-review.test.ts",
   "tests/bootstrap-env.mjs",
   "tests/fixtures/campaign-planner/input.ts",
   "migrations/001_phase1a_libraries.sql",
@@ -224,6 +231,15 @@ const planRunWebSource = [
   "apps/web/src/views/campaign-plan-run-pages.ts",
   "apps/web/src/validation/campaign-plan-run-validation.ts"
 ].filter(existsSync).map((path) => readFileSync(path, "utf8")).join("\n");
+const reviewWebSource = [
+  "apps/web/src/campaign-plan-review-service.ts",
+  "apps/web/src/campaign-plan-review-errors.ts",
+  "apps/web/src/routes/campaign-plan-review-api-routes.ts",
+  "apps/web/src/routes/campaign-plan-review-page-routes.ts",
+  "apps/web/src/views/campaign-plan-review-pages.ts",
+  "apps/web/src/validation/campaign-plan-review-validation.ts"
+].filter(existsSync).map((path) => readFileSync(path, "utf8")).join("\n");
+const reviewTestsSource = readSources("tests/campaign-plan-review");
 for (const route of requiredRoutes) {
   if (webSource.includes(route)) {
     pass(`Route Phase 1A tersedia: ${route}`);
@@ -431,6 +447,100 @@ if (existsSync("workers/campaign-planner")) {
   pass("Campaign Planner worker tersedia");
 } else {
   fail("Campaign Planner worker wajib tersedia pada Phase 2A.2");
+}
+
+if (existsSync("migrations/006_phase2a_campaign_plan_review.sql")) {
+  fail("Phase 2A.3 tidak boleh membuat migration 006");
+} else {
+  pass("Tidak ada migration 006 untuk Phase 2A.3");
+}
+
+for (const requiredReviewText of [
+  "campaign-plan-runs",
+  "/review",
+  "campaign-plan-draft-items",
+  "/approve-all",
+  "/approve",
+  "/reject",
+  "expected_revision_number",
+  "revision_number",
+  "immutable_campaign_plan_strategy",
+  "stale_draft_revision",
+  "ready_for_review",
+  "CampaignPlanReviewError"
+]) {
+  if (reviewWebSource.includes(requiredReviewText) || reviewTestsSource.includes(requiredReviewText)) {
+    pass(`Phase 2A.3 review memuat: ${requiredReviewText}`);
+  } else {
+    fail(`Phase 2A.3 review belum memuat: ${requiredReviewText}`);
+  }
+}
+
+for (const reviewStatus of ["pending_review", "approved", "rejected"]) {
+  if (phase2aMigrationSource.includes(reviewStatus) && reviewWebSource.includes(reviewStatus)) {
+    pass(`Review status valid digunakan: ${reviewStatus}`);
+  } else {
+    fail(`Review status wajib belum lengkap: ${reviewStatus}`);
+  }
+}
+
+if (phase2aMigrationSource.includes("'edited'") || reviewWebSource.includes("review_status = 'edited'") || reviewWebSource.includes('"edited"')) {
+  fail("Phase 2A.3 tidak boleh memakai edited sebagai review status");
+} else {
+  pass("Tidak ada edited review status pada Phase 2A.3");
+}
+
+if (reviewWebSource.includes("FOR UPDATE") && reviewWebSource.includes("validateCampaignPlanDraft")) {
+  pass("Review service memakai database locking dan Campaign Planner validation");
+} else {
+  fail("Review service wajib memakai locking dan revalidation Campaign Planner");
+}
+
+for (const requiredRoute of [
+  "api\\/campaign-plan-runs\\/",
+  "/review",
+  "api\\/campaign-plan-draft-items\\/",
+  "/approve-all",
+  "/campaign-plan-draft-items/",
+  "/edit"
+]) {
+  if (webSource.includes(requiredRoute) || reviewWebSource.includes(requiredRoute)) {
+    pass(`Review route tersedia: ${requiredRoute}`);
+  } else {
+    fail(`Review route belum tersedia: ${requiredRoute}`);
+  }
+}
+
+for (const forbiddenReviewText of [
+  "/import",
+  "approve-import",
+  "approveAndImport",
+  "createContentItem",
+  "createContentPublication",
+  "status = 'importing'",
+  "status = 'imported'",
+  "OPENAI_API_KEY",
+  "from \"openai\"",
+  "@openai/agents"
+]) {
+  if (reviewWebSource.includes(forbiddenReviewText) || reviewTestsSource.includes(forbiddenReviewText)) {
+    fail(`Phase 2A.3 tidak boleh memuat import/OpenAI: ${forbiddenReviewText}`);
+  } else {
+    pass(`Tidak ada import/OpenAI pada review: ${forbiddenReviewText}`);
+  }
+}
+
+for (const forbiddenOperationalInsert of [
+  "INSERT INTO content_items",
+  "INSERT INTO content_publications",
+  "content_items (",
+  "content_publications ("
+]) {
+  if (reviewWebSource.includes(forbiddenOperationalInsert) || campaignPlannerWorkerSource.includes(forbiddenOperationalInsert) || packageSource.includes(forbiddenOperationalInsert)) {
+    fail(`Phase 2A.3 tidak boleh write operational table: ${forbiddenOperationalInsert}`);
+  } else {
+    pass(`Tidak ada operational insert: ${forbiddenOperationalInsert}`);
+  }
 }
 
 const trackedLikeSources = [

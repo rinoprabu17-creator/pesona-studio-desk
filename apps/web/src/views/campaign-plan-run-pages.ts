@@ -15,7 +15,7 @@ const statusLabels: Record<string, string> = {
   queued: "Menunggu",
   generating: "Sedang Generate",
   validation_failed: "Validasi Gagal",
-  ready_for_review: "Siap Review",
+  ready_for_review: "Siap Direview",
   failed: "Gagal",
   cancelled: "Dibatalkan",
   approved: "Disetujui",
@@ -139,7 +139,16 @@ export function renderCampaignPlanRunDetailPage(run: any, url: URL): string {
     ? `<form method="post" action="/campaign-plan-runs/${escapeHtml(run.id)}/cancel"><button type="submit">Cancel</button></form>`
     : "";
   const readyNote = run.status === "ready_for_review"
-    ? `<div class="notice success">Draft selesai dibuat dan siap memasuki tahap review pada Phase 2A.3.</div>`
+    ? `<div class="notice success">Draft selesai dibuat dan siap direview.</div>`
+    : "";
+  const approvedNote = run.status === "approved"
+    ? `<div class="notice success">Rencana telah disetujui dan menunggu proses import.</div>`
+    : "";
+  const rejectedNote = run.status === "rejected"
+    ? `<div class="notice error">Rencana telah ditolak.</div>`
+    : "";
+  const reviewButton = run.status === "ready_for_review"
+    ? `<a class="button" href="/campaign-plan-runs/${escapeHtml(run.id)}/review">Review Draft Konten</a>`
     : "";
   const error = run.error ? `<div class="notice error">${escapeHtml(run.error.code)}: ${escapeHtml(run.error.message)}</div>` : "";
 
@@ -160,9 +169,10 @@ export function renderCampaignPlanRunDetailPage(run: any, url: URL): string {
     "Generation Run",
     "Status generation run Campaign Planner.",
     `
-      ${successHtml}${readyNote}${error}
+      ${successHtml}${readyNote}${approvedNote}${rejectedNote}${error}
       <div class="button-row">
         <a class="button button-secondary" href="/campaigns/${escapeHtml(run.campaign.id)}">Kembali ke Campaign</a>
+        ${reviewButton}
         ${retryButton}${cancelButton}
       </div>
       ${renderReadOnlyTable(["Field", "Nilai"], [

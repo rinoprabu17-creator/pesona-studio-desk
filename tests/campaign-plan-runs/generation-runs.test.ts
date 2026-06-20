@@ -120,6 +120,16 @@ async function stagingCounts(runId: string) {
   return result.rows[0];
 }
 
+async function processUntilRunStatus(runId: string, status: string, config: ReturnType<typeof loadWorkerConfig>) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const processed = await processNextRun(pool!, config);
+    const row = await pool!.query(`SELECT status FROM campaign_plan_runs WHERE id = $1`, [runId]);
+    if (row.rows[0]?.status === status) return row.rows[0];
+    if (!processed.processed) break;
+  }
+  return (await pool!.query(`SELECT status FROM campaign_plan_runs WHERE id = $1`, [runId])).rows[0];
+}
+
 function validProvider(delayMs = 0, calls: number[] = []) {
   return {
     providerName: "test-valid-provider",
@@ -272,9 +282,8 @@ maybeTest("timeout retry terbatas lalu manual retry valid memakai run id yang sa
   assert.deepEqual(after.rows[0].input_snapshot, before.rows[0].input_snapshot);
   assert.deepEqual(after.rows[0].strategy_snapshot, before.rows[0].strategy_snapshot);
 
-  await processNextRun(pool!, loadWorkerConfig({ workerId: "test-timeout-valid", fakeMode: "valid", maxAttempts: 2 }));
-  row = await pool!.query(`SELECT status FROM campaign_plan_runs WHERE id = $1`, [run.id]);
-  assert.equal(row.rows[0].status, "ready_for_review");
+  const ready = await processUntilRunStatus(run.id, "ready_for_review", loadWorkerConfig({ workerId: "test-timeout-valid", fakeMode: "valid", maxAttempts: 2 }));
+  assert.equal(ready.status, "ready_for_review");
 });
 
 maybeTest("cancel queued dan generating menghentikan worker", async () => {
@@ -576,7 +585,7 @@ maybeTest("snapshot immutable dan config drift batch size tidak membagi ulang ru
 maybeTest("manual retry reset state konsisten tanpa membuat run atau batch baru", async () => {
   const campaignId = await createCampaign("RETRY-STATE");
   const run = await createCampaignPlanRun(campaignId, { ...validRunInput(), requested_content_count: 5 });
-  await processNextRun(pool!, loadWorkerConfig({ workerId: "retry-state-fail", fakeMode: "missing_youtube_title" }));
+  await processUntilRunStatus(run.id, "validation_failed", loadWorkerConfig({ workerId: "retry-state-fail", fakeMode: "missing_youtube_title" }));
   const before = await pool!.query(
     `SELECT id, campaign_id, input_snapshot, strategy_snapshot,
             (SELECT COUNT(*)::int FROM campaign_plan_generation_batches WHERE run_id = campaign_plan_runs.id) AS batches

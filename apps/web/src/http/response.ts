@@ -17,12 +17,13 @@ export function sendSuccess(response: ResponseLike, data: unknown, statusCode = 
   sendJson(response, statusCode, { ok: true, data });
 }
 
-export function sendError(response: ResponseLike, statusCode: number, code: string, message: string): void {
+export function sendError(response: ResponseLike, statusCode: number, code: string, message: string, issues?: unknown[]): void {
   sendJson(response, statusCode, {
     ok: false,
     error: {
       code,
-      message
+      message,
+      ...(issues ? { issues } : {})
     }
   });
 }
@@ -42,7 +43,7 @@ export function sendHtml(response: ResponseLike, html: string, statusCode = 200)
 
 export function handleApiError(response: ResponseLike, error: unknown): void {
   if (error instanceof LibraryError) {
-    sendError(response, error.statusCode, error.code, error.message);
+    sendError(response, error.statusCode, error.code, error.message, (error as any).issues);
     return;
   }
 
@@ -53,7 +54,7 @@ export function handleApiError(response: ResponseLike, error: unknown): void {
     typeof (error as any).statusCode === "number" &&
     typeof (error as any).code === "string"
   ) {
-    sendError(response, (error as any).statusCode, (error as any).code, error.message);
+    sendError(response, (error as any).statusCode, (error as any).code, error.message, (error as any).issues);
     return;
   }
 
