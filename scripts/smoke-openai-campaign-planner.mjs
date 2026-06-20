@@ -120,12 +120,17 @@ if (!validationPass && process.env.SMOKE_SHOW_VALIDATION === "1") {
 console.log(JSON.stringify(output, null, 2));
 
 function summarizeIssues(issues) {
-  return issues.map((issue) => ({
-    code: issue.code,
-    draft_sequence: draftSequenceFromPath(issue.path),
-    field: fieldFromPath(issue.path),
-    message: safeMessage(issue.message)
-  }));
+  return issues.map((issue) => {
+    const details = issue.details || {};
+    return {
+      code: issue.code,
+      draft_sequence: typeof details.draft_sequence === "number" ? details.draft_sequence : draftSequenceFromPath(issue.path),
+      field: typeof details.field === "string" ? safeDiagnosticText(details.field, 80) : fieldFromPath(issue.path),
+      matched_pattern: details.matched_pattern ? safeDiagnosticText(details.matched_pattern, 120) : null,
+      sanitized_excerpt: details.sanitized_excerpt ? safeDiagnosticText(details.sanitized_excerpt, 120) : null,
+      message: safeMessage(issue.message)
+    };
+  });
 }
 
 function summarizeStructuredOutputIssues(issues) {
@@ -165,5 +170,7 @@ function safeDiagnosticText(value, maxLength) {
     .replace(/sk-[A-Za-z0-9_-]+/g, "[api-key]")
     .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, "Bearer [redacted]")
     .replace(/postgresql:\/\/\S+/gi, "[database-url]")
+    .replace(/OPENAI_API_KEY=\S+/gi, "OPENAI_API_KEY=[redacted]")
+    .replace(/DATABASE_URL=\S+/gi, "DATABASE_URL=[redacted]")
     .slice(0, maxLength);
 }

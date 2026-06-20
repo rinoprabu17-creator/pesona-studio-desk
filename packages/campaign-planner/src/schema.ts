@@ -201,7 +201,14 @@ export const CampaignPlanDraftSchema = z.object({
 export const ValidationIssueSchema = z.object({
   code: z.string().min(1),
   message: z.string().min(1),
-  path: z.string().nullable()
+  path: z.string().nullable(),
+  details: z.object({
+    draft_sequence: z.number().int().min(1).optional(),
+    field: z.string().min(1).nullable().optional(),
+    rule_code: z.string().min(1).optional(),
+    matched_pattern: z.string().min(1).optional(),
+    sanitized_excerpt: z.string().max(120).optional()
+  }).strict().optional()
 }).strict();
 
 export const ValidationSummarySchema = z.object({

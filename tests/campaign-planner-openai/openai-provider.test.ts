@@ -424,7 +424,13 @@ test("OpenAI mocked output tetap melewati claim validation mockup dan garansi", 
     usage: null,
     items: mockupRevisionItems
   }]);
-  assert.ok(mockupResult.errors.some((error) => error.code === "mockup_revision_promise"));
+  const mockupError = mockupResult.errors.find((error) => error.code === "mockup_revision_promise");
+  assert.ok(mockupError);
+  assert.equal(mockupError.details?.rule_code, "mockup_revision_promise");
+  assert.ok(["title", "hook", "angle", "cta_text", "planning_reason"].includes(String(mockupError.details?.field)));
+  assert.ok(typeof mockupError.details?.matched_pattern === "string");
+  assert.ok((mockupError.details?.sanitized_excerpt || "").length <= 120);
+  assert.equal(JSON.stringify(mockupError.details).includes("Revisi mockup sepuasnya sebelum order."), false);
 
   for (const phrase of [
     "mockup bisa direvisi",
