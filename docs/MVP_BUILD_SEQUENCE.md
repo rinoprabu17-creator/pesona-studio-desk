@@ -118,7 +118,8 @@ Goal:
 
 Goal:
 
-- n8n panggil API internal untuk trigger script/render/drive watcher.
+- n8n panggil API internal untuk trigger script/render/local storage watcher.
+- Google Drive integration tetap backup/sharing penting, bukan intake utama.
 
 ## Phase 12 — Hardening
 
