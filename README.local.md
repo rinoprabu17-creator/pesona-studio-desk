@@ -18,6 +18,20 @@ Google Drive dipakai untuk backup/sharing file penting, bukan sebagai storage ke
 
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
+## Checklist local-first Phase 2A.6B
+
+Sebelum menjalankan stack di server kantor:
+
+- Ubuntu Server sudah terpasang dan bisa diakses admin.
+- Docker Engine dan Docker Compose v2 tersedia.
+- SSD 2TB dipakai sebagai storage kerja utama untuk folder `storage/`.
+- UPS terpasang agar shutdown tidak memutus database/job secara mendadak.
+- Tidak ada GPU yang diwajibkan untuk fase awal.
+- `.env.local` dibuat dari `.env.local.example` dan tidak masuk git.
+- Password PostgreSQL, n8n, dan token internal sudah diganti dari contoh.
+- OpenAI tetap nonaktif kecuali owner sengaja mengaktifkan override OpenAI.
+- Backup database dan file penting direncanakan sebelum data operasional dipakai.
+
 ## Prasyarat
 
 - Node.js 24 atau lebih baru.
@@ -88,6 +102,20 @@ npm run test:campaign-planner
 ```
 
 Phase 2A.1 masih fake-only. Tidak ada OpenAI dependency, tidak ada OpenAI API key yang diperlukan, dan tidak ada live AI call.
+
+## Environment variable lokal
+
+File `.env.local.example` adalah template dokumentasi sekaligus default lokal. Nilai penting:
+
+- `DEPLOYMENT_PROFILE=local_office` menandai runtime local-first.
+- `SERVER_OPERATION_START=08:00` dan `SERVER_OPERATION_END=20:00` mendokumentasikan asumsi jam operasional.
+- `APP_STORAGE_DIR=/app/storage` dipetakan ke folder repo `./storage` oleh `docker-compose.dev.yml`.
+- `CONTENT_LAST_POST_TIME=19:00` dan `CONTENT_PRIME_TIME=20:00` hanya dokumentasi target konten, bukan auto posting.
+- `CAMPAIGN_PLANNER_PROVIDER=fake` dan `CAMPAIGN_PLANNER_OPENAI_ENABLED=false` menjaga default tanpa paid API call.
+- `OPENAI_MODEL=` dibiarkan kosong pada local default. Isi hanya jika OpenAI override sengaja dipakai.
+- `TEST_DATABASE_URL` wajib berbeda dari `DATABASE_URL` untuk integration tests.
+
+Jangan commit `.env`, `.env.local`, file secret, dump database, atau file storage operasional.
 
 ## Database Phase 1A
 
@@ -339,7 +367,16 @@ Jangan commit API key. Jangan paste API key ke chat/log. OpenAI request memakai 
 - `storage/mockups`
 - `storage/brand-assets`
 
-Isi folder storage diabaikan dari git. File `.gitkeep` hanya menjaga struktur folder.
+Isi folder storage diabaikan dari git. File `.gitkeep` hanya menjaga struktur folder. Google Drive hanya untuk backup/sharing file penting, bukan tempat kerja utama.
+
+Jangan menjalankan reset atau penghapusan massal folder `storage/` tanpa backup dan approval owner. Untuk server kantor, pastikan folder ini berada di SSD lokal 2TB atau bind mount yang setara sebelum dipakai operasional.
+
+## Safety runtime lokal
+
+- Jangan jalankan command destructive seperti reset database, drop table, hapus volume Docker, atau hapus storage tanpa approval owner.
+- Jangan set `CAMPAIGN_PLANNER_PROVIDER=openai` atau `OPENAI_LIVE_SMOKE=1` kecuali owner secara eksplisit meminta paid API call.
+- Jangan expose n8n atau web dashboard ke internet tanpa password, reverse proxy, dan approval owner.
+- Jangan menambah VPS, GPU, cloud storage utama, scheduler/publisher, atau API platform baru pada audit runtime lokal ini.
 
 ## Batas Phase 0
 

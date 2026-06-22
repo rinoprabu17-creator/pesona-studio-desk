@@ -145,3 +145,14 @@ Hal berikut tetap di luar MVP kecuali owner meminta eksplisit:
 - [ ] WA AI rules test: frontliner 24 jam mengarah ke manusia saat lead serius.
 - [ ] TikTok CTA test: video CTA, link WA bio, pinned comment.
 - [ ] AI budget guard next phase: local/rule-based default dan paid model dibatasi.
+
+## 12. Phase 2A.6B local runtime audit notes
+
+Audit runtime lokal harus mempertahankan batas berikut:
+
+- Local office server tetap primary runtime.
+- VPS hanya opsi nanti setelah approval owner.
+- GPU tidak wajib untuk fase awal.
+- Google Drive tetap backup/sharing saja.
+- Paid API call tidak boleh terjadi kecuali env dan override OpenAI sengaja diaktifkan.
+- Database, Docker volume, dan folder storage tidak boleh direset/destructive tanpa approval owner.

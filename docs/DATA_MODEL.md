@@ -74,7 +74,8 @@ updated_at
 id
 content_item_id
 shot_id
-google_drive_file_id
+local_file_path
+google_drive_backup_file_id nullable
 file_name
 mime_type
 duration_seconds
@@ -98,8 +99,9 @@ version
 job_type -- video/mockup
 edit_plan_json
 input_assets_json
-output_drive_file_id
-output_url
+output_local_path
+google_drive_backup_file_id nullable
+share_url nullable
 status
 error_message
 revision_notes
