@@ -20,6 +20,8 @@ import { handleContentItemApiRoute } from "./routes/content-item-api-routes.ts";
 import { handleContentItemPageGet, handleContentItemPagePost } from "./routes/content-item-page-routes.ts";
 import { handleContentPublicationApiRoute } from "./routes/content-publication-api-routes.ts";
 import { handleContentPublicationPageGet, handleContentPublicationPagePost } from "./routes/content-publication-page-routes.ts";
+import { handleFootageAssetApiRoute } from "./routes/footage-asset-api-routes.ts";
+import { handleFootageAssetPageGet, handleFootageAssetPagePost } from "./routes/footage-asset-page-routes.ts";
 import { handleLibraryApiRoute } from "./routes/library-api-routes.ts";
 import { handleLibraryPageGet, handleLibraryPagePost, renderNotFoundPage } from "./routes/library-page-routes.ts";
 import { escapeHtml, renderLayout } from "./views/layout.ts";
@@ -59,7 +61,8 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
         (await handleCampaignPlanRunApiRoute(request, response, pathname)) ||
         (await handleContentCalendarApiRoute(request, response, pathname, url)) ||
         (await handleContentItemApiRoute(request, response, pathname, url)) ||
-        (await handleContentPublicationApiRoute(request, response, pathname));
+        (await handleContentPublicationApiRoute(request, response, pathname)) ||
+        (await handleFootageAssetApiRoute(request, response, pathname, url));
       if (!handled) {
         sendError(response, 404, "not_found", "Endpoint tidak ditemukan.");
       }
@@ -74,7 +77,8 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
         (await handleCampaignPlanReviewPagePost(request, response, pathname)) ||
         (await handleCampaignPlanRunPagePost(request, response, pathname)) ||
         (await handleContentItemPagePost(request, response, pathname)) ||
-        (await handleContentPublicationPagePost(request, response, pathname));
+        (await handleContentPublicationPagePost(request, response, pathname)) ||
+        (await handleFootageAssetPagePost(request, response, pathname));
       if (!handled) {
         sendHtml(response, renderNotFoundPage(), 404);
       }
@@ -89,7 +93,8 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
       (await handleCampaignPlanRunPageGet(response, pathname, url)) ||
       (await handleContentCalendarPageGet(response, pathname, url)) ||
       (await handleContentItemPageGet(response, pathname, url)) ||
-      (await handleContentPublicationPageGet(response, pathname, url));
+      (await handleContentPublicationPageGet(response, pathname, url)) ||
+      (await handleFootageAssetPageGet(response, pathname, url));
     if (!handled) {
       sendHtml(response, renderNotFoundPage(), 404);
     }

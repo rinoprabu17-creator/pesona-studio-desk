@@ -9,6 +9,7 @@ export const navItems: NavItem[] = [
   { href: "/campaigns", label: "Campaign" },
   { href: "/content-calendar", label: "Kalender Konten" },
   { href: "/content-items", label: "Konten" },
+  { href: "/footage-assets", label: "Footage" },
   { href: "/products", label: "Product Library" },
   { href: "/colors", label: "Color Library" },
   { href: "/school-level-color-defaults", label: "Rekomendasi Warna" },

@@ -27,6 +27,8 @@ const requiredPaths = [
   "apps/web/src/content-item-errors.ts",
   "apps/web/src/content-publication-service.ts",
   "apps/web/src/content-publication-errors.ts",
+  "apps/web/src/footage-asset-service.ts",
+  "apps/web/src/footage-asset-errors.ts",
   "apps/web/src/content-calendar-service.ts",
   "apps/web/src/content-calendar-errors.ts",
   "apps/web/src/http/request.ts",
@@ -45,6 +47,8 @@ const requiredPaths = [
   "apps/web/src/routes/content-item-page-routes.ts",
   "apps/web/src/routes/content-publication-api-routes.ts",
   "apps/web/src/routes/content-publication-page-routes.ts",
+  "apps/web/src/routes/footage-asset-api-routes.ts",
+  "apps/web/src/routes/footage-asset-page-routes.ts",
   "apps/web/src/routes/library-api-routes.ts",
   "apps/web/src/routes/library-page-routes.ts",
   "apps/web/src/views/campaign-pages.ts",
@@ -54,6 +58,7 @@ const requiredPaths = [
   "apps/web/src/views/content-calendar-page.ts",
   "apps/web/src/views/content-item-pages.ts",
   "apps/web/src/views/content-publication-pages.ts",
+  "apps/web/src/views/footage-asset-pages.ts",
   "apps/web/src/views/layout.ts",
   "apps/web/src/views/library-pages.ts",
   "apps/web/src/validation/campaign-validation.ts",
@@ -61,6 +66,7 @@ const requiredPaths = [
   "apps/web/src/validation/campaign-plan-review-validation.ts",
   "apps/web/src/validation/content-item-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
+  "apps/web/src/validation/footage-asset-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
   "apps/web/src/validation/library-validation.ts",
   "packages/campaign-planner/src/constants.ts",
@@ -86,6 +92,7 @@ const requiredPaths = [
   "tests/campaign-plan-runs/generation-runs.test.ts",
   "tests/campaign-plan-review/draft-review.test.ts",
   "tests/campaign-plan-import/approved-import.test.ts",
+  "tests/footage-catalog/footage-catalog.test.ts",
   "tests/bootstrap-env.mjs",
   "tests/fixtures/campaign-planner/input.ts",
   "migrations/001_phase1a_libraries.sql",
@@ -93,6 +100,7 @@ const requiredPaths = [
   "migrations/003_phase1b_content_items.sql",
   "migrations/004_phase1b_content_publications.sql",
   "migrations/005_phase2a_campaign_plan_staging.sql",
+  "migrations/006_phase2b_footage_assets.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "scripts/prepare-test-db.mjs",
@@ -146,6 +154,9 @@ const requiredRoutes = [
   "/content-items",
   "/content-items/new",
   "/api/content-items",
+  "/footage-assets",
+  "/footage-assets/new",
+  "/api/footage-assets",
   "/publications/new",
   "/content-publications",
   "/publications$"
@@ -366,6 +377,30 @@ if (migrationFiles.length === 1 && migrationFiles[0] === "005_phase2a_campaign_p
   pass("Migration 005 Phase 2A staging tersedia");
 } else {
   fail(`Migration 005 Phase 2A harus tepat satu file: ${migrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const footageMigrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("006_"));
+if (footageMigrationFiles.length === 1 && footageMigrationFiles[0] === "006_phase2b_footage_assets.sql") {
+  pass("Migration 006 Phase 2B footage assets tersedia");
+} else {
+  fail(`Migration 006 Phase 2B harus tepat satu file: ${footageMigrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const footageMigrationSource = existsSync("migrations/006_phase2b_footage_assets.sql")
+  ? readFileSync("migrations/006_phase2b_footage_assets.sql", "utf8")
+  : "";
+for (const requiredText of [
+  "CREATE TABLE footage_assets",
+  "relative_path text NOT NULL UNIQUE",
+  "product_id uuid REFERENCES products(id)",
+  "status = ANY (ARRAY['new', 'reviewed', 'approved', 'rejected', 'archived'])",
+  "position(chr(92) in relative_path) = 0"
+]) {
+  if (footageMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 2B.1 footage memuat: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 2B.1 footage belum memuat: ${requiredText}`);
+  }
 }
 
 if (webSource.includes("/content-calendar")) {
@@ -619,10 +654,11 @@ for (const requiredImportTestText of [
 }
 
 const migration006Files = readdirSync("migrations").filter((fileName) => fileName.startsWith("006_"));
-if (migration006Files.length) {
-  fail(`Phase 2A.4 tidak boleh membuat migration 006: ${migration006Files.join(", ")}`);
+const unexpectedPhase2A4Migration006 = migration006Files.filter((fileName) => fileName !== "006_phase2b_footage_assets.sql");
+if (unexpectedPhase2A4Migration006.length) {
+  fail(`Phase 2A.4 tidak boleh membuat migration 006 untuk import/review: ${unexpectedPhase2A4Migration006.join(", ")}`);
 } else {
-  pass("Tidak ada migration 006 untuk Phase 2A.4");
+  pass("Tidak ada migration 006 untuk Phase 2A.4 import/review");
 }
 
 if (importWebSource.includes("contentCode") || importWebSource.includes("padStart(2")) {
