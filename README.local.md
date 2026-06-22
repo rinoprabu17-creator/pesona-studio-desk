@@ -65,6 +65,95 @@ Sebelum menjalankan stack di server kantor:
    docker compose --env-file .env.local -f docker-compose.dev.yml down
    ```
 
+## Local Runtime Smoke Phase 2A.6C
+
+Smoke ini memverifikasi runtime lokal bisa start dengan aman. Jangan pakai `docker compose down -v`, `docker volume rm`, reset database, atau hapus folder `storage/` saat smoke.
+
+1. Siapkan env lokal:
+
+   ```powershell
+   Copy-Item .env.local.example .env.local
+   ```
+
+   Untuk server kantor, ganti placeholder lokal berikut sebelum runtime dipakai operasional:
+
+   - `POSTGRES_PASSWORD`
+   - `N8N_BASIC_AUTH_PASSWORD`
+   - `N8N_ENCRYPTION_KEY`
+   - `INTERNAL_API_TOKEN`
+
+   Biarkan Campaign Planner pada mode lokal/fake:
+
+   ```text
+   CAMPAIGN_PLANNER_PROVIDER=fake
+   CAMPAIGN_PLANNER_OPENAI_ENABLED=false
+   OPENAI_MODEL=
+   ```
+
+2. Validasi Compose tanpa start container:
+
+   ```powershell
+   docker compose --env-file .env.local -f docker-compose.dev.yml config
+   ```
+
+   Pastikan service berikut ada: `postgres`, `redis`, `n8n`, `web-app`, `campaign-planner-worker`, `video-worker`, dan `mockup-worker`.
+
+3. Start runtime lokal:
+
+   ```powershell
+   docker compose --env-file .env.local -f docker-compose.dev.yml up --build
+   ```
+
+   Command ini boleh menarik/build image jika belum ada. Tidak ada live OpenAI call pada mode default karena provider tetap `fake` dan override `docker-compose.openai.yml` tidak dipakai.
+
+4. Cek service dari terminal lain:
+
+   ```powershell
+   docker compose --env-file .env.local -f docker-compose.dev.yml ps
+   docker compose --env-file .env.local -f docker-compose.dev.yml logs --tail=80 web-app
+   docker compose --env-file .env.local -f docker-compose.dev.yml logs --tail=80 campaign-planner-worker
+   docker compose --env-file .env.local -f docker-compose.dev.yml logs --tail=80 video-worker
+   docker compose --env-file .env.local -f docker-compose.dev.yml logs --tail=80 mockup-worker
+   ```
+
+   Indikator aman:
+
+   - PostgreSQL dan Redis berstatus healthy.
+   - Web dashboard terbuka di http://localhost:3000.
+   - `campaign-planner-worker` log `event:"started"` dan tidak meminta OpenAI key.
+   - `video-worker` log `event:"started"` dengan `storageDir:"/app/storage"`.
+   - `mockup-worker` log `event:"started"` dengan `storageDir:"/app/storage"`.
+   - Tidak ada log live OpenAI request.
+
+5. Cek storage mount lokal:
+
+   ```powershell
+   docker compose --env-file .env.local -f docker-compose.dev.yml exec web-app ls -la /app/storage
+   ```
+
+   Pastikan folder `footage`, `draft-videos`, `approved-videos`, `mockups`, dan `brand-assets` terlihat. Folder itu berasal dari bind mount repo `./storage`.
+
+6. Smoke aplikasi setelah database siap:
+
+   ```powershell
+   npm run db:migrate
+   npm run db:seed
+   ```
+
+   Lalu buka:
+
+   - http://localhost:3000/products
+   - http://localhost:3000/campaigns
+   - http://localhost:3000/content-calendar
+
+7. Stop runtime tanpa menghapus volume:
+
+   ```powershell
+   docker compose --env-file .env.local -f docker-compose.dev.yml down
+   ```
+
+   Jangan tambah `-v` kecuali owner secara eksplisit meminta reset data.
+
 ## Jalankan tanpa Docker
 
 Mode ini hanya untuk melihat placeholder web dan worker log. PostgreSQL dan Redis tidak otomatis menyala.
