@@ -59,11 +59,20 @@ Mengubah content item menjadi script video detail dan shot list untuk petugas fo
 - Voice over opsional
 - Catatan teknis footage
 
+## Cost Guard Phase 2A.6A
+
+MVP memakai pembagian kerja AI berikut:
+
+- Local/rule-based untuk footage organization, tagging, draft hook/caption kasar, repurpose caption, claim checker, lead scoring ringan, template mockup awal, dan render video template/FFmpeg.
+- OpenAI GPT-5.4 mini untuk campaign planner final, script final, caption final, dan quality check konten penting.
+- Premium model hanya dipakai manual approval/sesekali.
+- Jangan menambah Gemini, Claude, ManyChat, WhatsApp API, TikTok API, atau API baru tanpa approval owner.
+
 ## Agent 3 — Footage Intake & QA Agent
 
 ### Tugas
 
-Mengecek footage yang masuk dari Google Drive.
+Mengecek footage yang masuk ke storage lokal server. Google Drive hanya menjadi backup/sharing penting.
 
 ### Output wajib
 

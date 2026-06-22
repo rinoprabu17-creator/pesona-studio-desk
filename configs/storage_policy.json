@@ -1,0 +1,28 @@
+{
+  "phase": "2A.6A",
+  "runtime_wired": false,
+  "working_storage": {
+    "primary": "local_ssd",
+    "target_capacity_tb": 2,
+    "stores": [
+      "incoming_footage",
+      "render_work_files",
+      "video_drafts",
+      "initial_mockup_outputs",
+      "active_operational_exports"
+    ]
+  },
+  "cloud_storage": {
+    "provider": "google_drive",
+    "role": "backup_and_important_sharing",
+    "not_primary_working_storage": true
+  },
+  "excluded_from_core_storage": [
+    "final_design_pdf",
+    "corel_final_design_files"
+  ],
+  "notes": [
+    "Final design files stay with the separate design admin workflow.",
+    "Future runtime wiring should keep storage paths configurable and secret-free."
+  ]
+}

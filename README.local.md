@@ -1,11 +1,28 @@
 # Pesona Studio Desk - Local Development
 
-Dokumen ini untuk menjalankan skeleton Phase 0 dari laptop.
+Dokumen ini untuk menjalankan skeleton Phase 0 dari laptop dan menjadi acuan awal deployment local-first di kantor.
+
+## Target server lokal kantor
+
+MVP awal tidak membutuhkan VPS. Target operasional adalah server lokal kantor:
+
+- Lenovo i7-7700
+- Ubuntu Server
+- RAM target 32GB
+- SSD target 2TB sebagai storage kerja utama
+- UPS
+- Tanpa GPU pada fase awal
+- Operasional sekitar 08.00-20.00, tidak wajib 24 jam
+
+Google Drive dipakai untuk backup/sharing file penting, bukan sebagai storage kerja utama footage/output. Desain final PDF tetap dipegang admin desain terpisah dan tidak menjadi core storage Studio Desk.
+
+Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 ## Prasyarat
 
 - Node.js 24 atau lebih baru.
 - Docker Desktop dengan Docker Compose v2.
+- Untuk server kantor: Ubuntu Server dengan Docker Engine dan Docker Compose v2.
 
 ## Setup cepat
 

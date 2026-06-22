@@ -1,0 +1,37 @@
+{
+  "phase": "2A.6A",
+  "runtime_wired": false,
+  "posting": {
+    "last_post_time": "19:00",
+    "prime_time": "20:00",
+    "auto_posting_enabled": false
+  },
+  "instagram_facebook": {
+    "lead_bridge": "meta_business_suite",
+    "native_comment_to_dm_test": true,
+    "primary_keyword": "MOCKUP",
+    "dm_goal": "send_to_whatsapp"
+  },
+  "whatsapp": {
+    "frontliner": "whatsapp_business_ai",
+    "available_24h": true,
+    "human_takeover_required_for": [
+      "serious_lead",
+      "price_question",
+      "quotation_request",
+      "final_design_discussion"
+    ]
+  },
+  "manychat": {
+    "enabled": false,
+    "decision": "deferred_backup_option"
+  },
+  "tiktok": {
+    "flow": "limited_manual",
+    "cta_video": true,
+    "whatsapp_link_in_bio": true,
+    "pinned_comment": true,
+    "api_integration_enabled": false,
+    "auto_dm_enabled": false
+  }
+}

@@ -21,16 +21,20 @@ Sebelum mengerjakan task apa pun, baca file berikut:
 ## Prinsip teknis
 
 - Bangun MVP kecil dulu, jangan overengineering.
-- Gunakan Docker Compose untuk local/dev deployment di VPS.
+- Gunakan arsitektur local-first untuk MVP awal: server lokal kantor lebih dulu, VPS hanya jika owner menyetujui nanti.
+- Gunakan Docker Compose untuk local/dev deployment dan server lokal kantor Ubuntu Server.
 - Simpan semua secret di `.env`, jangan hard-code API key.
 - Gunakan PostgreSQL untuk database utama.
 - Gunakan Redis/queue untuk job render video dan mockup.
-- Gunakan Google Drive sebagai storage footage dan output.
+- Gunakan SSD lokal server sebagai storage kerja utama.
+- Gunakan Google Drive hanya untuk backup/sharing penting, bukan storage kerja utama.
 - Gunakan worker terpisah untuk render video dan mockup.
 - Semua fitur berat harus asynchronous: render video, render mockup, upload/download file.
 - Selalu buat migration/schema yang jelas.
 - Selalu buat seed data minimal untuk campaign knowledge base.
 - Utamakan UI sederhana dan operasional.
+- Utamakan integrasi native platform lebih dulu untuk comment/DM: Meta Business Suite comment-to-DM, WA Business AI, CTA TikTok manual.
+- Jaga biaya AI: local/rule-based dulu untuk pekerjaan rutin, GPT-5.4 mini untuk output final/quality check, premium model hanya dengan approval manual.
 
 ## Batasan produk yang tidak boleh dilanggar
 
@@ -45,6 +49,10 @@ Jangan membangun fitur berikut dalam MVP kecuali owner meminta secara eksplisit:
 - Auto desain final Corel/PDF
 - Auto revisi desain final
 - Scraping ilegal atau automation yang melanggar platform
+- Custom DM bot tanpa approval owner
+- Integrasi ManyChat sebelum owner approval
+- Integrasi WhatsApp API sebelum owner approval
+- Integrasi TikTok API sebelum owner approval
 - Mockup revision workflow
 - Produk selain Sampul Raport dan Sampul Ijazah
 
@@ -78,7 +86,7 @@ Contoh istilah status:
 - Buat validasi input.
 - Gunakan enum untuk status.
 - Buat komponen UI sederhana, bukan desain rumit.
-- Tambahkan logging pada job render dan integrasi Google Drive.
+- Tambahkan logging pada job render, storage lokal, dan backup/sharing Google Drive jika ada.
 
 ## Cara kerja task
 

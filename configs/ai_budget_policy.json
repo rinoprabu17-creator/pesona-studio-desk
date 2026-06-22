@@ -1,0 +1,32 @@
+{
+  "phase": "2A.6A",
+  "runtime_wired": false,
+  "default_paid_model": "gpt-5.4-mini",
+  "monthly_budget_usd_target": 10,
+  "premium_model_policy": "manual_approval_only",
+  "local_or_rule_based_first": [
+    "footage_organization",
+    "tagging",
+    "rough_hook_draft",
+    "rough_caption_draft",
+    "caption_repurpose",
+    "claim_checker",
+    "light_lead_scoring",
+    "initial_mockup_template",
+    "ffmpeg_template_render"
+  ],
+  "paid_api_allowed_for": [
+    "campaign_planner_final",
+    "script_final",
+    "caption_final",
+    "important_content_quality_check"
+  ],
+  "deferred_or_disallowed_without_owner_approval": [
+    "gemini",
+    "claude",
+    "manychat",
+    "whatsapp_api",
+    "tiktok_api",
+    "new_external_ai_api"
+  ]
+}

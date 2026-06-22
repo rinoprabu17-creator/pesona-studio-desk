@@ -5,7 +5,7 @@
 - Kalender konten
 - Script konten
 - Shot list footage
-- Footage dari Google Drive
+- Footage di storage lokal server
 - Render video draft
 - Approval/revisi video
 - Scheduler posting
@@ -45,3 +45,6 @@ Lead dari konten
 - Jangan menghubungkan otomatis semua lead ke Growth OS Lite.
 - Jangan membuat WA chatbot panjang.
 - Jangan membuat revisi mockup awal.
+- Jangan menjadikan Google Drive sebagai storage kerja utama.
+- Jangan membuat custom DM bot, ManyChat, WhatsApp API, atau TikTok API sebelum owner approve.
+- Desain final PDF tetap dipegang admin desain terpisah, bukan core storage Studio Desk.
