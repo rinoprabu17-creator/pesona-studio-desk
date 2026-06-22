@@ -2,15 +2,15 @@
 
 n8n bertugas sebagai orchestrator, bukan editor video dan bukan database utama.
 
-## Workflow A — Google Drive Footage Watcher
+## Workflow A — Local Footage Watcher
 
 Trigger:
 
-- Cron setiap 5 menit, atau Google Drive webhook jika sudah siap.
+- Cron setiap 5 menit, atau filesystem watcher jika sudah siap.
 
 Steps:
 
-1. List file baru di folder campaign.
+1. List file baru di folder storage lokal campaign.
 2. Cocokkan folder dengan `content_code`.
 3. Kirim file metadata ke API Studio Desk.
 4. Panggil job `footage-intake-qa`.
@@ -42,7 +42,7 @@ Steps:
 2. Simpan edit plan.
 3. Push job ke queue render worker.
 4. Tunggu callback worker.
-5. Simpan output Drive URL.
+5. Simpan path/output lokal dan backup/share link jika ada.
 6. Ubah status ke `Draft Ready`.
 
 ## Workflow D — Revision Render

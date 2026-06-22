@@ -6,7 +6,7 @@
 Owner/Admin klik Generate Campaign
 → Campaign Planner Agent membaca campaign_knowledge_base
 → Sistem membuat 30 content_items
-→ Sistem membuat folder Google Drive per content_code
+→ Sistem menyiapkan folder storage lokal per content_code
 → Status content: Planned
 ```
 
@@ -22,8 +22,8 @@ content.status = Planned
 ## Workflow 3 — Upload Footage
 
 ```text
-Petugas upload ke folder Google Drive sesuai content_code
-→ n8n mendeteksi file baru
+Petugas upload/salin footage ke folder storage lokal sesuai content_code
+→ n8n atau worker mendeteksi file baru
 → Sistem ambil metadata dan sample frame
 → Footage Intake & QA Agent mengecek footage
 → Status footage: Usable / Needs Reshoot / Low Quality
@@ -35,7 +35,7 @@ Petugas upload ke folder Google Drive sesuai content_code
 Footage minimum lengkap
 → Video Director Agent membuat edit_plan.json
 → Video Render Worker menjalankan render
-→ Output MP4 diupload ke Google Drive
+→ Output MP4 disimpan di storage lokal server
 → Status content: Draft Ready
 ```
 

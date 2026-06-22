@@ -5,11 +5,17 @@
 
 Sistem ini dibuat untuk membantu PT. Pesona Gama Solusindo memproduksi konten otomatis/semi-otomatis untuk produk **Sampul Raport** dan **Sampul Ijazah**, tanpa membebani Pesona Growth OS Lite.
 
+## Arah deployment MVP
+
+Pesona Studio Desk memakai arsitektur **local-first**. Target awal berjalan di server lokal kantor Ubuntu Server, bukan VPS, dengan storage kerja utama di SSD lokal 2TB. Google Drive dipakai untuk backup/sharing penting, bukan storage kerja harian utama.
+
+Blueprint deployment terbaru ada di `docs/phase-2a6-local-first-blueprint.md`.
+
 ## Fungsi MVP
 
 1. Kalender konten 30 hari
 2. Script + shot list footage
-3. Upload footage via Google Drive
+3. Upload footage ke storage lokal server
 4. Render video draft otomatis
 5. Approval/revisi video
 6. Scheduler posting

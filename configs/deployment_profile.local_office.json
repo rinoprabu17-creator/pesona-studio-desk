@@ -1,0 +1,25 @@
+{
+  "profile": "local_office",
+  "phase": "2A.6A",
+  "runtime_wired": false,
+  "server": {
+    "location": "office",
+    "hardware_target": "Lenovo i7-7700",
+    "os_target": "Ubuntu Server",
+    "ram_gb_target": 32,
+    "ssd_tb_target": 2,
+    "gpu_required_initially": false,
+    "ups_required": true
+  },
+  "operation_window": {
+    "timezone": "Asia/Jakarta",
+    "start": "08:00",
+    "end": "20:00",
+    "requires_24h_uptime": false
+  },
+  "deployment_notes": [
+    "Use Docker Compose on the local office server for MVP.",
+    "Do not require VPS for initial deployment.",
+    "Keep heavy jobs retryable because the server may stop outside office hours."
+  ]
+}

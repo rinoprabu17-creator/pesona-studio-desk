@@ -64,13 +64,14 @@ Goal:
 - Generate script dan shot list dari content item.
 - Tampilkan shot list untuk petugas footage.
 
-## Phase 5 — Google Drive Footage Intake
+## Phase 5 — Local Footage Intake
 
 Goal:
 
-- Simpan Google Drive folder per content item.
-- Admin bisa paste Drive file link manual dulu.
-- Nanti baru n8n watcher.
+- Simpan folder storage lokal per content item.
+- Admin bisa upload/salin footage manual dulu.
+- Nanti baru n8n/worker watcher.
+- Google Drive hanya untuk backup/sharing penting.
 
 ## Phase 6 — Video Render Worker Stub
 

@@ -1,8 +1,10 @@
 # VPS & Codex Setup Notes
 
+> Status Phase 2A.6A: deferred/reference only. MVP awal memakai server lokal kantor Ubuntu Server, bukan VPS. Gunakan dokumen ini hanya jika owner nanti menyetujui deployment VPS/staging eksternal.
+
 ## Rekomendasi cara kerja
 
-Gunakan VPS sebagai development/staging server. Jangan langsung utak-atik production tanpa backup.
+Untuk MVP awal, gunakan server lokal kantor sebagai development/staging operasional. Jangan mengaktifkan VPS tanpa approval owner. Jika VPS dipakai nanti, jangan langsung utak-atik production tanpa backup.
 
 ## Struktur folder VPS
 

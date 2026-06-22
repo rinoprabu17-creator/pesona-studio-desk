@@ -62,7 +62,7 @@ Field utama:
 
 ### 3.3 Footage Inbox
 
-Menampilkan footage dari Google Drive dan status kelayakannya.
+Menampilkan footage dari storage lokal server dan status kelayakannya. Google Drive hanya untuk backup/sharing penting.
 
 Status footage:
 
@@ -144,7 +144,7 @@ Tidak perlu DM AI Agent dan Lead Parser Agent pada MVP.
 
 ## 5. Stack teknis rekomendasi
 
-- VPS + Docker Compose
+- Local-first server kantor + Docker Compose
 - Web dashboard: Next.js / TypeScript
 - Database: PostgreSQL
 - ORM: Prisma atau setara
@@ -152,7 +152,8 @@ Tidak perlu DM AI Agent dan Lead Parser Agent pada MVP.
 - Workflow automation: n8n self-hosted
 - Video worker: Node.js + Remotion + FFmpeg
 - Mockup worker: Node.js + SVG/Canvas/Sharp renderer
-- Storage footage/output: Google Drive
+- Storage kerja footage/output: SSD lokal server
+- Backup/sharing penting: Google Drive
 
 ## 6. Handoff ke Growth OS Lite
 
@@ -163,3 +164,18 @@ Rule handoff:
 - Lead awal dari konten tetap di Studio Desk.
 - Lead yang tanya harga dan dibuatkan penawaran masuk Growth OS Lite.
 - Desain final dan order tetap di Growth OS Lite.
+
+## 7. Keputusan Phase 2A.6A
+
+Blueprint local-first terbaru dicatat di `docs/phase-2a6-local-first-blueprint.md`.
+
+Ringkasan:
+
+- Server awal berjalan di kantor, bukan VPS.
+- Server diasumsikan office-hours sekitar 08.00-20.00.
+- Posting terakhir ditargetkan 19.00 untuk prime time 20.00.
+- Meta Business Suite native comment-to-DM dites dengan keyword `MOCKUP`.
+- WhatsApp Business AI menjadi frontliner 24 jam.
+- ManyChat deferred/cadangan dan tidak masuk MVP awal.
+- TikTok memakai CTA video, link WA di bio, dan pinned comment secara manual.
+- AI lokal/rule-based dipakai untuk pekerjaan murah/rutin; OpenAI GPT-5.4 mini dipakai untuk final quality.
