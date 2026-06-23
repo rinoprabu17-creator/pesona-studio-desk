@@ -2,8 +2,13 @@ import type { CampaignRow } from "../campaign-service.ts";
 import { listCampaigns } from "../campaign-service.ts";
 import type { ContentItemRow } from "../content-item-service.ts";
 import { listContentItems } from "../content-item-service.ts";
+import type { ContentItemFootageSelectionRow } from "../content-item-footage-service.ts";
+import { listContentItemFootageSelections } from "../content-item-footage-service.ts";
+import type { FootageAssetRow } from "../footage-asset-service.ts";
+import { listFootageAssets } from "../footage-asset-service.ts";
 import { listColors, listOffers, listPainPoints, listProducts, listSchoolLevelColorDefaults } from "../library-service.ts";
 import { renderContentItemPublicationsSection } from "./content-publication-pages.ts";
+import { contentItemFootageRoles } from "../validation/content-item-footage-validation.ts";
 import {
   audienceSegments,
   contentPillars,
@@ -41,6 +46,18 @@ export const productionStatusLabels: Record<string, string> = {
   approved: "Disetujui",
   failed: "Gagal",
   archived: "Diarsipkan"
+};
+
+export const contentItemFootageRoleLabels: Record<string, string> = {
+  opening: "Opening",
+  product: "Produk",
+  process: "Proses",
+  packing: "Packing",
+  delivery: "Delivery",
+  testimonial: "Testimonial",
+  closing: "Closing",
+  b_roll: "B-roll",
+  other: "Lainnya"
 };
 
 function formatDate(value: unknown): string {
@@ -344,6 +361,121 @@ function statusActions(item: ContentItemRow): string {
   </div>`;
 }
 
+function footageAssetOptionLabel(asset: FootageAssetRow): string {
+  const parts = [
+    asset.relative_path,
+    asset.product_name || "Tanpa produk",
+    asset.theme || "Tanpa tema",
+    asset.shot_type,
+    asset.status,
+    `${asset.size_bytes} bytes`
+  ];
+  return parts.join(" | ");
+}
+
+function footageSelectOptions(assets: FootageAssetRow[]): string {
+  if (!assets.length) {
+    return `<option value="">Belum ada footage reviewed/approved</option>`;
+  }
+  return [
+    `<option value="">Pilih footage</option>`,
+    ...assets.map((asset) => `<option value="${escapeHtml(asset.id)}">${escapeHtml(footageAssetOptionLabel(asset))}</option>`)
+  ].join("");
+}
+
+function roleOptions(selected = "other"): string {
+  return contentItemFootageRoles
+    .map((role) => `<option value="${escapeHtml(role)}" ${role === selected ? "selected" : ""}>${escapeHtml(contentItemFootageRoleLabels[role] || role)}</option>`)
+    .join("");
+}
+
+function renderSelectedFootageTable(item: ContentItemRow, selections: ContentItemFootageSelectionRow[]): string {
+  const rows = selections.map((selection) => [
+    `<form method="post" action="/content-items/${escapeHtml(item.id)}/footage/${escapeHtml(selection.id)}/update">
+      <input name="sequence_number" type="number" min="1" step="1" value="${escapeHtml(selection.sequence_number)}" required style="width: 86px;">
+    `,
+    `<strong>${escapeHtml(selection.filename)}</strong><br><span class="muted">${escapeHtml(selection.relative_path)}</span>`,
+    `${escapeHtml(selection.product_name || "Tanpa produk")}<br><span class="muted">${escapeHtml(selection.theme || "Tanpa tema")}</span>`,
+    `<select name="role">${roleOptions(selection.role)}</select>`,
+    `<textarea name="usage_note" maxlength="1000">${escapeHtml(selection.usage_note || "")}</textarea>`,
+    `<div class="button-row">
+        <button type="submit">Simpan</button>
+      </form>
+      <form class="inline-form" method="post" action="/content-items/${escapeHtml(item.id)}/footage/${escapeHtml(selection.id)}/remove">
+        <button class="button-danger" type="submit">Lepas</button>
+      </form>
+    </div>`
+  ]);
+  return renderReadOnlyTable(["Urutan", "Footage", "Konteks", "Role", "Catatan Pakai", "Aksi"], rows);
+}
+
+export async function renderContentItemFootagePage(item: ContentItemRow, url: URL): Promise<string> {
+  const [selections, reviewed, approved] = await Promise.all([
+    listContentItemFootageSelections(item.id),
+    listFootageAssets({ status: "reviewed" }),
+    listFootageAssets({ status: "approved" })
+  ]);
+  const selectable = [...reviewed, ...approved].sort((a, b) => a.relative_path.localeCompare(b.relative_path));
+  const nextSequence = selections.reduce((max, selection) => Math.max(max, selection.sequence_number), 0) + 1;
+
+  const summary = renderReadOnlyTable(
+    ["Field", "Nilai"],
+    [
+      ["Content Code", `<strong>${escapeHtml(item.content_code)}</strong>`],
+      ["Judul", escapeHtml(item.title)],
+      ["Campaign", `${escapeHtml(item.campaign_code)} - ${escapeHtml(item.campaign_name)}`],
+      ["Tanggal", escapeHtml(formatDate(item.planned_content_date))],
+      ["Produk", escapeHtml(productLabel(item))],
+      ["Status", escapeHtml(productionStatusLabels[item.production_status] || item.production_status)]
+    ]
+  );
+
+  const addForm = `
+    <section>
+      <h2>Tambah Footage Pilihan</h2>
+      <form method="post" action="/content-items/${escapeHtml(item.id)}/footage/add">
+        <div class="form-grid">
+          <label>Footage Reviewed/Approved
+            <select name="footage_asset_id" required>${footageSelectOptions(selectable)}</select>
+          </label>
+          <label>Urutan
+            <input name="sequence_number" type="number" min="1" step="1" value="${escapeHtml(nextSequence)}" required>
+          </label>
+          <label>Role
+            <select name="role">${roleOptions("other")}</select>
+          </label>
+        </div>
+        <label style="margin-top: 14px;">Catatan Pakai
+          <textarea name="usage_note" maxlength="1000" placeholder="contoh: close-up opening untuk hook"></textarea>
+        </label>
+        <div class="button-row" style="margin-top: 14px;">
+          <button type="submit">Pilih Footage</button>
+          <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Kembali Detail</a>
+        </div>
+      </form>
+    </section>
+  `;
+
+  const content = `
+    ${renderMessage(url)}
+    <div class="notice">Workflow ini hanya memilih footage untuk planning konten. Tidak ada file footage yang dipindah, diedit, dihapus, diupload, atau dirender menjadi video.</div>
+    ${summary}
+    <section>
+      <h2>Footage Terpilih</h2>
+      ${renderSelectedFootageTable(item, selections)}
+    </section>
+    ${addForm}
+  `;
+
+  return renderLayout(
+    "/content-items",
+    `Footage Konten - ${item.content_code}`,
+    "Content Footage Selection",
+    "Pilih footage reviewed/approved untuk rencana konten sebelum script dan video workflow.",
+    content
+  );
+}
+
 export async function renderContentItemDetailPage(item: ContentItemRow, url: URL): Promise<string> {
   const rows = [
     ["Content Code", `<strong>${escapeHtml(item.content_code)}</strong>`],
@@ -368,6 +500,7 @@ export async function renderContentItemDetailPage(item: ContentItemRow, url: URL
     ${renderMessage(url)}
     <div class="button-row">
       <a class="button" href="/content-items/${escapeHtml(item.id)}/edit">Edit Konten</a>
+      <a class="button" href="/content-items/${escapeHtml(item.id)}/footage">Pilih Footage</a>
       <a class="button button-secondary" href="/content-items">Kembali</a>
     </div>
     <p class="hint">Publikasi channel akan dikelola pada tahap berikutnya.</p>

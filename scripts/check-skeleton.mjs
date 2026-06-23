@@ -25,6 +25,8 @@ const requiredPaths = [
   "apps/web/src/campaign-plan-import-errors.ts",
   "apps/web/src/content-item-service.ts",
   "apps/web/src/content-item-errors.ts",
+  "apps/web/src/content-item-footage-service.ts",
+  "apps/web/src/content-item-footage-errors.ts",
   "apps/web/src/content-publication-service.ts",
   "apps/web/src/content-publication-errors.ts",
   "apps/web/src/footage-asset-service.ts",
@@ -65,6 +67,7 @@ const requiredPaths = [
   "apps/web/src/validation/campaign-plan-run-validation.ts",
   "apps/web/src/validation/campaign-plan-review-validation.ts",
   "apps/web/src/validation/content-item-validation.ts",
+  "apps/web/src/validation/content-item-footage-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/footage-asset-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
@@ -101,6 +104,7 @@ const requiredPaths = [
   "migrations/004_phase1b_content_publications.sql",
   "migrations/005_phase2a_campaign_plan_staging.sql",
   "migrations/006_phase2b_footage_assets.sql",
+  "migrations/007_phase2c_content_item_footage.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "scripts/prepare-test-db.mjs",
@@ -400,6 +404,38 @@ for (const requiredText of [
     pass(`Migration Phase 2B.1 footage memuat: ${requiredText}`);
   } else {
     fail(`Migration Phase 2B.1 footage belum memuat: ${requiredText}`);
+  }
+}
+
+const contentFootageMigrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("007_"));
+if (contentFootageMigrationFiles.length === 1 && contentFootageMigrationFiles[0] === "007_phase2c_content_item_footage.sql") {
+  pass("Migration 007 Phase 2C content item footage tersedia");
+} else {
+  fail(`Migration 007 Phase 2C harus tepat satu file: ${contentFootageMigrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const contentFootageMigrationSource = existsSync("migrations/007_phase2c_content_item_footage.sql")
+  ? readFileSync("migrations/007_phase2c_content_item_footage.sql", "utf8")
+  : "";
+for (const requiredText of [
+  "CREATE TABLE content_item_footage_selections",
+  "content_item_id uuid NOT NULL REFERENCES content_items(id)",
+  "footage_asset_id uuid NOT NULL REFERENCES footage_assets(id)",
+  "content_item_footage_item_sequence_key UNIQUE (content_item_id, sequence_number)",
+  "content_item_footage_item_asset_key UNIQUE (content_item_id, footage_asset_id)"
+]) {
+  if (contentFootageMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 2C.1 content footage memuat: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 2C.1 content footage belum memuat: ${requiredText}`);
+  }
+}
+
+for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
+  if (contentFootageMigrationSource.includes(forbiddenText)) {
+    fail(`Migration Phase 2C.1 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
+  } else {
+    pass(`Migration Phase 2C.1 tidak memuat destructive SQL: ${forbiddenText}`);
   }
 }
 

@@ -6,6 +6,11 @@ import {
   updateContentItem,
   updateContentItemProductionStatus
 } from "../content-item-service.ts";
+import {
+  addContentItemFootageSelection,
+  removeContentItemFootageSelectionForContentItem,
+  updateContentItemFootageSelectionForContentItem
+} from "../content-item-footage-service.ts";
 import { readFormBody } from "../http/request.ts";
 import type { RequestLike } from "../http/request.ts";
 import { redirect, sendHtml } from "../http/response.ts";
@@ -13,6 +18,7 @@ import type { ResponseLike } from "../http/response.ts";
 import { LibraryError } from "../library-errors.ts";
 import {
   renderContentItemDetailPage,
+  renderContentItemFootagePage,
   renderContentItemFormPage,
   renderContentItemListPage,
   renderContentItemNotFoundPage,
@@ -108,6 +114,44 @@ export async function handleContentItemPagePost(request: RequestLike, response: 
     return true;
   }
 
+  const addFootageMatch = pathname.match(/^\/content-items\/([^/]+)\/footage\/add$/);
+  if (addFootageMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      await addContentItemFootageSelection(addFootageMatch[1], body);
+      redirect(response, `/content-items/${encodeURIComponent(addFootageMatch[1])}/footage?success=Footage berhasil dipilih untuk konten.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Footage gagal dipilih.";
+      redirect(response, `/content-items/${encodeURIComponent(addFootageMatch[1])}/footage?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
+  const updateFootageMatch = pathname.match(/^\/content-items\/([^/]+)\/footage\/([^/]+)\/update$/);
+  if (updateFootageMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      await updateContentItemFootageSelectionForContentItem(updateFootageMatch[1], updateFootageMatch[2], body);
+      redirect(response, `/content-items/${encodeURIComponent(updateFootageMatch[1])}/footage?success=Pilihan footage berhasil disimpan.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Pilihan footage gagal disimpan.";
+      redirect(response, `/content-items/${encodeURIComponent(updateFootageMatch[1])}/footage?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
+  const removeFootageMatch = pathname.match(/^\/content-items\/([^/]+)\/footage\/([^/]+)\/remove$/);
+  if (removeFootageMatch && request.method === "POST") {
+    try {
+      await removeContentItemFootageSelectionForContentItem(removeFootageMatch[1], removeFootageMatch[2]);
+      redirect(response, `/content-items/${encodeURIComponent(removeFootageMatch[1])}/footage?success=Pilihan footage berhasil dilepas.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Pilihan footage gagal dilepas.";
+      redirect(response, `/content-items/${encodeURIComponent(removeFootageMatch[1])}/footage?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -142,6 +186,18 @@ export async function handleContentItemPageGet(response: ResponseLike, pathname:
           item
         })
       );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Konten tidak ditemukan.";
+      sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
+    }
+    return true;
+  }
+
+  const footageMatch = pathname.match(/^\/content-items\/([^/]+)\/footage$/);
+  if (footageMatch) {
+    try {
+      const item = await getContentItem(footageMatch[1]);
+      sendHtml(response, await renderContentItemFootagePage(item, url));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Konten tidak ditemukan.";
       sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);

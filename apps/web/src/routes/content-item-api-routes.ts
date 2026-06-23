@@ -5,6 +5,12 @@ import {
   updateContentItem,
   updateContentItemProductionStatus
 } from "../content-item-service.ts";
+import {
+  addContentItemFootageSelection,
+  listContentItemFootageSelections,
+  removeContentItemFootageSelection,
+  updateContentItemFootageSelection
+} from "../content-item-footage-service.ts";
 import { readJsonBody } from "../http/request.ts";
 import type { RequestLike } from "../http/request.ts";
 import { sendSuccess } from "../http/response.ts";
@@ -31,6 +37,29 @@ export async function handleContentItemApiRoute(request: RequestLike, response: 
   if (statusMatch && request.method === "POST") {
     const body = await readJsonBody(request);
     sendSuccess(response, await updateContentItemProductionStatus(statusMatch[1], body.production_status));
+    return true;
+  }
+
+  const footageMatch = pathname.match(/^\/api\/content-items\/([^/]+)\/footage$/);
+  if (footageMatch && request.method === "GET") {
+    sendSuccess(response, await listContentItemFootageSelections(footageMatch[1]));
+    return true;
+  }
+
+  if (footageMatch && request.method === "POST") {
+    sendSuccess(response, await addContentItemFootageSelection(footageMatch[1], await readJsonBody(request)), 201);
+    return true;
+  }
+
+  const selectionMatch = pathname.match(/^\/api\/content-item-footage\/([^/]+)$/);
+  if (selectionMatch && request.method === "POST") {
+    sendSuccess(response, await updateContentItemFootageSelection(selectionMatch[1], await readJsonBody(request)));
+    return true;
+  }
+
+  const removeSelectionMatch = pathname.match(/^\/api\/content-item-footage\/([^/]+)\/remove$/);
+  if (removeSelectionMatch && request.method === "POST") {
+    sendSuccess(response, await removeContentItemFootageSelection(removeSelectionMatch[1]));
     return true;
   }
 
