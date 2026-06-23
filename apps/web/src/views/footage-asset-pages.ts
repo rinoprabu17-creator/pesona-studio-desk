@@ -1,5 +1,6 @@
 import type { FootageAssetRow } from "../footage-asset-service.ts";
 import { listFootageAssets } from "../footage-asset-service.ts";
+import { scanFootageDirectory } from "../footage-scan-service.ts";
 import { listProducts } from "../library-service.ts";
 import {
   footageSchoolLevels,
@@ -132,6 +133,7 @@ export async function renderFootageAssetListPage(url: URL): Promise<string> {
       <div class="button-row" style="margin-top: 14px;">
         <button type="submit">Filter</button>
         <a class="button button-secondary" href="/footage-assets">Reset</a>
+        <a class="button button-secondary" href="/footage-assets/scan">Scan Folder</a>
         <a class="button" href="/footage-assets/new">Catat Footage</a>
       </div>
     </form>
@@ -160,6 +162,65 @@ export async function renderFootageAssetListPage(url: URL): Promise<string> {
     "Local Footage Catalog",
     "Catat metadata footage yang sudah tersimpan di storage/footage. Fase ini tidak upload, scan otomatis, atau mengubah file footage.",
     `${renderMessage(url)}${filter}${table}`
+  );
+}
+
+export async function renderFootageAssetScanPage(url: URL, errorMessage?: string): Promise<string> {
+  const scan = await scanFootageDirectory();
+  const missing = scan.files.filter((file) => !file.cataloged);
+  const error = errorMessage ? `<div class="notice error">${escapeHtml(errorMessage)}</div>` : "";
+  const importForm = missing.length
+    ? `<form method="post" action="/footage-assets/scan/import">
+        <div class="form-grid">
+          <label>Shot Type Default
+            <select name="shot_type" required>
+              ${footageShotTypes.map((item) => `<option value="${escapeHtml(item)}" ${item === "other" ? "selected" : ""}>${escapeHtml(footageShotTypeLabels[item])}</option>`).join("")}
+            </select>
+          </label>
+        </div>
+        <p class="hint">Import hanya membuat metadata database untuk file yang belum tercatat. File fisik tetap read-only: tidak diubah, dipindah, dihapus, disalin, atau di-upload.</p>
+        <div class="button-row" style="margin-top: 14px;">
+          <button type="submit">Buat Metadata Missing</button>
+          <a class="button button-secondary" href="/footage-assets">Kembali</a>
+        </div>
+      </form>`
+    : `<div class="notice success">Semua file yang ditemukan sudah tercatat atau belum ada file reguler di folder footage.</div>
+       <div class="button-row"><a class="button button-secondary" href="/footage-assets">Kembali</a></div>`;
+
+  const filesTable = renderReadOnlyTable(
+    ["Path", "Filename", "Ekstensi", "Ukuran", "Status Katalog"],
+    scan.files.map((file) => [
+      escapeHtml(file.relative_path),
+      escapeHtml(file.filename),
+      escapeHtml(file.file_extension),
+      escapeHtml(`${file.size_bytes} bytes`),
+      file.cataloged ? `<span class="badge badge-ok">Sudah tercatat</span>` : `<span class="badge">Belum tercatat</span>`
+    ])
+  );
+
+  const skippedTable = scan.skipped.length
+    ? `<div>
+        <h2>Path Dilewati</h2>
+        ${renderReadOnlyTable(
+          ["Path", "Alasan"],
+          scan.skipped.map((item) => [escapeHtml(item.relative_path), escapeHtml(item.reason)])
+        )}
+      </div>`
+    : "";
+
+  return renderLayout(
+    "/footage-assets",
+    "Scan Folder Footage",
+    "Read-only Scan Preview",
+    "Scan ini hanya membaca daftar file dan metadata ukuran di storage/footage. Import hanya membuat metadata database untuk file missing.",
+    `${renderMessage(url)}${error}
+     <div class="notice">Root scan: <strong>${escapeHtml(scan.storage_root)}</strong><br>File fisik tidak diubah oleh scan atau import metadata.</div>
+     ${importForm}
+     <div>
+       <h2>File Ditemukan</h2>
+       ${filesTable}
+     </div>
+     ${skippedTable}`
   );
 }
 

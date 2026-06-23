@@ -1,5 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { mkdtemp, mkdir, rm, stat, writeFile } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import pg from "pg";
 import {
   createFootageAsset,
@@ -7,6 +10,10 @@ import {
   listFootageAssets,
   updateFootageAsset
 } from "../../apps/web/src/footage-asset-service.ts";
+import {
+  importFootageScan,
+  scanFootageDirectory
+} from "../../apps/web/src/footage-scan-service.ts";
 import { closeDatabase } from "../../apps/web/src/db.ts";
 import {
   validateFootageAssetInput,
@@ -18,6 +25,7 @@ const shouldRun = Boolean(databaseUrl);
 const { Pool } = pg;
 const pool = databaseUrl ? new Pool({ connectionString: databaseUrl, max: 4 }) : null;
 const prefix = `footage-catalog-${process.pid}-${Date.now()}`;
+const tempDirs: string[] = [];
 
 function maybeTest(name: string, fn: Parameters<typeof test>[1]) {
   test(name, { skip: shouldRun ? false : "TEST_DATABASE_URL tidak tersedia." }, fn);
@@ -34,8 +42,19 @@ test.after(async () => {
     await pool.query(`DELETE FROM footage_assets WHERE relative_path LIKE $1`, [`${prefix}/%`]);
     await pool.end();
   }
+  for (const dir of tempDirs) {
+    await rm(dir, { recursive: true, force: true });
+  }
   await closeDatabase();
 });
+
+async function createTempFootageRoot(): Promise<{ storageRoot: string; footageRoot: string }> {
+  const storageRoot = await mkdtemp(join(tmpdir(), `${prefix}-storage-`));
+  tempDirs.push(storageRoot);
+  const footageRoot = join(storageRoot, "footage");
+  await mkdir(footageRoot, { recursive: true });
+  return { storageRoot, footageRoot };
+}
 
 test("footage relative path validation rejects unsafe paths", () => {
   const invalidPaths = [
@@ -134,4 +153,93 @@ maybeTest("footage service create, list, detail, update, filters, duplicate guar
     () => createFootageAsset({ relative_path: updated.relative_path, size_bytes: 1, shot_type: "other" }),
     /sudah tercatat/
   );
+});
+
+maybeTest("footage scan reads regular files, validates relative paths, and ignores non-files", async () => {
+  const { storageRoot, footageRoot } = await createTempFootageRoot();
+  await mkdir(join(footageRoot, prefix, "nested"), { recursive: true });
+  await writeFile(join(footageRoot, prefix, "clip-a.MP4"), "abc");
+  await writeFile(join(footageRoot, prefix, "nested", "clip-b.mov"), "abcdef");
+  await writeFile(join(footageRoot, prefix, "no-extension"), "unsafe");
+
+  const result = await scanFootageDirectory({ storageRoot });
+  assert.deepEqual(
+    result.files.map((file) => ({
+      relative_path: file.relative_path,
+      filename: file.filename,
+      file_extension: file.file_extension,
+      size_bytes: file.size_bytes,
+      cataloged: file.cataloged
+    })),
+    [
+      {
+        relative_path: `${prefix}/clip-a.MP4`,
+        filename: "clip-a.MP4",
+        file_extension: "mp4",
+        size_bytes: 3,
+        cataloged: false
+      },
+      {
+        relative_path: `${prefix}/nested/clip-b.mov`,
+        filename: "clip-b.mov",
+        file_extension: "mov",
+        size_bytes: 6,
+        cataloged: false
+      }
+    ]
+  );
+  assert.equal(result.skipped.some((item) => item.relative_path === `${prefix}/no-extension`), true);
+});
+
+maybeTest("footage scan import creates metadata only and skips existing catalog records", async () => {
+  const { storageRoot, footageRoot } = await createTempFootageRoot();
+  await mkdir(join(footageRoot, prefix), { recursive: true });
+  const existingPath = join(footageRoot, prefix, "existing.mp4");
+  const missingPath = join(footageRoot, prefix, "missing.mp4");
+  await writeFile(existingPath, "existing");
+  await writeFile(missingPath, "missing");
+
+  await createFootageAsset({
+    relative_path: `${prefix}/existing.mp4`,
+    size_bytes: 8,
+    status: "new",
+    shot_type: "product"
+  });
+
+  const beforeExisting = await stat(existingPath);
+  const beforeMissing = await stat(missingPath);
+  const result = await importFootageScan({}, { storageRoot });
+  const afterExisting = await stat(existingPath);
+  const afterMissing = await stat(missingPath);
+
+  assert.deepEqual(result.created.map((file) => file.relative_path), [`${prefix}/missing.mp4`]);
+  assert.deepEqual(result.skipped_existing.map((file) => file.relative_path), [`${prefix}/existing.mp4`]);
+  assert.equal(result.skipped_unsafe.length, 0);
+
+  const rows = await pool!.query<{ relative_path: string; status: string; shot_type: string; size_bytes: string }>(
+    `SELECT relative_path, status, shot_type, size_bytes
+     FROM footage_assets
+     WHERE relative_path IN ($1, $2)
+     ORDER BY relative_path`,
+    [`${prefix}/existing.mp4`, `${prefix}/missing.mp4`]
+  );
+  assert.deepEqual(rows.rows, [
+    {
+      relative_path: `${prefix}/existing.mp4`,
+      status: "new",
+      shot_type: "product",
+      size_bytes: "8"
+    },
+    {
+      relative_path: `${prefix}/missing.mp4`,
+      status: "new",
+      shot_type: "other",
+      size_bytes: "7"
+    }
+  ]);
+
+  assert.equal(afterExisting.size, beforeExisting.size);
+  assert.equal(afterExisting.mtimeMs, beforeExisting.mtimeMs);
+  assert.equal(afterMissing.size, beforeMissing.size);
+  assert.equal(afterMissing.mtimeMs, beforeMissing.mtimeMs);
 });
