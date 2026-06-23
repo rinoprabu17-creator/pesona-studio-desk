@@ -26,6 +26,13 @@ import {
 } from "../validation/video-draft-job-validation.ts";
 import type { VideoDraftJobRow, VideoDraftReadiness } from "../video-draft-job-service.ts";
 import { getVideoDraftJobForContentItem } from "../video-draft-job-service.ts";
+import type { RenderManifestItemRow, RenderManifestRow } from "../render-manifest-service.ts";
+import { getRenderManifestContextForContentItem } from "../render-manifest-service.ts";
+import {
+  renderManifestModes,
+  renderManifestStatuses,
+  renderManifestTargetFormats
+} from "../validation/render-manifest-validation.ts";
 import {
   audienceSegments,
   contentPillars,
@@ -124,6 +131,18 @@ export const videoDraftTargetFormatLabels: Record<string, string> = {
 
 export const videoDraftRenderModeLabels: Record<string, string> = {
   disabled_metadata_only: "Disabled - metadata only"
+};
+
+export const renderManifestStatusLabels: Record<string, string> = {
+  draft: "Draft",
+  reviewed: "Reviewed",
+  approved: "Approved",
+  blocked: "Blocked",
+  archived: "Archived"
+};
+
+export const renderManifestModeLabels: Record<string, string> = {
+  metadata_only: "Metadata only"
 };
 
 function formatDate(value: unknown): string {
@@ -491,6 +510,24 @@ function videoDraftRenderModeOptions(selected = "disabled_metadata_only"): strin
     .join("");
 }
 
+function renderManifestStatusOptions(selected = "draft"): string {
+  return renderManifestStatuses
+    .map((status) => `<option value="${escapeHtml(status)}" ${status === selected ? "selected" : ""}>${escapeHtml(renderManifestStatusLabels[status] || status)}</option>`)
+    .join("");
+}
+
+function renderManifestModeOptions(selected = "metadata_only"): string {
+  return renderManifestModes
+    .map((mode) => `<option value="${escapeHtml(mode)}" ${mode === selected ? "selected" : ""}>${escapeHtml(renderManifestModeLabels[mode] || mode)}</option>`)
+    .join("");
+}
+
+function renderManifestTargetFormatOptions(selected = "vertical_9_16"): string {
+  return renderManifestTargetFormats
+    .map((format) => `<option value="${escapeHtml(format)}" ${format === selected ? "selected" : ""}>${escapeHtml(videoDraftTargetFormatLabels[format] || format)}</option>`)
+    .join("");
+}
+
 function selectedFootageOptions(selections: ContentItemFootageSelectionRow[], selected: string | null = null): string {
   return [
     `<option value="" ${!selected ? "selected" : ""}>Tanpa footage terpilih</option>`,
@@ -841,6 +878,9 @@ function renderVideoDraftJobSection(item: ContentItemRow, job: VideoDraftJobRow 
     <form class="inline-form" method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(job.id)}/cancel">
       <button class="button-danger" type="submit">Cancel Job</button>
     </form>
+    <div class="button-row" style="margin-top: 14px;">
+      <a class="button" href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(job.id)}/manifest">Render Manifest</a>
+    </div>
   </section>`;
 }
 
@@ -875,6 +915,133 @@ export async function renderContentItemVideoDraftPage(item: ContentItemRow, url:
     `Video Draft Job - ${item.content_code}`,
     "Video Draft Job",
     "Metadata-only request tracker untuk future video draft. Fase ini belum membuat file video.",
+    content
+  );
+}
+
+function renderManifestCreateSection(item: ContentItemRow, job: NonNullable<Awaited<ReturnType<typeof getRenderManifestContextForContentItem>>["job"]>): string {
+  return `<section>
+    <h2>Buat Render Manifest DB-only</h2>
+    <form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(job.id)}/manifest/create">
+      <div class="form-grid">
+        <label>Status Manifest
+          <select name="manifest_status">${renderManifestStatusOptions("draft")}</select>
+        </label>
+        <label>Mode
+          <select name="manifest_mode">${renderManifestModeOptions("metadata_only")}</select>
+        </label>
+        <label>Target Format
+          <select name="target_format">${renderManifestTargetFormatOptions(job.target_format)}</select>
+        </label>
+      </div>
+      <label style="margin-top: 14px;">Catatan
+        <textarea name="notes" maxlength="2000" placeholder="Catatan inspeksi manifest sebelum future render."></textarea>
+      </label>
+      <div class="button-row" style="margin-top: 14px;">
+        <button type="submit">Buat Manifest DB-only</button>
+      </div>
+    </form>
+  </section>`;
+}
+
+function renderManifestSummary(item: ContentItemRow, jobId: string, manifest: RenderManifestRow): string {
+  return `<section>
+    <h2>Render Manifest</h2>
+    ${renderReadOnlyTable(
+      ["Field", "Nilai"],
+      [
+        ["Manifest ID", escapeHtml(manifest.id)],
+        ["Status", escapeHtml(renderManifestStatusLabels[manifest.manifest_status] || manifest.manifest_status)],
+        ["Mode", escapeHtml(renderManifestModeLabels[manifest.manifest_mode] || manifest.manifest_mode)],
+        ["Target Format", escapeHtml(videoDraftTargetFormatLabels[manifest.target_format] || manifest.target_format)],
+        ["Item Count", escapeHtml(manifest.item_count)],
+        ["Estimasi Durasi", manifest.estimated_duration_seconds === null ? "-" : `${escapeHtml(manifest.estimated_duration_seconds)} detik`],
+        ["Item dengan footage", escapeHtml(manifest.selected_footage_count)],
+        ["Step tanpa footage", escapeHtml(manifest.missing_footage_step_count)],
+        ["Warning", escapeHtml(manifest.manifest_warnings || "-")]
+      ]
+    )}
+    <form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifest.id)}/update">
+      <div class="form-grid">
+        <label>Status Manifest
+          <select name="manifest_status">${renderManifestStatusOptions(manifest.manifest_status)}</select>
+        </label>
+        <label>Mode
+          <select name="manifest_mode">${renderManifestModeOptions(manifest.manifest_mode)}</select>
+        </label>
+        <label>Target Format
+          <select name="target_format">${renderManifestTargetFormatOptions(manifest.target_format)}</select>
+        </label>
+      </div>
+      <label style="margin-top: 14px;">Warning Manifest
+        <textarea name="manifest_warnings" maxlength="4000">${escapeHtml(manifest.manifest_warnings || "")}</textarea>
+      </label>
+      <label style="margin-top: 14px;">Catatan
+        <textarea name="notes" maxlength="2000">${escapeHtml(manifest.notes || "")}</textarea>
+      </label>
+      <div class="button-row" style="margin-top: 14px;">
+        <button type="submit">Simpan Manifest</button>
+      </div>
+    </form>
+  </section>`;
+}
+
+function renderManifestItems(items: RenderManifestItemRow[]): string {
+  return `<section>
+    <h2>Manifest Items</h2>
+    ${renderReadOnlyTable(
+      ["Urutan", "Tipe", "Footage Snapshot", "Visual", "Narasi/Overlay", "Durasi", "Warning"],
+      items.map((item) => [
+        escapeHtml(item.sequence_number),
+        escapeHtml(shotPlanStepTypeLabels[item.step_type] || item.step_type),
+        item.source_relative_path_snapshot
+          ? `<strong>${escapeHtml(item.source_filename_snapshot || "-")}</strong><br><span class="muted">${escapeHtml(item.source_relative_path_snapshot)} | ${escapeHtml(item.source_file_extension_snapshot || "-")} | ${escapeHtml(item.source_size_bytes_snapshot ?? "-")} bytes</span>`
+          : `<span class="muted">Tanpa footage snapshot</span>`,
+        escapeHtml(item.visual_note || "-"),
+        `${escapeHtml(item.narration_text || "-")}<br><span class="muted">${escapeHtml(item.overlay_text || "-")}</span>`,
+        item.duration_seconds === null ? "-" : `${escapeHtml(item.duration_seconds)} detik`,
+        escapeHtml(item.item_warnings || "-")
+      ])
+    )}
+  </section>`;
+}
+
+export async function renderContentItemRenderManifestPage(item: ContentItemRow, jobId: string, url: URL): Promise<string> {
+  const { job, manifest, items } = await getRenderManifestContextForContentItem(item.id, jobId);
+  if (!job) {
+    return renderContentItemNotFoundPage("Video draft job tidak ditemukan.");
+  }
+
+  const summary = renderReadOnlyTable(
+    ["Field", "Nilai"],
+    [
+      ["Content Code", `<strong>${escapeHtml(item.content_code)}</strong>`],
+      ["Judul", escapeHtml(item.title)],
+      ["Video Draft Job", escapeHtml(job.id)],
+      ["Job Status", escapeHtml(videoDraftJobStatusLabels[job.job_status] || job.job_status)],
+      ["Render Mode", escapeHtml(videoDraftRenderModeLabels[job.render_mode] || job.render_mode)],
+      ["Target Format", escapeHtml(videoDraftTargetFormatLabels[job.target_format] || job.target_format)],
+      ["Label Output Rencana", escapeHtml(job.planned_output_label || "-")]
+    ]
+  );
+
+  const content = `
+    ${renderMessage(url)}
+    <div class="notice">Render manifest ini DB-only untuk inspeksi owner. Tidak ada video render, tidak menjalankan FFmpeg, tidak membuat file JSON/video, tidak menulis ke storage, tidak ada AI generation, tidak ada upload, posting otomatis, atau penjadwalan otomatis.</div>
+    ${summary}
+    ${manifest ? renderManifestSummary(item, job.id, manifest) : renderManifestCreateSection(item, job)}
+    ${manifest ? renderManifestItems(items) : ""}
+    <div class="button-row" style="margin-top: 14px;">
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}/video-draft">Video Draft Job</a>
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Detail Konten</a>
+    </div>
+  `;
+
+  return renderLayout(
+    "/content-items",
+    `Render Manifest - ${item.content_code}`,
+    "Render Manifest",
+    "Snapshot DB-only untuk rencana future render. Fase ini tidak membuat file atau menjalankan render.",
     content
   );
 }

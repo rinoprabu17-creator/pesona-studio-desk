@@ -23,6 +23,11 @@ import type { RequestLike } from "../http/request.ts";
 import { redirect, sendHtml } from "../http/response.ts";
 import type { ResponseLike } from "../http/response.ts";
 import { LibraryError } from "../library-errors.ts";
+import { RenderManifestError } from "../render-manifest-errors.ts";
+import {
+  createRenderManifestForVideoDraftJob,
+  updateRenderManifestForContentItem
+} from "../render-manifest-service.ts";
 import { VideoDraftJobError } from "../video-draft-job-errors.ts";
 import {
   cancelVideoDraftJobForContentItem,
@@ -35,6 +40,7 @@ import {
   renderContentItemFormPage,
   renderContentItemListPage,
   renderContentItemNotFoundPage,
+  renderContentItemRenderManifestPage,
   renderContentItemScriptPlanPage,
   renderContentItemVideoDraftPage,
   valuesFromContentItem,
@@ -46,6 +52,7 @@ function statusCodeFor(error: unknown): number {
     error instanceof ContentItemError ||
     error instanceof CampaignError ||
     error instanceof LibraryError ||
+    error instanceof RenderManifestError ||
     error instanceof VideoDraftJobError
   ) {
     return error.statusCode;
@@ -58,6 +65,7 @@ function isNotFoundLike(error: unknown): boolean {
     error instanceof ContentItemError ||
     error instanceof CampaignError ||
     error instanceof LibraryError ||
+    error instanceof RenderManifestError ||
     error instanceof VideoDraftJobError
   ) {
     return error.statusCode === 400 || error.statusCode === 404;
@@ -262,6 +270,32 @@ export async function handleContentItemPagePost(request: RequestLike, response: 
     return true;
   }
 
+  const createRenderManifestMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/create$/);
+  if (createRenderManifestMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      await createRenderManifestForVideoDraftJob(createRenderManifestMatch[2], body);
+      redirect(response, `/content-items/${encodeURIComponent(createRenderManifestMatch[1])}/video-draft/${encodeURIComponent(createRenderManifestMatch[2])}/manifest?success=Render manifest DB-only berhasil dibuat.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Render manifest gagal dibuat.";
+      redirect(response, `/content-items/${encodeURIComponent(createRenderManifestMatch[1])}/video-draft/${encodeURIComponent(createRenderManifestMatch[2])}/manifest?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
+  const updateRenderManifestMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/([^/]+)\/update$/);
+  if (updateRenderManifestMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      await updateRenderManifestForContentItem(updateRenderManifestMatch[1], updateRenderManifestMatch[2], updateRenderManifestMatch[3], body);
+      redirect(response, `/content-items/${encodeURIComponent(updateRenderManifestMatch[1])}/video-draft/${encodeURIComponent(updateRenderManifestMatch[2])}/manifest?success=Render manifest metadata berhasil disimpan.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Render manifest gagal disimpan.";
+      redirect(response, `/content-items/${encodeURIComponent(updateRenderManifestMatch[1])}/video-draft/${encodeURIComponent(updateRenderManifestMatch[2])}/manifest?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -334,6 +368,18 @@ export async function handleContentItemPageGet(response: ResponseLike, pathname:
       sendHtml(response, await renderContentItemVideoDraftPage(item, url));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Konten tidak ditemukan.";
+      sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
+    }
+    return true;
+  }
+
+  const renderManifestMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest$/);
+  if (renderManifestMatch) {
+    try {
+      const item = await getContentItem(renderManifestMatch[1]);
+      sendHtml(response, await renderContentItemRenderManifestPage(item, renderManifestMatch[2], url));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Render manifest tidak ditemukan.";
       sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
     }
     return true;

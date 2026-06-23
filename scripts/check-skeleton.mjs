@@ -31,6 +31,8 @@ const requiredPaths = [
   "apps/web/src/content-item-script-plan-errors.ts",
   "apps/web/src/video-draft-job-service.ts",
   "apps/web/src/video-draft-job-errors.ts",
+  "apps/web/src/render-manifest-service.ts",
+  "apps/web/src/render-manifest-errors.ts",
   "apps/web/src/content-publication-service.ts",
   "apps/web/src/content-publication-errors.ts",
   "apps/web/src/footage-asset-service.ts",
@@ -74,6 +76,7 @@ const requiredPaths = [
   "apps/web/src/validation/content-item-footage-validation.ts",
   "apps/web/src/validation/content-item-script-plan-validation.ts",
   "apps/web/src/validation/video-draft-job-validation.ts",
+  "apps/web/src/validation/render-manifest-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/footage-asset-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
@@ -113,6 +116,7 @@ const requiredPaths = [
   "migrations/007_phase2c_content_item_footage.sql",
   "migrations/008_phase2c_script_shot_plans.sql",
   "migrations/009_phase2d_video_draft_jobs.sql",
+  "migrations/010_phase2d_render_manifests.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "scripts/prepare-test-db.mjs",
@@ -512,6 +516,40 @@ for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
     fail(`Migration Phase 2D.1 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
   } else {
     pass(`Migration Phase 2D.1 tidak memuat destructive SQL: ${forbiddenText}`);
+  }
+}
+
+const renderManifestMigrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("010_"));
+if (renderManifestMigrationFiles.length === 1 && renderManifestMigrationFiles[0] === "010_phase2d_render_manifests.sql") {
+  pass("Migration 010 Phase 2D render manifests tersedia");
+} else {
+  fail(`Migration 010 Phase 2D harus tepat satu file: ${renderManifestMigrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const renderManifestMigrationSource = existsSync("migrations/010_phase2d_render_manifests.sql")
+  ? readFileSync("migrations/010_phase2d_render_manifests.sql", "utf8")
+  : "";
+for (const requiredText of [
+  "CREATE TABLE video_render_manifests",
+  "CREATE TABLE video_render_manifest_items",
+  "video_draft_job_id uuid NOT NULL REFERENCES video_draft_jobs(id)",
+  "manifest_mode text NOT NULL DEFAULT 'metadata_only'",
+  "video_render_manifests_job_key UNIQUE (video_draft_job_id)",
+  "source_relative_path_snapshot text",
+  "CREATE INDEX video_render_manifest_items_manifest_id_idx"
+]) {
+  if (renderManifestMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 2D.2 render manifest memuat: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 2D.2 render manifest belum memuat: ${requiredText}`);
+  }
+}
+
+for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
+  if (renderManifestMigrationSource.includes(forbiddenText)) {
+    fail(`Migration Phase 2D.2 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
+  } else {
+    pass(`Migration Phase 2D.2 tidak memuat destructive SQL: ${forbiddenText}`);
   }
 }
 

@@ -29,6 +29,12 @@ import {
   getVideoDraftJobForContentItem,
   updateVideoDraftJob
 } from "../video-draft-job-service.ts";
+import {
+  createRenderManifestForVideoDraftJob,
+  getRenderManifestForVideoDraftJob,
+  listRenderManifestItems,
+  updateRenderManifest
+} from "../render-manifest-service.ts";
 
 export async function handleContentItemApiRoute(request: RequestLike, response: ResponseLike, pathname: string, url: URL): Promise<boolean> {
   if (pathname === "/api/content-items" && request.method === "GET") {
@@ -117,6 +123,25 @@ export async function handleContentItemApiRoute(request: RequestLike, response: 
   const videoDraftJobMatch = pathname.match(/^\/api\/video-draft-jobs\/([^/]+)$/);
   if (videoDraftJobMatch && request.method === "POST") {
     sendSuccess(response, await updateVideoDraftJob(videoDraftJobMatch[1], await readJsonBody(request)));
+    return true;
+  }
+
+  const videoDraftManifestMatch = pathname.match(/^\/api\/video-draft-jobs\/([^/]+)\/render-manifest$/);
+  if (videoDraftManifestMatch && request.method === "GET") {
+    const manifest = await getRenderManifestForVideoDraftJob(videoDraftManifestMatch[1]);
+    const items = manifest ? await listRenderManifestItems(manifest.id) : [];
+    sendSuccess(response, { manifest, items });
+    return true;
+  }
+
+  if (videoDraftManifestMatch && request.method === "POST") {
+    sendSuccess(response, await createRenderManifestForVideoDraftJob(videoDraftManifestMatch[1], await readJsonBody(request)), 201);
+    return true;
+  }
+
+  const renderManifestMatch = pathname.match(/^\/api\/render-manifests\/([^/]+)$/);
+  if (renderManifestMatch && request.method === "POST") {
+    sendSuccess(response, await updateRenderManifest(renderManifestMatch[1], await readJsonBody(request)));
     return true;
   }
 
