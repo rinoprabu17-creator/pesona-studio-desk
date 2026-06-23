@@ -57,6 +57,15 @@ import {
   updateVideoDraftJob
 } from "../../apps/web/src/video-draft-job-service.ts";
 import { validateVideoDraftJobInput } from "../../apps/web/src/validation/video-draft-job-validation.ts";
+import {
+  createRenderManifestForVideoDraftJob,
+  getRenderManifestById,
+  getRenderManifestContextForContentItem,
+  getRenderManifestForVideoDraftJob,
+  listRenderManifestItems,
+  updateRenderManifest
+} from "../../apps/web/src/render-manifest-service.ts";
+import { validateRenderManifestInput } from "../../apps/web/src/validation/render-manifest-validation.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -84,6 +93,19 @@ test.after(async () => {
     ]);
     const ids = campaigns.rows.map((row) => row.id);
     if (ids.length) {
+      await pool.query(
+        `DELETE FROM video_render_manifest_items
+         WHERE manifest_id IN (
+           SELECT id FROM video_render_manifests
+           WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))
+         )`,
+        [ids]
+      );
+      await pool.query(
+        `DELETE FROM video_render_manifests
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
       await pool.query(
         `DELETE FROM video_draft_jobs
          WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
@@ -1194,20 +1216,242 @@ maybeTest("video draft page and API route before generic content detail", async 
   assert.equal(body.data.readiness.content_item_id, contentItemId);
 });
 
-test("content footage, script planning, and video draft runtime files do not add forbidden execution dependencies", () => {
+maybeTest("render manifest rejects missing video draft job and jobs without shot steps", async () => {
+  await assert.rejects(
+    () => createRenderManifestForVideoDraftJob("11111111-1111-4111-8111-111111111111"),
+    /Video draft job tidak ditemukan/i
+  );
+
+  const contentItemId = await createContent("manifest-no-steps");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    render_mode: "disabled_metadata_only"
+  });
+
+  await assert.rejects(
+    () => createRenderManifestForVideoDraftJob(job.id),
+    /Shot plan step wajib ada/i
+  );
+});
+
+maybeTest("render manifest create snapshots selected footage and missing footage step warnings", async () => {
+  const contentItemId = await createContent("manifest-create");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("manifest-snapshot.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+  const second = await addShotPlanStep(plan.id, {
+    sequence_number: 2,
+    step_type: "cta",
+    visual_note: "CTA without selected footage.",
+    duration_seconds: 5
+  });
+  const first = await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product",
+    visual_note: "Selected product footage.",
+    narration_text: "Narasi produk.",
+    overlay_text: "Sampul Raport",
+    duration_seconds: 8
+  });
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    target_format: "square_1_1",
+    render_mode: "disabled_metadata_only",
+    planned_output_label: "Manifest snapshot"
+  });
+
+  const manifest = await createRenderManifestForVideoDraftJob(job.id, {
+    manifest_status: "draft",
+    manifest_mode: "metadata_only",
+    target_format: "square_1_1",
+    notes: "DB-only manifest."
+  });
+  const items = await listRenderManifestItems(manifest.id);
+
+  assert.equal(manifest.video_draft_job_id, job.id);
+  assert.equal(manifest.content_item_id, contentItemId);
+  assert.equal(manifest.script_plan_id, plan.id);
+  assert.equal(manifest.manifest_mode, "metadata_only");
+  assert.equal(manifest.target_format, "square_1_1");
+  assert.equal(manifest.item_count, 2);
+  assert.equal(manifest.selected_footage_count, 1);
+  assert.equal(manifest.missing_footage_step_count, 1);
+  assert.equal(manifest.estimated_duration_seconds, 13);
+  assert.match(manifest.manifest_warnings || "", /Step 2 belum memakai footage/i);
+
+  assert.deepEqual(items.map((item) => item.sequence_number), [1, 2]);
+  assert.equal(items[0].shot_plan_step_id, first.id);
+  assert.equal(items[0].content_item_footage_selection_id, selection.id);
+  assert.equal(items[0].footage_asset_id, reviewed.id);
+  assert.equal(items[0].source_relative_path_snapshot, reviewed.relative_path);
+  assert.equal(items[0].source_filename_snapshot, reviewed.filename);
+  assert.equal(items[0].source_file_extension_snapshot, reviewed.file_extension);
+  assert.equal(items[0].source_size_bytes_snapshot, reviewed.size_bytes);
+  assert.equal(items[1].shot_plan_step_id, second.id);
+  assert.equal(items[1].content_item_footage_selection_id, null);
+  assert.match(items[1].item_warnings || "", /belum memakai footage/i);
+});
+
+maybeTest("render manifest duplicate handling and metadata-only update", async () => {
+  const contentItemId = await createContent("manifest-update");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  await addShotPlanStep(plan.id, {
+    sequence_number: 1,
+    step_type: "hook",
+    duration_seconds: 6
+  });
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    target_format: "vertical_9_16",
+    render_mode: "disabled_metadata_only"
+  });
+  const manifest = await createRenderManifestForVideoDraftJob(job.id);
+
+  await assert.rejects(
+    () => createRenderManifestForVideoDraftJob(job.id),
+    /sudah ada/i
+  );
+
+  const updated = await updateRenderManifest(manifest.id, {
+    manifest_status: "reviewed",
+    manifest_mode: "metadata_only",
+    target_format: "horizontal_16_9",
+    manifest_warnings: "Reviewed DB-only manifest.",
+    notes: "Metadata update only."
+  });
+  const items = await listRenderManifestItems(manifest.id);
+
+  assert.equal(updated.id, manifest.id);
+  assert.equal(updated.manifest_status, "reviewed");
+  assert.equal(updated.target_format, "horizontal_16_9");
+  assert.equal(updated.notes, "Metadata update only.");
+  assert.equal(items.length, 1);
+  assert.equal(items[0].sequence_number, 1);
+});
+
+maybeTest("render manifest validation rejects invalid status and mode", async () => {
+  assert.throws(() => validateRenderManifestInput({ manifest_status: "rendering" }), /Status render manifest tidak valid/i);
+  assert.throws(() => validateRenderManifestInput({ manifest_mode: "file" }), /metadata_only/i);
+  assert.throws(() => validateRenderManifestInput({ target_format: "cinema" }), /Target format render manifest tidak valid/i);
+});
+
+maybeTest("render manifest create and update do not mutate related rows or physical files", async () => {
+  const { storageRoot, footageRoot } = await createTempFootageRoot();
+  await mkdir(join(footageRoot, prefix), { recursive: true });
+  const filePath = join(footageRoot, prefix, "manifest-physical.mp4");
+  await writeFile(filePath, "render-manifest-db-only");
+  const before = await stat(filePath);
+
+  const contentItemId = await createContent("manifest-physical");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("manifest-physical.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+  const step = await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product",
+    duration_seconds: 7
+  });
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    render_mode: "disabled_metadata_only"
+  });
+
+  const manifest = await createRenderManifestForVideoDraftJob(job.id);
+  await updateRenderManifest(manifest.id, {
+    manifest_status: "approved",
+    manifest_mode: "metadata_only",
+    target_format: manifest.target_format,
+    notes: "Approved for future planning only."
+  });
+
+  const after = await stat(filePath);
+  const jobAfter = await getVideoDraftJobById(job.id);
+  const planAfter = await getContentItemScriptPlan(contentItemId);
+  const stepsAfter = await listShotPlanSteps(plan.id);
+  const selectionAfter = await getContentItemFootageSelection(selection.id);
+  const footageAfter = await getFootageAsset(reviewed.id);
+
+  assert.equal(jobAfter.id, job.id);
+  assert.equal(planAfter?.id, plan.id);
+  assert.equal(stepsAfter.some((row) => row.id === step.id), true);
+  assert.equal(selectionAfter.id, selection.id);
+  assert.equal(footageAfter.relative_path, reviewed.relative_path);
+  assert.equal(footageAfter.filename, reviewed.filename);
+  assert.equal(footageAfter.file_extension, reviewed.file_extension);
+  assert.equal(footageAfter.size_bytes, reviewed.size_bytes);
+  assert.equal(after.size, before.size);
+  assert.equal(after.mtimeMs, before.mtimeMs);
+  assert.equal(storageRoot.includes(prefix), true);
+});
+
+maybeTest("render manifest page and API route before generic video draft job route", async () => {
+  const contentItemId = await createContent("manifest-route");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  await addShotPlanStep(plan.id, {
+    sequence_number: 1,
+    step_type: "hook"
+  });
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    render_mode: "disabled_metadata_only"
+  });
+  const manifest = await createRenderManifestForVideoDraftJob(job.id);
+
+  const pageResponse = mockResponse();
+  const pageHandled = await handleContentItemPageGet(
+    pageResponse,
+    `/content-items/${contentItemId}/video-draft/${job.id}/manifest`,
+    new URL(`http://localhost/content-items/${contentItemId}/video-draft/${job.id}/manifest`)
+  );
+  assert.equal(pageHandled, true);
+  assert.equal(pageResponse.statusCode, 200);
+  assert.match(pageResponse.body, /Render Manifest/);
+  assert.match(pageResponse.body, /DB-only/);
+
+  const apiResponse = mockResponse();
+  const apiHandled = await handleContentItemApiRoute(
+    { method: "GET", url: `/api/video-draft-jobs/${job.id}/render-manifest`, headers: {}, on() {} } as any,
+    apiResponse,
+    `/api/video-draft-jobs/${job.id}/render-manifest`,
+    new URL(`http://localhost/api/video-draft-jobs/${job.id}/render-manifest`)
+  );
+  assert.equal(apiHandled, true);
+  assert.equal(apiResponse.statusCode, 200);
+  const body = JSON.parse(apiResponse.body);
+  assert.equal(body.ok, true);
+  assert.equal(body.data.manifest.id, manifest.id);
+
+  const context = await getRenderManifestContextForContentItem(contentItemId, job.id);
+  assert.equal(context.manifest?.id, manifest.id);
+});
+
+test("content footage, script planning, video draft, and render manifest runtime files do not add forbidden execution dependencies", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
     "apps/web/src/content-item-script-plan-service.ts",
     "apps/web/src/video-draft-job-service.ts",
+    "apps/web/src/render-manifest-service.ts",
     "apps/web/src/routes/content-item-api-routes.ts",
     "apps/web/src/routes/content-item-page-routes.ts",
     "apps/web/src/views/content-item-pages.ts",
     "apps/web/src/validation/content-item-footage-validation.ts",
     "apps/web/src/validation/content-item-script-plan-validation.ts",
-    "apps/web/src/validation/video-draft-job-validation.ts"
+    "apps/web/src/validation/video-draft-job-validation.ts",
+    "apps/web/src/validation/render-manifest-validation.ts"
   ].map((path) => readFileSync(path, "utf8")).join("\n");
 
-  for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher", "fluent-ffmpeg", "spawn", "exec", "draft-videos", "approved-videos"]) {
+  for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher", "fluent-ffmpeg", "child_process", "spawn", "exec", "execFile", "draft-videos", "approved-videos", "writeFile", "copyFile", "createWriteStream", "appendFile", "truncate"]) {
     assert.equal(source.includes(forbidden), false);
   }
 });
