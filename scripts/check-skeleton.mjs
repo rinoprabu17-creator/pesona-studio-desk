@@ -27,6 +27,8 @@ const requiredPaths = [
   "apps/web/src/content-item-errors.ts",
   "apps/web/src/content-item-footage-service.ts",
   "apps/web/src/content-item-footage-errors.ts",
+  "apps/web/src/content-item-script-plan-service.ts",
+  "apps/web/src/content-item-script-plan-errors.ts",
   "apps/web/src/content-publication-service.ts",
   "apps/web/src/content-publication-errors.ts",
   "apps/web/src/footage-asset-service.ts",
@@ -68,6 +70,7 @@ const requiredPaths = [
   "apps/web/src/validation/campaign-plan-review-validation.ts",
   "apps/web/src/validation/content-item-validation.ts",
   "apps/web/src/validation/content-item-footage-validation.ts",
+  "apps/web/src/validation/content-item-script-plan-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/footage-asset-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
@@ -105,6 +108,7 @@ const requiredPaths = [
   "migrations/005_phase2a_campaign_plan_staging.sql",
   "migrations/006_phase2b_footage_assets.sql",
   "migrations/007_phase2c_content_item_footage.sql",
+  "migrations/008_phase2c_script_shot_plans.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "scripts/prepare-test-db.mjs",
@@ -436,6 +440,40 @@ for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
     fail(`Migration Phase 2C.1 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
   } else {
     pass(`Migration Phase 2C.1 tidak memuat destructive SQL: ${forbiddenText}`);
+  }
+}
+
+const scriptPlanMigrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("008_"));
+if (scriptPlanMigrationFiles.length === 1 && scriptPlanMigrationFiles[0] === "008_phase2c_script_shot_plans.sql") {
+  pass("Migration 008 Phase 2C script shot plans tersedia");
+} else {
+  fail(`Migration 008 Phase 2C harus tepat satu file: ${scriptPlanMigrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const scriptPlanMigrationSource = existsSync("migrations/008_phase2c_script_shot_plans.sql")
+  ? readFileSync("migrations/008_phase2c_script_shot_plans.sql", "utf8")
+  : "";
+for (const requiredText of [
+  "CREATE TABLE content_item_script_plans",
+  "CREATE TABLE content_item_shot_plan_steps",
+  "content_item_id uuid NOT NULL REFERENCES content_items(id)",
+  "script_plan_id uuid NOT NULL REFERENCES content_item_script_plans(id)",
+  "content_item_footage_selection_id uuid REFERENCES content_item_footage_selections(id)",
+  "content_item_script_plans_content_item_key UNIQUE (content_item_id)",
+  "content_item_shot_plan_steps_plan_sequence_key UNIQUE (script_plan_id, sequence_number)"
+]) {
+  if (scriptPlanMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 2C.3 script plan memuat: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 2C.3 script plan belum memuat: ${requiredText}`);
+  }
+}
+
+for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
+  if (scriptPlanMigrationSource.includes(forbiddenText)) {
+    fail(`Migration Phase 2C.3 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
+  } else {
+    pass(`Migration Phase 2C.3 tidak memuat destructive SQL: ${forbiddenText}`);
   }
 }
 

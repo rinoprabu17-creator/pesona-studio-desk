@@ -4,11 +4,21 @@ import type { ContentItemRow } from "../content-item-service.ts";
 import { listContentItems } from "../content-item-service.ts";
 import type { ContentItemFootageSelectionRow } from "../content-item-footage-service.ts";
 import { listContentItemFootageSelections } from "../content-item-footage-service.ts";
+import type { ContentItemScriptPlanRow, ShotPlanStepRow } from "../content-item-script-plan-service.ts";
+import {
+  getOrCreateContentItemScriptPlan,
+  listShotPlanSteps
+} from "../content-item-script-plan-service.ts";
 import type { FootageAssetRow } from "../footage-asset-service.ts";
 import { listFootageAssets } from "../footage-asset-service.ts";
 import { listColors, listOffers, listPainPoints, listProducts, listSchoolLevelColorDefaults } from "../library-service.ts";
 import { renderContentItemPublicationsSection } from "./content-publication-pages.ts";
 import { contentItemFootageRoles } from "../validation/content-item-footage-validation.ts";
+import {
+  scriptPlanStatuses,
+  scriptPlanVideoFormats,
+  shotPlanStepTypes
+} from "../validation/content-item-script-plan-validation.ts";
 import {
   audienceSegments,
   contentPillars,
@@ -57,6 +67,36 @@ export const contentItemFootageRoleLabels: Record<string, string> = {
   testimonial: "Testimonial",
   closing: "Closing",
   b_roll: "B-roll",
+  other: "Lainnya"
+};
+
+export const scriptPlanStatusLabels: Record<string, string> = {
+  draft: "Draft",
+  reviewed: "Reviewed",
+  approved: "Approved",
+  archived: "Archived"
+};
+
+export const scriptPlanVideoFormatLabels: Record<string, string> = {
+  short_video: "Short Video",
+  reels: "Reels",
+  tiktok: "TikTok",
+  youtube_short: "YouTube Short",
+  story: "Story",
+  other: "Lainnya"
+};
+
+export const shotPlanStepTypeLabels: Record<string, string> = {
+  hook: "Hook",
+  scene: "Scene",
+  product: "Produk",
+  process: "Proses",
+  packing: "Packing",
+  delivery: "Delivery",
+  testimonial: "Testimonial",
+  b_roll: "B-roll",
+  cta: "CTA",
+  closing: "Closing",
   other: "Lainnya"
 };
 
@@ -389,6 +429,147 @@ function roleOptions(selected = "other"): string {
     .join("");
 }
 
+function scriptPlanStatusOptions(selected = "draft"): string {
+  return scriptPlanStatuses
+    .map((status) => `<option value="${escapeHtml(status)}" ${status === selected ? "selected" : ""}>${escapeHtml(scriptPlanStatusLabels[status] || status)}</option>`)
+    .join("");
+}
+
+function videoFormatOptions(selected = "short_video"): string {
+  return scriptPlanVideoFormats
+    .map((format) => `<option value="${escapeHtml(format)}" ${format === selected ? "selected" : ""}>${escapeHtml(scriptPlanVideoFormatLabels[format] || format)}</option>`)
+    .join("");
+}
+
+function shotStepTypeOptions(selected = "scene"): string {
+  return shotPlanStepTypes
+    .map((stepType) => `<option value="${escapeHtml(stepType)}" ${stepType === selected ? "selected" : ""}>${escapeHtml(shotPlanStepTypeLabels[stepType] || stepType)}</option>`)
+    .join("");
+}
+
+function selectedFootageOptions(selections: ContentItemFootageSelectionRow[], selected: string | null = null): string {
+  return [
+    `<option value="" ${!selected ? "selected" : ""}>Tanpa footage terpilih</option>`,
+    ...selections.map((selection) => {
+      const label = `#${selection.sequence_number} ${selection.filename} | ${contentItemFootageRoleLabels[selection.role] || selection.role} | ${selection.relative_path}`;
+      return `<option value="${escapeHtml(selection.id)}" ${selection.id === selected ? "selected" : ""}>${escapeHtml(label)}</option>`;
+    })
+  ].join("");
+}
+
+function renderScriptPlanForm(item: ContentItemRow, plan: ContentItemScriptPlanRow): string {
+  return `
+    <section>
+      <h2>Script Plan</h2>
+      <form method="post" action="/content-items/${escapeHtml(item.id)}/script-plan/save">
+        <div class="form-grid">
+          <label>Status Plan
+            <select name="plan_status">${scriptPlanStatusOptions(plan.plan_status)}</select>
+          </label>
+          <label>Format Video
+            <select name="video_format">${videoFormatOptions(plan.video_format)}</select>
+          </label>
+        </div>
+        <label style="margin-top: 14px;">Hook Text
+          <textarea name="hook_text" maxlength="500">${escapeHtml(plan.hook_text || "")}</textarea>
+        </label>
+        <label style="margin-top: 14px;">Main Message
+          <textarea name="main_message" maxlength="2000">${escapeHtml(plan.main_message || "")}</textarea>
+        </label>
+        <label style="margin-top: 14px;">CTA Text
+          <textarea name="cta_text" maxlength="500">${escapeHtml(plan.cta_text || "")}</textarea>
+        </label>
+        <label style="margin-top: 14px;">Catatan
+          <textarea name="notes" maxlength="2000">${escapeHtml(plan.notes || "")}</textarea>
+        </label>
+        <div class="button-row" style="margin-top: 14px;">
+          <button type="submit">Simpan Script Plan</button>
+        </div>
+      </form>
+    </section>
+  `;
+}
+
+function renderSelectedFootageContext(selections: ContentItemFootageSelectionRow[]): string {
+  return `<section>
+    <h2>Footage Terpilih Sebagai Konteks</h2>
+    ${renderReadOnlyTable(
+      ["Urutan", "Footage", "Role", "Status", "Catatan"],
+      selections.map((selection) => [
+        escapeHtml(selection.sequence_number),
+        `<strong>${escapeHtml(selection.filename)}</strong><br><span class="muted">${escapeHtml(selection.relative_path)}</span>`,
+        escapeHtml(contentItemFootageRoleLabels[selection.role] || selection.role),
+        escapeHtml(selection.footage_status),
+        escapeHtml(selection.usage_note || "-")
+      ])
+    )}
+  </section>`;
+}
+
+function renderShotPlanStepsTable(item: ContentItemRow, plan: ContentItemScriptPlanRow, selections: ContentItemFootageSelectionRow[], steps: ShotPlanStepRow[]): string {
+  const rows = steps.map((step) => [
+    `<form method="post" action="/content-items/${escapeHtml(item.id)}/script-plan/steps/${escapeHtml(step.id)}/update">
+      <input name="sequence_number" type="number" min="1" step="1" value="${escapeHtml(step.sequence_number)}" required style="width: 86px;">
+    `,
+    `<select name="step_type">${shotStepTypeOptions(step.step_type)}</select>`,
+    `<select name="content_item_footage_selection_id">${selectedFootageOptions(selections, step.content_item_footage_selection_id)}</select>
+     <p class="hint">${step.footage_relative_path ? escapeHtml(step.footage_relative_path) : "Tidak memakai footage terpilih."}</p>`,
+    `<textarea name="visual_note" maxlength="1000">${escapeHtml(step.visual_note || "")}</textarea>`,
+    `<textarea name="narration_text" maxlength="2000">${escapeHtml(step.narration_text || "")}</textarea>`,
+    `<textarea name="overlay_text" maxlength="500">${escapeHtml(step.overlay_text || "")}</textarea>
+     <label>Durasi
+       <input name="duration_seconds" type="number" min="1" max="120" step="1" value="${escapeHtml(step.duration_seconds ?? "")}">
+     </label>`,
+    `<div class="button-row">
+        <button type="submit">Simpan</button>
+      </form>
+      <form class="inline-form" method="post" action="/content-items/${escapeHtml(item.id)}/script-plan/steps/${escapeHtml(step.id)}/remove">
+        <button class="button-danger" type="submit">Hapus Step</button>
+      </form>
+    </div>`
+  ]);
+  return `<section>
+    <h2>Shot Plan Steps</h2>
+    ${renderReadOnlyTable(["Urutan", "Tipe", "Footage", "Visual", "Narasi", "Overlay/Durasi", "Aksi"], rows)}
+  </section>`;
+}
+
+function renderAddShotPlanStepForm(item: ContentItemRow, selections: ContentItemFootageSelectionRow[], steps: ShotPlanStepRow[]): string {
+  const nextSequence = steps.reduce((max, step) => Math.max(max, step.sequence_number), 0) + 1;
+  return `<section>
+    <h2>Tambah Shot Plan Step</h2>
+    <form method="post" action="/content-items/${escapeHtml(item.id)}/script-plan/steps/add">
+      <div class="form-grid">
+        <label>Urutan
+          <input name="sequence_number" type="number" min="1" step="1" value="${escapeHtml(nextSequence)}" required>
+        </label>
+        <label>Tipe Step
+          <select name="step_type">${shotStepTypeOptions("scene")}</select>
+        </label>
+        <label>Footage Terpilih Opsional
+          <select name="content_item_footage_selection_id">${selectedFootageOptions(selections)}</select>
+        </label>
+        <label>Durasi Detik
+          <input name="duration_seconds" type="number" min="1" max="120" step="1">
+        </label>
+      </div>
+      <label style="margin-top: 14px;">Visual Note
+        <textarea name="visual_note" maxlength="1000"></textarea>
+      </label>
+      <label style="margin-top: 14px;">Narration Text
+        <textarea name="narration_text" maxlength="2000"></textarea>
+      </label>
+      <label style="margin-top: 14px;">Overlay Text
+        <textarea name="overlay_text" maxlength="500"></textarea>
+      </label>
+      <div class="button-row" style="margin-top: 14px;">
+        <button type="submit">Tambah Step</button>
+        <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Kembali Detail</a>
+      </div>
+    </form>
+  </section>`;
+}
+
 function renderSelectedFootageTable(item: ContentItemRow, selections: ContentItemFootageSelectionRow[]): string {
   const rows = selections.map((selection) => [
     `<form method="post" action="/content-items/${escapeHtml(item.id)}/footage/${escapeHtml(selection.id)}/update">
@@ -476,6 +657,44 @@ export async function renderContentItemFootagePage(item: ContentItemRow, url: UR
   );
 }
 
+export async function renderContentItemScriptPlanPage(item: ContentItemRow, url: URL): Promise<string> {
+  const plan = await getOrCreateContentItemScriptPlan(item.id);
+  const [selections, steps] = await Promise.all([
+    listContentItemFootageSelections(item.id),
+    listShotPlanSteps(plan.id)
+  ]);
+
+  const summary = renderReadOnlyTable(
+    ["Field", "Nilai"],
+    [
+      ["Content Code", `<strong>${escapeHtml(item.content_code)}</strong>`],
+      ["Judul", escapeHtml(item.title)],
+      ["Campaign", `${escapeHtml(item.campaign_code)} - ${escapeHtml(item.campaign_name)}`],
+      ["Tanggal", escapeHtml(formatDate(item.planned_content_date))],
+      ["Produk", escapeHtml(productLabel(item))],
+      ["Status", escapeHtml(productionStatusLabels[item.production_status] || item.production_status)]
+    ]
+  );
+
+  const content = `
+    ${renderMessage(url)}
+    <div class="notice">Planning ini manual/rule-based untuk script dan shot order. Tidak ada AI generation, video render, file modification, upload, auto-posting, penerbitan otomatis, atau penjadwalan otomatis.</div>
+    ${summary}
+    ${renderScriptPlanForm(item, plan)}
+    ${renderSelectedFootageContext(selections)}
+    ${renderShotPlanStepsTable(item, plan, selections, steps)}
+    ${renderAddShotPlanStepForm(item, selections, steps)}
+  `;
+
+  return renderLayout(
+    "/content-items",
+    `Script/Shot Plan - ${item.content_code}`,
+    "Script / Shot Planning",
+    "Susun script draft dan urutan shot berdasarkan footage terpilih sebelum workflow video.",
+    content
+  );
+}
+
 export async function renderContentItemDetailPage(item: ContentItemRow, url: URL): Promise<string> {
   const rows = [
     ["Content Code", `<strong>${escapeHtml(item.content_code)}</strong>`],
@@ -501,6 +720,7 @@ export async function renderContentItemDetailPage(item: ContentItemRow, url: URL
     <div class="button-row">
       <a class="button" href="/content-items/${escapeHtml(item.id)}/edit">Edit Konten</a>
       <a class="button" href="/content-items/${escapeHtml(item.id)}/footage">Pilih Footage</a>
+      <a class="button" href="/content-items/${escapeHtml(item.id)}/script-plan">Script/Shot Plan</a>
       <a class="button button-secondary" href="/content-items">Kembali</a>
     </div>
     <p class="hint">Publikasi channel akan dikelola pada tahap berikutnya.</p>

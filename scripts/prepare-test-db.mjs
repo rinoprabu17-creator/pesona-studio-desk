@@ -84,7 +84,7 @@ async function migrateTestDatabase(testDatabaseUrl) {
 
     const files = readdirSync(migrationsDir)
       .filter((fileName) => fileName.endsWith(".sql"))
-      .filter((fileName) => parseMigrationFile(fileName).version <= "007")
+      .filter((fileName) => parseMigrationFile(fileName).version <= "008")
       .sort();
 
     for (const fileName of files) {
