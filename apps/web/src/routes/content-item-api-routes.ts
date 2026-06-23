@@ -35,6 +35,12 @@ import {
   listRenderManifestItems,
   updateRenderManifest
 } from "../render-manifest-service.ts";
+import {
+  getRenderPreflightContextForManifest,
+  getRenderPreflightRunById,
+  listRenderPreflightChecks,
+  runRenderPreflightForManifest
+} from "../render-preflight-service.ts";
 
 export async function handleContentItemApiRoute(request: RequestLike, response: ResponseLike, pathname: string, url: URL): Promise<boolean> {
   if (pathname === "/api/content-items" && request.method === "GET") {
@@ -136,6 +142,28 @@ export async function handleContentItemApiRoute(request: RequestLike, response: 
 
   if (videoDraftManifestMatch && request.method === "POST") {
     sendSuccess(response, await createRenderManifestForVideoDraftJob(videoDraftManifestMatch[1], await readJsonBody(request)), 201);
+    return true;
+  }
+
+  const renderManifestPreflightMatch = pathname.match(/^\/api\/render-manifests\/([^/]+)\/preflight$/);
+  if (renderManifestPreflightMatch && request.method === "GET") {
+    sendSuccess(response, await getRenderPreflightContextForManifest(renderManifestPreflightMatch[1]));
+    return true;
+  }
+
+  const renderManifestPreflightRunMatch = pathname.match(/^\/api\/render-manifests\/([^/]+)\/preflight\/run$/);
+  if (renderManifestPreflightRunMatch && request.method === "POST") {
+    const run = await runRenderPreflightForManifest(renderManifestPreflightRunMatch[1]);
+    const checks = await listRenderPreflightChecks(run.id);
+    sendSuccess(response, { run, checks }, 201);
+    return true;
+  }
+
+  const renderPreflightRunMatch = pathname.match(/^\/api\/render-preflight-runs\/([^/]+)$/);
+  if (renderPreflightRunMatch && request.method === "GET") {
+    const run = await getRenderPreflightRunById(renderPreflightRunMatch[1]);
+    const checks = await listRenderPreflightChecks(renderPreflightRunMatch[1]);
+    sendSuccess(response, { run, checks });
     return true;
   }
 

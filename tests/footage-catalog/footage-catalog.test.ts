@@ -66,6 +66,18 @@ import {
   updateRenderManifest
 } from "../../apps/web/src/render-manifest-service.ts";
 import { validateRenderManifestInput } from "../../apps/web/src/validation/render-manifest-validation.ts";
+import {
+  buildRenderPreflightChecks,
+  getRenderPreflightContextForContentItem,
+  getRenderPreflightRunById,
+  listRenderPreflightChecks,
+  listRenderPreflightRunsForManifest,
+  runRenderPreflightForManifest
+} from "../../apps/web/src/render-preflight-service.ts";
+import {
+  validateRenderPreflightResult,
+  validateRenderPreflightRunStatus
+} from "../../apps/web/src/validation/render-preflight-validation.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -93,6 +105,19 @@ test.after(async () => {
     ]);
     const ids = campaigns.rows.map((row) => row.id);
     if (ids.length) {
+      await pool.query(
+        `DELETE FROM video_render_preflight_checks
+         WHERE preflight_run_id IN (
+           SELECT id FROM video_render_preflight_runs
+           WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))
+         )`,
+        [ids]
+      );
+      await pool.query(
+        `DELETE FROM video_render_preflight_runs
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
       await pool.query(
         `DELETE FROM video_render_manifest_items
          WHERE manifest_id IN (
@@ -1436,19 +1461,297 @@ maybeTest("render manifest page and API route before generic video draft job rou
   assert.equal(context.manifest?.id, manifest.id);
 });
 
-test("content footage, script planning, video draft, and render manifest runtime files do not add forbidden execution dependencies", () => {
+maybeTest("render preflight rejects missing manifest", async () => {
+  await assert.rejects(
+    () => runRenderPreflightForManifest("11111111-1111-4111-8111-111111111111"),
+    /Render manifest tidak ditemukan/i
+  );
+});
+
+maybeTest("render preflight returns ready for reviewed manifest with safe snapshots", async () => {
+  const contentItemId = await createContent("preflight-ready");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("preflight-ready.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+  await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product",
+    duration_seconds: 9
+  });
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    render_mode: "disabled_metadata_only"
+  });
+  const manifest = await createRenderManifestForVideoDraftJob(job.id, {
+    manifest_status: "reviewed",
+    manifest_mode: "metadata_only",
+    target_format: "vertical_9_16"
+  });
+
+  const run = await runRenderPreflightForManifest(manifest.id);
+  const checks = await listRenderPreflightChecks(run.id);
+
+  assert.equal(run.preflight_result, "ready");
+  assert.equal(run.blocking_check_count, 0);
+  assert.equal(run.warning_check_count, 0);
+  assert.ok(checks.length > 0);
+  assert.equal(checks.some((check) => check.check_code === "item_snapshot_path_safe" && check.check_status === "pass"), true);
+
+  const runById = await getRenderPreflightRunById(run.id);
+  assert.equal(runById.id, run.id);
+});
+
+maybeTest("render preflight allows draft manifest as warning and allows multiple runs", async () => {
+  const contentItemId = await createContent("preflight-draft");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("preflight-draft.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+  await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product",
+    duration_seconds: 5
+  });
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    render_mode: "disabled_metadata_only"
+  });
+  const manifest = await createRenderManifestForVideoDraftJob(job.id, {
+    manifest_status: "draft",
+    manifest_mode: "metadata_only",
+    target_format: "vertical_9_16"
+  });
+
+  const first = await runRenderPreflightForManifest(manifest.id);
+  const second = await runRenderPreflightForManifest(manifest.id);
+  const runs = await listRenderPreflightRunsForManifest(manifest.id);
+  const checks = await listRenderPreflightChecks(first.id);
+
+  assert.equal(first.preflight_result, "ready");
+  assert.equal(first.blocking_check_count, 0);
+  assert.equal(first.warning_check_count, 1);
+  assert.equal(checks.some((check) => check.check_code === "manifest_status_draft" && check.check_level === "warning"), true);
+  assert.equal(runs.length >= 2, true);
+  assert.notEqual(first.id, second.id);
+});
+
+maybeTest("render preflight blocks cancelled video draft job and item count mismatch", async () => {
+  const contentItemId = await createContent("preflight-blocked");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("preflight-blocked.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+  await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product",
+    duration_seconds: 5
+  });
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    render_mode: "disabled_metadata_only"
+  });
+  const manifest = await createRenderManifestForVideoDraftJob(job.id, {
+    manifest_status: "approved",
+    manifest_mode: "metadata_only",
+    target_format: "vertical_9_16"
+  });
+  await cancelVideoDraftJob(job.id);
+  await pool!.query(`UPDATE video_render_manifests SET item_count = $2 WHERE id = $1`, [manifest.id, 99]);
+
+  const run = await runRenderPreflightForManifest(manifest.id);
+  const checks = await listRenderPreflightChecks(run.id);
+
+  assert.equal(run.preflight_result, "blocked");
+  assert.equal(run.blocking_check_count, 2);
+  assert.equal(checks.some((check) => check.check_code === "job_not_cancelled_or_archived" && check.check_status === "fail"), true);
+  assert.equal(checks.some((check) => check.check_code === "manifest_item_count_matches" && check.check_status === "fail"), true);
+});
+
+maybeTest("render preflight warns for missing footage item and does not mutate related rows or physical file", async () => {
+  const { storageRoot, footageRoot } = await createTempFootageRoot();
+  await mkdir(join(footageRoot, prefix), { recursive: true });
+  const filePath = join(footageRoot, prefix, "preflight-physical.mp4");
+  await writeFile(filePath, "render-preflight-db-only");
+  const before = await stat(filePath);
+
+  const contentItemId = await createContent("preflight-physical");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("preflight-physical.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+  const selectedStep = await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product",
+    duration_seconds: 7
+  });
+  const missingStep = await addShotPlanStep(plan.id, {
+    sequence_number: 2,
+    step_type: "closing"
+  });
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    render_mode: "disabled_metadata_only"
+  });
+  const manifest = await createRenderManifestForVideoDraftJob(job.id, {
+    manifest_status: "approved",
+    manifest_mode: "metadata_only",
+    target_format: "vertical_9_16"
+  });
+
+  const run = await runRenderPreflightForManifest(manifest.id);
+  const checks = await listRenderPreflightChecks(run.id);
+  const after = await stat(filePath);
+  const jobAfter = await getVideoDraftJobById(job.id);
+  const manifestAfter = await getRenderManifestById(manifest.id);
+  const stepsAfter = await listShotPlanSteps(plan.id);
+  const selectionAfter = await getContentItemFootageSelection(selection.id);
+  const footageAfter = await getFootageAsset(reviewed.id);
+
+  assert.equal(run.preflight_result, "ready");
+  assert.equal(run.blocking_check_count, 0);
+  assert.equal(run.warning_check_count >= 3, true);
+  assert.equal(checks.some((check) => check.check_code === "item_without_footage_snapshot" && check.check_status === "fail"), true);
+  assert.equal(jobAfter.id, job.id);
+  assert.equal(manifestAfter.id, manifest.id);
+  assert.equal(stepsAfter.some((row) => row.id === selectedStep.id), true);
+  assert.equal(stepsAfter.some((row) => row.id === missingStep.id), true);
+  assert.equal(selectionAfter.id, selection.id);
+  assert.equal(footageAfter.relative_path, reviewed.relative_path);
+  assert.equal(after.size, before.size);
+  assert.equal(after.mtimeMs, before.mtimeMs);
+  assert.equal(storageRoot.includes(prefix), true);
+});
+
+test("render preflight unsafe snapshot path rule creates blocking check", () => {
+  const manifest = {
+    id: "manifest",
+    video_draft_job_id: "job",
+    content_item_id: "content",
+    script_plan_id: "plan",
+    manifest_status: "approved",
+    manifest_mode: "metadata_only",
+    target_format: "vertical_9_16",
+    item_count: 1,
+    estimated_duration_seconds: 10,
+    selected_footage_count: 1,
+    missing_footage_step_count: 0,
+    manifest_warnings: null,
+    job_status: "planning_ready",
+    render_mode: "disabled_metadata_only",
+    content_code: "TEST",
+    content_title: "Test"
+  };
+  const items = [{
+    id: "item",
+    manifest_id: "manifest",
+    sequence_number: 1,
+    step_type: "product",
+    duration_seconds: 10,
+    content_item_footage_selection_id: "selection",
+    footage_asset_id: "footage",
+    source_relative_path_snapshot: "../unsafe.mp4",
+    source_filename_snapshot: "unsafe.mp4",
+    source_file_extension_snapshot: ".mp4",
+    source_size_bytes_snapshot: 1,
+    item_warnings: null
+  }];
+
+  const checks = buildRenderPreflightChecks(manifest, items);
+  assert.equal(checks.some((check) => check.check_code === "item_snapshot_path_safe" && check.check_level === "blocking" && check.check_status === "fail"), true);
+});
+
+maybeTest("render preflight validation rejects invalid generated statuses", async () => {
+  assert.throws(() => validateRenderPreflightRunStatus("running"), /Status preflight run tidak valid/i);
+  assert.throws(() => validateRenderPreflightResult("maybe"), /Hasil preflight tidak valid/i);
+});
+
+maybeTest("render preflight page and API route before generic render manifest route", async () => {
+  const contentItemId = await createContent("preflight-route");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("preflight-route.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+  await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product",
+    duration_seconds: 6
+  });
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    render_mode: "disabled_metadata_only"
+  });
+  const manifest = await createRenderManifestForVideoDraftJob(job.id, {
+    manifest_status: "reviewed",
+    manifest_mode: "metadata_only",
+    target_format: "vertical_9_16"
+  });
+  const run = await runRenderPreflightForManifest(manifest.id);
+
+  const pageResponse = mockResponse();
+  const pageHandled = await handleContentItemPageGet(
+    pageResponse,
+    `/content-items/${contentItemId}/video-draft/${job.id}/manifest/${manifest.id}/preflight`,
+    new URL(`http://localhost/content-items/${contentItemId}/video-draft/${job.id}/manifest/${manifest.id}/preflight`)
+  );
+  assert.equal(pageHandled, true);
+  assert.equal(pageResponse.statusCode, 200);
+  assert.match(pageResponse.body, /Render Preflight/);
+  assert.match(pageResponse.body, /DB-only/);
+
+  const apiResponse = mockResponse();
+  const apiHandled = await handleContentItemApiRoute(
+    { method: "GET", url: `/api/render-manifests/${manifest.id}/preflight`, headers: {}, on() {} } as any,
+    apiResponse,
+    `/api/render-manifests/${manifest.id}/preflight`,
+    new URL(`http://localhost/api/render-manifests/${manifest.id}/preflight`)
+  );
+  assert.equal(apiHandled, true);
+  assert.equal(apiResponse.statusCode, 200);
+  const body = JSON.parse(apiResponse.body);
+  assert.equal(body.ok, true);
+  assert.equal(body.data.manifest.id, manifest.id);
+  assert.equal(body.data.latestRun.id, run.id);
+
+  const context = await getRenderPreflightContextForContentItem(contentItemId, job.id, manifest.id);
+  assert.equal(context.latestRun?.id, run.id);
+});
+
+test("content footage, script planning, video draft, render manifest, and render preflight runtime files do not add forbidden execution dependencies", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
     "apps/web/src/content-item-script-plan-service.ts",
     "apps/web/src/video-draft-job-service.ts",
     "apps/web/src/render-manifest-service.ts",
+    "apps/web/src/render-preflight-service.ts",
     "apps/web/src/routes/content-item-api-routes.ts",
     "apps/web/src/routes/content-item-page-routes.ts",
     "apps/web/src/views/content-item-pages.ts",
     "apps/web/src/validation/content-item-footage-validation.ts",
     "apps/web/src/validation/content-item-script-plan-validation.ts",
     "apps/web/src/validation/video-draft-job-validation.ts",
-    "apps/web/src/validation/render-manifest-validation.ts"
+    "apps/web/src/validation/render-manifest-validation.ts",
+    "apps/web/src/validation/render-preflight-validation.ts"
   ].map((path) => readFileSync(path, "utf8")).join("\n");
 
   for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher", "fluent-ffmpeg", "child_process", "spawn", "exec", "execFile", "draft-videos", "approved-videos", "writeFile", "copyFile", "createWriteStream", "appendFile", "truncate"]) {
