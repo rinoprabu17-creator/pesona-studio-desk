@@ -33,6 +33,8 @@ const requiredPaths = [
   "apps/web/src/video-draft-job-errors.ts",
   "apps/web/src/render-manifest-service.ts",
   "apps/web/src/render-manifest-errors.ts",
+  "apps/web/src/render-preflight-service.ts",
+  "apps/web/src/render-preflight-errors.ts",
   "apps/web/src/content-publication-service.ts",
   "apps/web/src/content-publication-errors.ts",
   "apps/web/src/footage-asset-service.ts",
@@ -77,6 +79,7 @@ const requiredPaths = [
   "apps/web/src/validation/content-item-script-plan-validation.ts",
   "apps/web/src/validation/video-draft-job-validation.ts",
   "apps/web/src/validation/render-manifest-validation.ts",
+  "apps/web/src/validation/render-preflight-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/footage-asset-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
@@ -117,6 +120,7 @@ const requiredPaths = [
   "migrations/008_phase2c_script_shot_plans.sql",
   "migrations/009_phase2d_video_draft_jobs.sql",
   "migrations/010_phase2d_render_manifests.sql",
+  "migrations/011_phase2d_render_preflight_runs.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "scripts/prepare-test-db.mjs",
@@ -550,6 +554,40 @@ for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
     fail(`Migration Phase 2D.2 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
   } else {
     pass(`Migration Phase 2D.2 tidak memuat destructive SQL: ${forbiddenText}`);
+  }
+}
+
+const renderPreflightMigrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("011_"));
+if (renderPreflightMigrationFiles.length === 1 && renderPreflightMigrationFiles[0] === "011_phase2d_render_preflight_runs.sql") {
+  pass("Migration 011 Phase 2D render preflight runs tersedia");
+} else {
+  fail(`Migration 011 Phase 2D harus tepat satu file: ${renderPreflightMigrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const renderPreflightMigrationSource = existsSync("migrations/011_phase2d_render_preflight_runs.sql")
+  ? readFileSync("migrations/011_phase2d_render_preflight_runs.sql", "utf8")
+  : "";
+for (const requiredText of [
+  "CREATE TABLE video_render_preflight_runs",
+  "CREATE TABLE video_render_preflight_checks",
+  "render_manifest_id uuid NOT NULL REFERENCES video_render_manifests(id)",
+  "preflight_result text NOT NULL DEFAULT 'blocked'",
+  "check_level = ANY (ARRAY['info', 'warning', 'blocking'])",
+  "CREATE INDEX video_render_preflight_runs_render_manifest_id_idx",
+  "CREATE INDEX video_render_preflight_checks_run_id_idx"
+]) {
+  if (renderPreflightMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 2D.3 render preflight memuat: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 2D.3 render preflight belum memuat: ${requiredText}`);
+  }
+}
+
+for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
+  if (renderPreflightMigrationSource.includes(forbiddenText)) {
+    fail(`Migration Phase 2D.3 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
+  } else {
+    pass(`Migration Phase 2D.3 tidak memuat destructive SQL: ${forbiddenText}`);
   }
 }
 

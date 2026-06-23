@@ -28,6 +28,8 @@ import type { VideoDraftJobRow, VideoDraftReadiness } from "../video-draft-job-s
 import { getVideoDraftJobForContentItem } from "../video-draft-job-service.ts";
 import type { RenderManifestItemRow, RenderManifestRow } from "../render-manifest-service.ts";
 import { getRenderManifestContextForContentItem } from "../render-manifest-service.ts";
+import type { RenderPreflightCheckRow, RenderPreflightRunRow } from "../render-preflight-service.ts";
+import { getRenderPreflightContextForContentItem } from "../render-preflight-service.ts";
 import {
   renderManifestModes,
   renderManifestStatuses,
@@ -143,6 +145,22 @@ export const renderManifestStatusLabels: Record<string, string> = {
 
 export const renderManifestModeLabels: Record<string, string> = {
   metadata_only: "Metadata only"
+};
+
+export const renderPreflightResultLabels: Record<string, string> = {
+  ready: "Ready",
+  blocked: "Blocked"
+};
+
+export const renderPreflightLevelLabels: Record<string, string> = {
+  blocking: "Blocking",
+  warning: "Warning",
+  info: "Info"
+};
+
+export const renderPreflightStatusLabels: Record<string, string> = {
+  pass: "Pass",
+  fail: "Fail"
 };
 
 function formatDate(value: unknown): string {
@@ -1032,6 +1050,7 @@ export async function renderContentItemRenderManifestPage(item: ContentItemRow, 
     ${manifest ? renderManifestSummary(item, job.id, manifest) : renderManifestCreateSection(item, job)}
     ${manifest ? renderManifestItems(items) : ""}
     <div class="button-row" style="margin-top: 14px;">
+      ${manifest ? `<a class="button" href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(job.id)}/manifest/${escapeHtml(manifest.id)}/preflight">Render Preflight</a>` : ""}
       <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}/video-draft">Video Draft Job</a>
       <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Detail Konten</a>
     </div>
@@ -1042,6 +1061,110 @@ export async function renderContentItemRenderManifestPage(item: ContentItemRow, 
     `Render Manifest - ${item.content_code}`,
     "Render Manifest",
     "Snapshot DB-only untuk rencana future render. Fase ini tidak membuat file atau menjalankan render.",
+    content
+  );
+}
+
+function renderPreflightRunSummary(run: RenderPreflightRunRow | null): string {
+  if (!run) {
+    return `<section><h2>Preflight Run Terakhir</h2><p class="hint">Belum ada render preflight run untuk manifest ini.</p></section>`;
+  }
+  return `<section>
+    <h2>Preflight Run Terakhir</h2>
+    ${renderReadOnlyTable(
+      ["Field", "Nilai"],
+      [
+        ["Run ID", escapeHtml(run.id)],
+        ["Status Run", escapeHtml(run.run_status)],
+        ["Hasil", escapeHtml(renderPreflightResultLabels[run.preflight_result] || run.preflight_result)],
+        ["Check Count", escapeHtml(run.check_count)],
+        ["Blocking", escapeHtml(run.blocking_check_count)],
+        ["Warning", escapeHtml(run.warning_check_count)],
+        ["Summary", escapeHtml(run.summary || "-")]
+      ]
+    )}
+  </section>`;
+}
+
+function renderPreflightRunList(runs: RenderPreflightRunRow[]): string {
+  return `<section>
+    <h2>Riwayat Preflight</h2>
+    ${runs.length === 0
+      ? `<p class="hint">Belum ada riwayat preflight.</p>`
+      : renderReadOnlyTable(
+          ["Run", "Hasil", "Blocking", "Warning", "Dibuat"],
+          runs.slice(0, 10).map((run) => [
+            escapeHtml(run.id),
+            escapeHtml(renderPreflightResultLabels[run.preflight_result] || run.preflight_result),
+            escapeHtml(run.blocking_check_count),
+            escapeHtml(run.warning_check_count),
+            escapeHtml(run.created_at)
+          ])
+        )}
+  </section>`;
+}
+
+function renderPreflightChecks(checks: RenderPreflightCheckRow[]): string {
+  return `<section>
+    <h2>Check Terakhir</h2>
+    ${checks.length === 0
+      ? `<p class="hint">Belum ada check. Jalankan preflight untuk membuat hasil DB-only.</p>`
+      : renderReadOnlyTable(
+          ["Level", "Status", "Code", "Item", "Pesan"],
+          checks.map((check) => [
+            escapeHtml(renderPreflightLevelLabels[check.check_level] || check.check_level),
+            escapeHtml(renderPreflightStatusLabels[check.check_status] || check.check_status),
+            escapeHtml(check.check_code),
+            escapeHtml(check.render_manifest_item_id || "-"),
+            escapeHtml(check.message)
+          ])
+        )}
+  </section>`;
+}
+
+export async function renderContentItemRenderPreflightPage(item: ContentItemRow, jobId: string, manifestId: string, url: URL): Promise<string> {
+  const { manifest, latestRun, latestChecks, runs } = await getRenderPreflightContextForContentItem(item.id, jobId, manifestId);
+  const summary = renderReadOnlyTable(
+    ["Field", "Nilai"],
+    [
+      ["Content Code", `<strong>${escapeHtml(item.content_code)}</strong>`],
+      ["Judul", escapeHtml(item.title)],
+      ["Video Draft Job", escapeHtml(manifest.video_draft_job_id)],
+      ["Job Status", escapeHtml(videoDraftJobStatusLabels[manifest.job_status] || manifest.job_status)],
+      ["Render Mode", escapeHtml(videoDraftRenderModeLabels[manifest.render_mode] || manifest.render_mode)],
+      ["Manifest", escapeHtml(manifest.id)],
+      ["Manifest Status", escapeHtml(renderManifestStatusLabels[manifest.manifest_status] || manifest.manifest_status)],
+      ["Manifest Mode", escapeHtml(renderManifestModeLabels[manifest.manifest_mode] || manifest.manifest_mode)],
+      ["Item Count", escapeHtml(manifest.item_count)],
+      ["Step tanpa footage", escapeHtml(manifest.missing_footage_step_count)]
+    ]
+  );
+
+  const content = `
+    ${renderMessage(url)}
+    <div class="notice">Render preflight ini DB-only untuk inspeksi kesiapan. Tidak ada video render, tidak menjalankan FFmpeg, tidak membuat file JSON/video, tidak menulis ke storage, tidak ada AI generation, tidak ada upload, posting otomatis, atau penjadwalan otomatis.</div>
+    ${summary}
+    <section>
+      <h2>Jalankan Preflight DB-only</h2>
+      <p class="hint">Preflight membaca manifest dan item snapshot, lalu menyimpan hasil check ke database. Tidak ada file yang dibuat atau diubah.</p>
+      <form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifest.id)}/preflight/run" style="margin-top: 14px;">
+        <button type="submit">Run Preflight DB-only</button>
+      </form>
+    </section>
+    ${renderPreflightRunSummary(latestRun)}
+    ${renderPreflightChecks(latestChecks)}
+    ${renderPreflightRunList(runs)}
+    <div class="button-row" style="margin-top: 14px;">
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest">Render Manifest</a>
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Detail Konten</a>
+    </div>
+  `;
+
+  return renderLayout(
+    "/content-items",
+    `Render Preflight - ${item.content_code}`,
+    "Render Preflight",
+    "DB-only readiness check untuk render manifest. Fase ini belum mengeksekusi render.",
     content
   );
 }

@@ -28,6 +28,11 @@ import {
   createRenderManifestForVideoDraftJob,
   updateRenderManifestForContentItem
 } from "../render-manifest-service.ts";
+import { RenderPreflightError } from "../render-preflight-errors.ts";
+import {
+  getRenderPreflightContextForContentItem,
+  runRenderPreflightForManifest
+} from "../render-preflight-service.ts";
 import { VideoDraftJobError } from "../video-draft-job-errors.ts";
 import {
   cancelVideoDraftJobForContentItem,
@@ -40,6 +45,7 @@ import {
   renderContentItemFormPage,
   renderContentItemListPage,
   renderContentItemNotFoundPage,
+  renderContentItemRenderPreflightPage,
   renderContentItemRenderManifestPage,
   renderContentItemScriptPlanPage,
   renderContentItemVideoDraftPage,
@@ -53,6 +59,7 @@ function statusCodeFor(error: unknown): number {
     error instanceof CampaignError ||
     error instanceof LibraryError ||
     error instanceof RenderManifestError ||
+    error instanceof RenderPreflightError ||
     error instanceof VideoDraftJobError
   ) {
     return error.statusCode;
@@ -66,6 +73,7 @@ function isNotFoundLike(error: unknown): boolean {
     error instanceof CampaignError ||
     error instanceof LibraryError ||
     error instanceof RenderManifestError ||
+    error instanceof RenderPreflightError ||
     error instanceof VideoDraftJobError
   ) {
     return error.statusCode === 400 || error.statusCode === 404;
@@ -296,6 +304,19 @@ export async function handleContentItemPagePost(request: RequestLike, response: 
     return true;
   }
 
+  const runRenderPreflightMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/([^/]+)\/preflight\/run$/);
+  if (runRenderPreflightMatch && request.method === "POST") {
+    try {
+      await getRenderPreflightContextForContentItem(runRenderPreflightMatch[1], runRenderPreflightMatch[2], runRenderPreflightMatch[3]);
+      await runRenderPreflightForManifest(runRenderPreflightMatch[3]);
+      redirect(response, `/content-items/${encodeURIComponent(runRenderPreflightMatch[1])}/video-draft/${encodeURIComponent(runRenderPreflightMatch[2])}/manifest/${encodeURIComponent(runRenderPreflightMatch[3])}/preflight?success=Render preflight DB-only selesai.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Render preflight gagal dijalankan.";
+      redirect(response, `/content-items/${encodeURIComponent(runRenderPreflightMatch[1])}/video-draft/${encodeURIComponent(runRenderPreflightMatch[2])}/manifest/${encodeURIComponent(runRenderPreflightMatch[3])}/preflight?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -380,6 +401,18 @@ export async function handleContentItemPageGet(response: ResponseLike, pathname:
       sendHtml(response, await renderContentItemRenderManifestPage(item, renderManifestMatch[2], url));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Render manifest tidak ditemukan.";
+      sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
+    }
+    return true;
+  }
+
+  const renderPreflightMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/([^/]+)\/preflight$/);
+  if (renderPreflightMatch) {
+    try {
+      const item = await getContentItem(renderPreflightMatch[1]);
+      sendHtml(response, await renderContentItemRenderPreflightPage(item, renderPreflightMatch[2], renderPreflightMatch[3], url));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Render preflight tidak ditemukan.";
       sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
     }
     return true;
