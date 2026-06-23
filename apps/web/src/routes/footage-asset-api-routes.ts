@@ -4,6 +4,7 @@ import {
   listFootageAssets,
   updateFootageAsset
 } from "../footage-asset-service.ts";
+import { importFootageScan, scanFootageDirectory } from "../footage-scan-service.ts";
 import { readJsonBody } from "../http/request.ts";
 import type { RequestLike } from "../http/request.ts";
 import { sendSuccess } from "../http/response.ts";
@@ -25,6 +26,16 @@ export async function handleFootageAssetApiRoute(request: RequestLike, response:
 
   if (pathname === "/api/footage-assets" && request.method === "POST") {
     sendSuccess(response, await createFootageAsset(await readJsonBody(request)), 201);
+    return true;
+  }
+
+  if (pathname === "/api/footage-assets/scan" && request.method === "GET") {
+    sendSuccess(response, await scanFootageDirectory());
+    return true;
+  }
+
+  if (pathname === "/api/footage-assets/scan/import" && request.method === "POST") {
+    sendSuccess(response, await importFootageScan(await readJsonBody(request)), 201);
     return true;
   }
 

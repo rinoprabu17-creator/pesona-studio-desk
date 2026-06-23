@@ -4,6 +4,7 @@ import {
   getFootageAsset,
   updateFootageAsset
 } from "../footage-asset-service.ts";
+import { importFootageScan } from "../footage-scan-service.ts";
 import { readFormBody } from "../http/request.ts";
 import type { RequestLike } from "../http/request.ts";
 import { redirect, sendHtml } from "../http/response.ts";
@@ -14,6 +15,7 @@ import {
   renderFootageAssetFormPage,
   renderFootageAssetListPage,
   renderFootageAssetNotFoundPage,
+  renderFootageAssetScanPage,
   valuesFromFootageAsset,
   valuesFromForm
 } from "../views/footage-asset-pages.ts";
@@ -31,6 +33,21 @@ function isNotFoundLike(error: unknown): boolean {
 }
 
 export async function handleFootageAssetPagePost(request: RequestLike, response: ResponseLike, pathname: string): Promise<boolean> {
+  if (pathname === "/footage-assets/scan/import" && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      const result = await importFootageScan({ shot_type: body.shot_type });
+      redirect(
+        response,
+        `/footage-assets/scan?success=${encodeURIComponent(`${result.created.length} metadata footage berhasil dibuat. ${result.skipped_existing.length} sudah tercatat.`)}`
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Import metadata footage gagal.";
+      sendHtml(response, await renderFootageAssetScanPage(new URL("http://localhost/footage-assets/scan"), message), statusCodeFor(error));
+    }
+    return true;
+  }
+
   if (pathname === "/footage-assets/create" && request.method === "POST") {
     const body = await readFormBody(request);
     const values = valuesFromForm(body);
@@ -89,6 +106,11 @@ export async function handleFootageAssetPagePost(request: RequestLike, response:
 export async function handleFootageAssetPageGet(response: ResponseLike, pathname: string, url: URL): Promise<boolean> {
   if (pathname === "/footage-assets") {
     sendHtml(response, await renderFootageAssetListPage(url));
+    return true;
+  }
+
+  if (pathname === "/footage-assets/scan") {
+    sendHtml(response, await renderFootageAssetScanPage(url));
     return true;
   }
 
