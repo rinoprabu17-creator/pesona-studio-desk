@@ -41,6 +41,11 @@ import {
   listRenderPreflightChecks,
   runRenderPreflightForManifest
 } from "../render-preflight-service.ts";
+import {
+  getControlledRenderContextForManifest,
+  getRenderAttemptById,
+  runControlledSmokeRenderForManifest
+} from "../render-attempt-service.ts";
 
 export async function handleContentItemApiRoute(request: RequestLike, response: ResponseLike, pathname: string, url: URL): Promise<boolean> {
   if (pathname === "/api/content-items" && request.method === "GET") {
@@ -156,6 +161,24 @@ export async function handleContentItemApiRoute(request: RequestLike, response: 
     const run = await runRenderPreflightForManifest(renderManifestPreflightRunMatch[1]);
     const checks = await listRenderPreflightChecks(run.id);
     sendSuccess(response, { run, checks }, 201);
+    return true;
+  }
+
+  const renderManifestAttemptsMatch = pathname.match(/^\/api\/render-manifests\/([^/]+)\/render-attempts$/);
+  if (renderManifestAttemptsMatch && request.method === "GET") {
+    sendSuccess(response, await getControlledRenderContextForManifest(renderManifestAttemptsMatch[1]));
+    return true;
+  }
+
+  const renderManifestSmokeAttemptMatch = pathname.match(/^\/api\/render-manifests\/([^/]+)\/render-attempts\/run-smoke$/);
+  if (renderManifestSmokeAttemptMatch && request.method === "POST") {
+    sendSuccess(response, await runControlledSmokeRenderForManifest(renderManifestSmokeAttemptMatch[1]), 201);
+    return true;
+  }
+
+  const renderAttemptMatch = pathname.match(/^\/api\/render-attempts\/([^/]+)$/);
+  if (renderAttemptMatch && request.method === "GET") {
+    sendSuccess(response, await getRenderAttemptById(renderAttemptMatch[1]));
     return true;
   }
 

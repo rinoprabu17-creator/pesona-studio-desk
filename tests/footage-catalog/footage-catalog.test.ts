@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { mkdtemp, mkdir, rm, stat, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import pg from "pg";
 import { createContentItem } from "../../apps/web/src/content-item-service.ts";
@@ -78,6 +78,21 @@ import {
   validateRenderPreflightResult,
   validateRenderPreflightRunStatus
 } from "../../apps/web/src/validation/render-preflight-validation.ts";
+import {
+  buildSafeFfmpegArgs,
+  getControlledRenderContextForContentItem,
+  getControlledRenderContextForManifest,
+  getRenderAttemptById,
+  isSafeRenderSourceRelativePath,
+  listRenderAttemptsForManifest,
+  runControlledSmokeRenderForManifest,
+  validateControlledRenderEligibility
+} from "../../apps/web/src/render-attempt-service.ts";
+import {
+  validateRenderAttemptMode,
+  validateRenderAttemptOutputRelativePath,
+  validateRenderAttemptStatus
+} from "../../apps/web/src/validation/render-attempt-validation.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -105,6 +120,11 @@ test.after(async () => {
     ]);
     const ids = campaigns.rows.map((row) => row.id);
     if (ids.length) {
+      await pool.query(
+        `DELETE FROM video_render_attempts
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
       await pool.query(
         `DELETE FROM video_render_preflight_checks
          WHERE preflight_run_id IN (
@@ -222,6 +242,49 @@ async function createFootage(relativeName: string, status: string) {
     theme: `Selection ${relativeName}`,
     quality_score: 4
   });
+}
+
+async function createReadyRenderAttemptFixture(
+  codeSuffix: string,
+  options: { createSourceFile?: boolean; manifestStatus?: "reviewed" | "approved"; runPreflight?: boolean } = {}
+) {
+  const createSourceFile = options.createSourceFile ?? true;
+  const manifestStatus = options.manifestStatus || "approved";
+  const { storageRoot, footageRoot } = await createTempFootageRoot();
+  const contentItemId = await createContent(`render-attempt-${codeSuffix}`);
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage(`render-attempt-${codeSuffix}.mp4`, "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+  const step = await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product",
+    duration_seconds: 6
+  });
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    job_status: "planning_ready",
+    target_format: "vertical_9_16",
+    render_mode: "disabled_metadata_only"
+  });
+  const manifest = await createRenderManifestForVideoDraftJob(job.id, {
+    manifest_status: manifestStatus,
+    manifest_mode: "metadata_only",
+    target_format: "vertical_9_16"
+  });
+
+  const sourcePath = join(footageRoot, reviewed.relative_path);
+  if (createSourceFile) {
+    await mkdir(dirname(sourcePath), { recursive: true });
+    await writeFile(sourcePath, `mock source for ${codeSuffix}`);
+  }
+  const preflight = options.runPreflight === false ? null : await runRenderPreflightForManifest(manifest.id);
+
+  return { storageRoot, footageRoot, contentItemId, plan, reviewed, selection, step, job, manifest, preflight, sourcePath };
 }
 
 function mockResponse() {
@@ -1006,7 +1069,7 @@ maybeTest("script plan page and API route before generic content detail", async 
   assert.equal(pageHandled, true);
   assert.equal(pageResponse.statusCode, 200);
   assert.match(pageResponse.body, /Script \/ Shot Planning/);
-  assert.match(pageResponse.body, /Tidak ada AI generation/);
+  assert.match(pageResponse.body, /Tidak ada generasi AI/);
 
   const apiResponse = mockResponse();
   const apiHandled = await handleContentItemApiRoute(
@@ -1225,7 +1288,7 @@ maybeTest("video draft page and API route before generic content detail", async 
   assert.equal(pageHandled, true);
   assert.equal(pageResponse.statusCode, 200);
   assert.match(pageResponse.body, /Video Draft Job/);
-  assert.match(pageResponse.body, /tidak menjalankan FFmpeg/);
+  assert.match(pageResponse.body, /tidak menjalankan alat render lokal/);
 
   const apiResponse = mockResponse();
   const apiHandled = await handleContentItemApiRoute(
@@ -1737,7 +1800,200 @@ maybeTest("render preflight page and API route before generic render manifest ro
   assert.equal(context.latestRun?.id, run.id);
 });
 
-test("content footage, script planning, video draft, render manifest, and render preflight runtime files do not add forbidden execution dependencies", () => {
+maybeTest("controlled render attempt rejects missing manifest and missing ready preflight", async () => {
+  await assert.rejects(
+    () => runControlledSmokeRenderForManifest("11111111-1111-4111-8111-111111111111"),
+    /Render manifest tidak ditemukan/i
+  );
+
+  const fixture = await createReadyRenderAttemptFixture("no-preflight", {
+    createSourceFile: true,
+    runPreflight: false
+  });
+
+  await assert.rejects(
+    () => runControlledSmokeRenderForManifest(fixture.manifest.id, { storageRoot: fixture.storageRoot }),
+    /preflight ready wajib/i
+  );
+});
+
+maybeTest("controlled render attempt records blocked attempt when latest preflight is blocked", async () => {
+  const fixture = await createReadyRenderAttemptFixture("blocked-preflight", {
+    createSourceFile: true
+  });
+  await cancelVideoDraftJob(fixture.job.id);
+  const blockedRun = await runRenderPreflightForManifest(fixture.manifest.id);
+
+  const attempt = await runControlledSmokeRenderForManifest(fixture.manifest.id, {
+    storageRoot: fixture.storageRoot
+  });
+  const attempts = await listRenderAttemptsForManifest(fixture.manifest.id);
+
+  assert.equal(blockedRun.preflight_result, "blocked");
+  assert.equal(attempt.attempt_status, "blocked");
+  assert.equal(attempt.preflight_run_id, blockedRun.id);
+  assert.match(attempt.error_message || "", /Preflight terakhir belum ready/i);
+  assert.equal(attempts.some((row) => row.id === attempt.id), true);
+});
+
+test("controlled render path validation rejects unsafe source and output paths", () => {
+  assert.equal(isSafeRenderSourceRelativePath(`${prefix}/safe.mp4`), true);
+  assert.equal(isSafeRenderSourceRelativePath("../unsafe.mp4"), false);
+  assert.equal(isSafeRenderSourceRelativePath("/absolute.mp4"), false);
+  assert.equal(isSafeRenderSourceRelativePath("nested\\unsafe.mp4"), false);
+
+  assert.equal(validateRenderAttemptOutputRelativePath("smoke/output.mp4"), "smoke/output.mp4");
+  assert.throws(() => validateRenderAttemptOutputRelativePath("output.mp4"), /smoke/i);
+  assert.throws(() => validateRenderAttemptOutputRelativePath("smoke/../output.mp4"), /traversal/i);
+  assert.throws(() => validateRenderAttemptOutputRelativePath("/smoke/output.mp4"), /smoke/i);
+  assert.throws(() => validateRenderAttemptOutputRelativePath("smoke/output.mov"), /mp4|traversal/i);
+});
+
+maybeTest("controlled render eligibility blocks missing physical source and existing output", async () => {
+  const missingSource = await createReadyRenderAttemptFixture("missing-source", {
+    createSourceFile: false
+  });
+  const missingEligibility = await validateControlledRenderEligibility(missingSource.manifest.id, {
+    storageRoot: missingSource.storageRoot
+  });
+  const blockedAttempt = await runControlledSmokeRenderForManifest(missingSource.manifest.id, {
+    storageRoot: missingSource.storageRoot
+  });
+
+  assert.equal(missingEligibility.ok, false);
+  assert.match(missingEligibility.blocking_reasons.join(" "), /Source footage fisik tidak ditemukan/i);
+  assert.equal(blockedAttempt.attempt_status, "blocked");
+  assert.equal(blockedAttempt.output_relative_path, null);
+
+  const existingOutput = await createReadyRenderAttemptFixture("existing-output", {
+    createSourceFile: true
+  });
+  const outputRelativePath = `smoke/existing-output-${existingOutput.manifest.id.slice(0, 8)}.mp4`;
+  const outputPath = join(existingOutput.storageRoot, "draft-videos", outputRelativePath);
+  await mkdir(dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, "existing output");
+
+  const existingEligibility = await validateControlledRenderEligibility(existingOutput.manifest.id, {
+    storageRoot: existingOutput.storageRoot,
+    output_relative_path: outputRelativePath
+  });
+  const existingAttempt = await runControlledSmokeRenderForManifest(existingOutput.manifest.id, {
+    storageRoot: existingOutput.storageRoot,
+    output_relative_path: outputRelativePath
+  });
+
+  assert.equal(existingEligibility.ok, false);
+  assert.match(existingEligibility.blocking_reasons.join(" "), /tidak boleh overwrite/i);
+  assert.equal(existingAttempt.attempt_status, "blocked");
+  assert.match(existingAttempt.error_message || "", /tidak boleh overwrite/i);
+});
+
+test("controlled render builds FFmpeg argument array without shell command string", () => {
+  const args = buildSafeFfmpegArgs("/tmp/source.mp4", "/tmp/output.mp4", { target_format: "square_1_1" });
+  assert.equal(Array.isArray(args), true);
+  assert.equal(args.includes("-i"), true);
+  assert.equal(args.includes("/tmp/source.mp4"), true);
+  assert.equal(args.includes("-n"), true);
+  assert.equal(args.at(-1), "/tmp/output.mp4");
+  assert.equal(args.join(" ").includes("scale=720:720"), true);
+});
+
+maybeTest("controlled render mocked success records smoke output and keeps source plus planning rows intact", async () => {
+  const fixture = await createReadyRenderAttemptFixture("mock-success", {
+    createSourceFile: true
+  });
+  const beforeSource = await stat(fixture.sourcePath);
+  const outputRelativePath = `smoke/mock-success-${fixture.manifest.id.slice(0, 8)}.mp4`;
+  let capturedArgs: string[] = [];
+
+  const attempt = await runControlledSmokeRenderForManifest(fixture.manifest.id, {
+    storageRoot: fixture.storageRoot,
+    output_relative_path: outputRelativePath,
+    ffmpegRunner: async (args) => {
+      capturedArgs = args;
+      const outputPath = args.at(-1);
+      assert.ok(outputPath);
+      await mkdir(dirname(outputPath), { recursive: true });
+      await writeFile(outputPath, "mock mp4 output");
+      return { exitCode: 0, errorMessage: null };
+    }
+  });
+
+  const outputPath = join(fixture.storageRoot, "draft-videos", outputRelativePath);
+  const outputStat = await stat(outputPath);
+  const afterSource = await stat(fixture.sourcePath);
+  const loadedAttempt = await getRenderAttemptById(attempt.id);
+  const jobAfter = await getVideoDraftJobById(fixture.job.id);
+  const manifestAfter = await getRenderManifestById(fixture.manifest.id);
+  const planAfter = await getContentItemScriptPlan(fixture.contentItemId);
+  const stepsAfter = await listShotPlanSteps(fixture.plan.id);
+  const selectionAfter = await getContentItemFootageSelection(fixture.selection.id);
+  const footageAfter = await getFootageAsset(fixture.reviewed.id);
+
+  assert.equal(attempt.attempt_status, "succeeded");
+  assert.equal(loadedAttempt.output_relative_path, outputRelativePath);
+  assert.equal(loadedAttempt.output_size_bytes, outputStat.size);
+  assert.equal(loadedAttempt.ffmpeg_exit_code, 0);
+  assert.equal(capturedArgs.includes("-i"), true);
+  assert.equal(capturedArgs.includes(fixture.sourcePath), true);
+  assert.equal(outputStat.size > 0, true);
+  assert.equal(afterSource.size, beforeSource.size);
+  assert.equal(afterSource.mtimeMs, beforeSource.mtimeMs);
+  assert.equal(jobAfter.id, fixture.job.id);
+  assert.equal(manifestAfter.id, fixture.manifest.id);
+  assert.equal(planAfter?.id, fixture.plan.id);
+  assert.equal(stepsAfter.some((row) => row.id === fixture.step.id), true);
+  assert.equal(selectionAfter.id, fixture.selection.id);
+  assert.equal(footageAfter.relative_path, fixture.reviewed.relative_path);
+  assert.equal(footageAfter.filename, fixture.reviewed.filename);
+  assert.equal(footageAfter.file_extension, fixture.reviewed.file_extension);
+  assert.equal(footageAfter.size_bytes, fixture.reviewed.size_bytes);
+});
+
+maybeTest("controlled render validation rejects invalid generated attempt fields", async () => {
+  assert.throws(() => validateRenderAttemptStatus("queued"), /Status render attempt tidak valid/i);
+  assert.throws(() => validateRenderAttemptMode("auto"), /manual_smoke/i);
+});
+
+maybeTest("controlled render page and API route before generic render manifest route", async () => {
+  const fixture = await createReadyRenderAttemptFixture("route", {
+    createSourceFile: false,
+    manifestStatus: "reviewed"
+  });
+
+  const pageResponse = mockResponse();
+  const pageHandled = await handleContentItemPageGet(
+    pageResponse,
+    `/content-items/${fixture.contentItemId}/video-draft/${fixture.job.id}/manifest/${fixture.manifest.id}/render-attempts`,
+    new URL(`http://localhost/content-items/${fixture.contentItemId}/video-draft/${fixture.job.id}/manifest/${fixture.manifest.id}/render-attempts`)
+  );
+  assert.equal(pageHandled, true);
+  assert.equal(pageResponse.statusCode, 200);
+  assert.match(pageResponse.body, /Controlled Smoke Render/);
+  assert.match(pageResponse.body, /manual-only/);
+
+  const apiResponse = mockResponse();
+  const apiHandled = await handleContentItemApiRoute(
+    { method: "GET", url: `/api/render-manifests/${fixture.manifest.id}/render-attempts`, headers: {}, on() {} } as any,
+    apiResponse,
+    `/api/render-manifests/${fixture.manifest.id}/render-attempts`,
+    new URL(`http://localhost/api/render-manifests/${fixture.manifest.id}/render-attempts`)
+  );
+  assert.equal(apiHandled, true);
+  assert.equal(apiResponse.statusCode, 200);
+  const body = JSON.parse(apiResponse.body);
+  assert.equal(body.ok, true);
+  assert.equal(body.data.manifest.id, fixture.manifest.id);
+
+  const context = await getControlledRenderContextForContentItem(fixture.contentItemId, fixture.job.id, fixture.manifest.id, {
+    storageRoot: fixture.storageRoot
+  });
+  const manifestContext = await getControlledRenderContextForManifest(fixture.manifest.id, { storageRoot: fixture.storageRoot });
+  assert.equal(context.manifest.id, fixture.manifest.id);
+  assert.equal(manifestContext.latestPreflight?.id, fixture.preflight?.id);
+});
+
+test("content footage, script planning, video draft, render manifest, preflight, and controlled render runtime files keep dependencies guarded", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
     "apps/web/src/content-item-script-plan-service.ts",
@@ -1751,10 +2007,19 @@ test("content footage, script planning, video draft, render manifest, and render
     "apps/web/src/validation/content-item-script-plan-validation.ts",
     "apps/web/src/validation/video-draft-job-validation.ts",
     "apps/web/src/validation/render-manifest-validation.ts",
-    "apps/web/src/validation/render-preflight-validation.ts"
+    "apps/web/src/validation/render-preflight-validation.ts",
+    "apps/web/src/validation/render-attempt-validation.ts"
   ].map((path) => readFileSync(path, "utf8")).join("\n");
 
-  for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher", "fluent-ffmpeg", "child_process", "spawn", "exec", "execFile", "draft-videos", "approved-videos", "writeFile", "copyFile", "createWriteStream", "appendFile", "truncate"]) {
+  for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher", "fluent-ffmpeg", "child_process", "spawn", "exec", "execFile", "approved-videos", "workers/video", "writeFile", "copyFile", "createWriteStream", "appendFile", "truncate"]) {
     assert.equal(source.includes(forbidden), false);
   }
+
+  const renderAttemptSource = readFileSync("apps/web/src/render-attempt-service.ts", "utf8");
+  for (const forbidden of ["exec(", "execFile", "shell:", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "storage/approved-videos", "workers/video", "OpenAI", "openai", "scheduler", "publisher", "upload"]) {
+    assert.equal(renderAttemptSource.includes(forbidden), false);
+  }
+  assert.equal(renderAttemptSource.includes(`spawn("ffmpeg"`), true);
+  assert.equal(renderAttemptSource.includes("storage/draft-videos"), true);
+  assert.equal(renderAttemptSource.includes("storage/footage"), true);
 });

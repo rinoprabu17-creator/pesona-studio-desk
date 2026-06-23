@@ -30,6 +30,8 @@ import type { RenderManifestItemRow, RenderManifestRow } from "../render-manifes
 import { getRenderManifestContextForContentItem } from "../render-manifest-service.ts";
 import type { RenderPreflightCheckRow, RenderPreflightRunRow } from "../render-preflight-service.ts";
 import { getRenderPreflightContextForContentItem } from "../render-preflight-service.ts";
+import type { RenderAttemptRow } from "../render-attempt-service.ts";
+import { getControlledRenderContextForContentItem } from "../render-attempt-service.ts";
 import {
   renderManifestModes,
   renderManifestStatuses,
@@ -161,6 +163,15 @@ export const renderPreflightLevelLabels: Record<string, string> = {
 export const renderPreflightStatusLabels: Record<string, string> = {
   pass: "Pass",
   fail: "Fail"
+};
+
+export const renderAttemptStatusLabels: Record<string, string> = {
+  requested: "Requested",
+  running: "Running",
+  succeeded: "Succeeded",
+  failed: "Failed",
+  blocked: "Blocked",
+  archived: "Archived"
 };
 
 function formatDate(value: unknown): string {
@@ -738,7 +749,7 @@ export async function renderContentItemFootagePage(item: ContentItemRow, url: UR
 
   const content = `
     ${renderMessage(url)}
-    <div class="notice">Workflow ini hanya memilih footage untuk planning konten. Tidak ada file footage yang dipindah, diedit, dihapus, diupload, atau dirender menjadi video.</div>
+    <div class="notice">Workflow ini hanya memilih footage untuk planning konten. Tidak ada file footage yang dipindah, diedit, dihapus, diunggah, atau dibuat menjadi video.</div>
     ${summary}
     <section>
       <h2>Footage Terpilih</h2>
@@ -777,7 +788,7 @@ export async function renderContentItemScriptPlanPage(item: ContentItemRow, url:
 
   const content = `
     ${renderMessage(url)}
-    <div class="notice">Planning ini manual/rule-based untuk script dan shot order. Tidak ada AI generation, video render, file modification, upload, auto-posting, penerbitan otomatis, atau penjadwalan otomatis.</div>
+    <div class="notice">Planning ini manual/rule-based untuk script dan shot order. Tidak ada generasi AI, pembuatan video, perubahan file, unggah, auto-posting, penerbitan otomatis, atau penjadwalan otomatis.</div>
     ${summary}
     ${renderScriptPlanForm(item, plan)}
     ${renderSelectedFootageContext(selections)}
@@ -918,7 +929,7 @@ export async function renderContentItemVideoDraftPage(item: ContentItemRow, url:
 
   const content = `
     ${renderMessage(url)}
-    <div class="notice">Video draft job ini hanya tracker metadata request. Tidak ada video render, tidak menjalankan FFmpeg, tidak membuat file video, tidak ada AI generation, tidak ada upload, posting otomatis, atau penjadwalan otomatis.</div>
+    <div class="notice">Video draft job ini hanya tracker metadata request. Tidak ada pembuatan video, tidak menjalankan alat render lokal, tidak membuat file video, tidak ada generasi AI, tidak ada unggah, posting otomatis, atau penjadwalan otomatis.</div>
     ${summary}
     ${renderVideoDraftReadiness(readiness)}
     ${renderVideoDraftJobSection(item, job, readiness)}
@@ -1045,7 +1056,7 @@ export async function renderContentItemRenderManifestPage(item: ContentItemRow, 
 
   const content = `
     ${renderMessage(url)}
-    <div class="notice">Render manifest ini DB-only untuk inspeksi owner. Tidak ada video render, tidak menjalankan FFmpeg, tidak membuat file JSON/video, tidak menulis ke storage, tidak ada AI generation, tidak ada upload, posting otomatis, atau penjadwalan otomatis.</div>
+    <div class="notice">Render manifest ini DB-only untuk inspeksi owner. Tidak ada pembuatan video, tidak menjalankan alat render lokal, tidak membuat file JSON/video, tidak menulis ke storage, tidak ada generasi AI, tidak ada unggah, posting otomatis, atau penjadwalan otomatis.</div>
     ${summary}
     ${manifest ? renderManifestSummary(item, job.id, manifest) : renderManifestCreateSection(item, job)}
     ${manifest ? renderManifestItems(items) : ""}
@@ -1142,7 +1153,7 @@ export async function renderContentItemRenderPreflightPage(item: ContentItemRow,
 
   const content = `
     ${renderMessage(url)}
-    <div class="notice">Render preflight ini DB-only untuk inspeksi kesiapan. Tidak ada video render, tidak menjalankan FFmpeg, tidak membuat file JSON/video, tidak menulis ke storage, tidak ada AI generation, tidak ada upload, posting otomatis, atau penjadwalan otomatis.</div>
+    <div class="notice">Render preflight ini DB-only untuk inspeksi kesiapan. Tidak ada pembuatan video, tidak menjalankan alat render lokal, tidak membuat file JSON/video, tidak menulis ke storage, tidak ada generasi AI, tidak ada unggah, posting otomatis, atau penjadwalan otomatis.</div>
     ${summary}
     <section>
       <h2>Jalankan Preflight DB-only</h2>
@@ -1155,6 +1166,7 @@ export async function renderContentItemRenderPreflightPage(item: ContentItemRow,
     ${renderPreflightChecks(latestChecks)}
     ${renderPreflightRunList(runs)}
     <div class="button-row" style="margin-top: 14px;">
+      ${latestRun?.preflight_result === "ready" ? `<a class="button" href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifest.id)}/render-attempts">Controlled Smoke Render</a>` : ""}
       <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest">Render Manifest</a>
       <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Detail Konten</a>
     </div>
@@ -1165,6 +1177,86 @@ export async function renderContentItemRenderPreflightPage(item: ContentItemRow,
     `Render Preflight - ${item.content_code}`,
     "Render Preflight",
     "DB-only readiness check untuk render manifest. Fase ini belum mengeksekusi render.",
+    content
+  );
+}
+
+function renderRenderAttemptEligibility(eligibility: Awaited<ReturnType<typeof getControlledRenderContextForContentItem>>["eligibility"]): string {
+  return `<section>
+    <h2>Eligibility</h2>
+    ${renderReadOnlyTable(
+      ["Field", "Nilai"],
+      [
+        ["Status", eligibility.ok ? `<span class="badge badge-ok">Eligible</span>` : `<span class="badge">Blocked</span>`],
+        ["Source", escapeHtml(eligibility.source_relative_path || "-")],
+        ["Output Preview", escapeHtml(eligibility.output_relative_path_preview || "-")],
+        ["Blocking Reasons", eligibility.blocking_reasons.length ? escapeHtml(eligibility.blocking_reasons.join(" ")) : "-"]
+      ]
+    )}
+  </section>`;
+}
+
+function renderRenderAttemptList(attempts: RenderAttemptRow[]): string {
+  return `<section>
+    <h2>Render Attempts</h2>
+    ${attempts.length === 0
+      ? `<p class="hint">Belum ada controlled smoke render attempt.</p>`
+      : renderReadOnlyTable(
+          ["Attempt", "Status", "Output", "Size", "Exit", "Error", "Dibuat"],
+          attempts.map((attempt) => [
+            escapeHtml(attempt.id),
+            escapeHtml(renderAttemptStatusLabels[attempt.attempt_status] || attempt.attempt_status),
+            escapeHtml(attempt.output_relative_path || "-"),
+            attempt.output_size_bytes === null ? "-" : `${escapeHtml(attempt.output_size_bytes)} bytes`,
+            attempt.ffmpeg_exit_code === null ? "-" : escapeHtml(attempt.ffmpeg_exit_code),
+            escapeHtml(attempt.error_message || "-"),
+            escapeHtml(attempt.created_at)
+          ])
+        )}
+  </section>`;
+}
+
+export async function renderContentItemRenderAttemptsPage(item: ContentItemRow, jobId: string, manifestId: string, url: URL): Promise<string> {
+  const { manifest, latestPreflight, eligibility, attempts } = await getControlledRenderContextForContentItem(item.id, jobId, manifestId);
+  const summary = renderReadOnlyTable(
+    ["Field", "Nilai"],
+    [
+      ["Content Code", `<strong>${escapeHtml(item.content_code)}</strong>`],
+      ["Judul", escapeHtml(item.title)],
+      ["Video Draft Job", escapeHtml(manifest.video_draft_job_id)],
+      ["Job Status", escapeHtml(videoDraftJobStatusLabels[manifest.job_status] || manifest.job_status)],
+      ["Render Mode", escapeHtml(videoDraftRenderModeLabels[manifest.render_mode] || manifest.render_mode)],
+      ["Manifest", escapeHtml(manifest.id)],
+      ["Manifest Status", escapeHtml(renderManifestStatusLabels[manifest.manifest_status] || manifest.manifest_status)],
+      ["Manifest Mode", escapeHtml(renderManifestModeLabels[manifest.manifest_mode] || manifest.manifest_mode)],
+      ["Latest Preflight", latestPreflight ? `${escapeHtml(renderPreflightResultLabels[latestPreflight.preflight_result] || latestPreflight.preflight_result)} (${escapeHtml(latestPreflight.id)})` : "-"]
+    ]
+  );
+
+  const content = `
+    ${renderMessage(url)}
+    <div class="notice">Controlled smoke render ini manual-only dan local-only. Output hanya boleh ke storage/draft-videos/smoke, tidak membuat approved video, tidak unggah, tidak ada penjadwalan, tidak ada penerbitan, tidak ada AI eksternal, dan tidak ada worker daemon.</div>
+    ${summary}
+    ${renderRenderAttemptEligibility(eligibility)}
+    <section>
+      <h2>Run Manual Smoke</h2>
+      <p class="hint">Aksi ini membaca source dari storage footage dan menulis maksimal satu file MP4 smoke draft jika semua guard lolos. Source footage tidak diubah.</p>
+      <form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifest.id)}/render-attempts/run-smoke" style="margin-top: 14px;">
+        <button type="submit">Run Controlled Smoke Render</button>
+      </form>
+    </section>
+    ${renderRenderAttemptList(attempts)}
+    <div class="button-row" style="margin-top: 14px;">
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifest.id)}/preflight">Render Preflight</a>
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Detail Konten</a>
+    </div>
+  `;
+
+  return renderLayout(
+    "/content-items",
+    `Controlled Smoke Render - ${item.content_code}`,
+    "Controlled Smoke Render",
+    "Manual local-only prototype untuk membuat satu draft smoke MP4 dari manifest yang ready.",
     content
   );
 }

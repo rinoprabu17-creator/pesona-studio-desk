@@ -35,6 +35,8 @@ const requiredPaths = [
   "apps/web/src/render-manifest-errors.ts",
   "apps/web/src/render-preflight-service.ts",
   "apps/web/src/render-preflight-errors.ts",
+  "apps/web/src/render-attempt-service.ts",
+  "apps/web/src/render-attempt-errors.ts",
   "apps/web/src/content-publication-service.ts",
   "apps/web/src/content-publication-errors.ts",
   "apps/web/src/footage-asset-service.ts",
@@ -80,6 +82,7 @@ const requiredPaths = [
   "apps/web/src/validation/video-draft-job-validation.ts",
   "apps/web/src/validation/render-manifest-validation.ts",
   "apps/web/src/validation/render-preflight-validation.ts",
+  "apps/web/src/validation/render-attempt-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/footage-asset-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
@@ -121,6 +124,7 @@ const requiredPaths = [
   "migrations/009_phase2d_video_draft_jobs.sql",
   "migrations/010_phase2d_render_manifests.sql",
   "migrations/011_phase2d_render_preflight_runs.sql",
+  "migrations/012_phase2e_controlled_render_attempts.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "scripts/prepare-test-db.mjs",
@@ -588,6 +592,39 @@ for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
     fail(`Migration Phase 2D.3 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
   } else {
     pass(`Migration Phase 2D.3 tidak memuat destructive SQL: ${forbiddenText}`);
+  }
+}
+
+const renderAttemptMigrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("012_"));
+if (renderAttemptMigrationFiles.length === 1 && renderAttemptMigrationFiles[0] === "012_phase2e_controlled_render_attempts.sql") {
+  pass("Migration 012 Phase 2E controlled render attempts tersedia");
+} else {
+  fail(`Migration 012 Phase 2E harus tepat satu file: ${renderAttemptMigrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const renderAttemptMigrationSource = existsSync("migrations/012_phase2e_controlled_render_attempts.sql")
+  ? readFileSync("migrations/012_phase2e_controlled_render_attempts.sql", "utf8")
+  : "";
+for (const requiredText of [
+  "CREATE TABLE video_render_attempts",
+  "render_manifest_id uuid NOT NULL REFERENCES video_render_manifests(id)",
+  "preflight_run_id uuid NOT NULL REFERENCES video_render_preflight_runs(id)",
+  "attempt_mode text NOT NULL DEFAULT 'manual_smoke'",
+  "output_relative_path ~ '^smoke/'",
+  "CREATE INDEX video_render_attempts_render_manifest_id_idx"
+]) {
+  if (renderAttemptMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 2E.1 render attempt memuat: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 2E.1 render attempt belum memuat: ${requiredText}`);
+  }
+}
+
+for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
+  if (renderAttemptMigrationSource.includes(forbiddenText)) {
+    fail(`Migration Phase 2E.1 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
+  } else {
+    pass(`Migration Phase 2E.1 tidak memuat destructive SQL: ${forbiddenText}`);
   }
 }
 
