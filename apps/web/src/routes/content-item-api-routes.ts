@@ -23,6 +23,12 @@ import { readJsonBody } from "../http/request.ts";
 import type { RequestLike } from "../http/request.ts";
 import { sendSuccess } from "../http/response.ts";
 import type { ResponseLike } from "../http/response.ts";
+import {
+  cancelVideoDraftJob,
+  createVideoDraftJobForContentItem,
+  getVideoDraftJobForContentItem,
+  updateVideoDraftJob
+} from "../video-draft-job-service.ts";
 
 export async function handleContentItemApiRoute(request: RequestLike, response: ResponseLike, pathname: string, url: URL): Promise<boolean> {
   if (pathname === "/api/content-items" && request.method === "GET") {
@@ -73,6 +79,17 @@ export async function handleContentItemApiRoute(request: RequestLike, response: 
     return true;
   }
 
+  const videoDraftMatch = pathname.match(/^\/api\/content-items\/([^/]+)\/video-draft$/);
+  if (videoDraftMatch && request.method === "GET") {
+    sendSuccess(response, await getVideoDraftJobForContentItem(videoDraftMatch[1]));
+    return true;
+  }
+
+  if (videoDraftMatch && request.method === "POST") {
+    sendSuccess(response, await createVideoDraftJobForContentItem(videoDraftMatch[1], await readJsonBody(request)), 201);
+    return true;
+  }
+
   const scriptPlanUpdateMatch = pathname.match(/^\/api\/script-plans\/([^/]+)$/);
   if (scriptPlanUpdateMatch && request.method === "POST") {
     sendSuccess(response, await updateContentItemScriptPlan(scriptPlanUpdateMatch[1], await readJsonBody(request)));
@@ -94,6 +111,18 @@ export async function handleContentItemApiRoute(request: RequestLike, response: 
   const removeScriptPlanStepMatch = pathname.match(/^\/api\/script-plan-steps\/([^/]+)\/remove$/);
   if (removeScriptPlanStepMatch && request.method === "POST") {
     sendSuccess(response, await removeShotPlanStep(removeScriptPlanStepMatch[1]));
+    return true;
+  }
+
+  const videoDraftJobMatch = pathname.match(/^\/api\/video-draft-jobs\/([^/]+)$/);
+  if (videoDraftJobMatch && request.method === "POST") {
+    sendSuccess(response, await updateVideoDraftJob(videoDraftJobMatch[1], await readJsonBody(request)));
+    return true;
+  }
+
+  const cancelVideoDraftJobMatch = pathname.match(/^\/api\/video-draft-jobs\/([^/]+)\/cancel$/);
+  if (cancelVideoDraftJobMatch && request.method === "POST") {
+    sendSuccess(response, await cancelVideoDraftJob(cancelVideoDraftJobMatch[1]));
     return true;
   }
 

@@ -23,6 +23,12 @@ import type { RequestLike } from "../http/request.ts";
 import { redirect, sendHtml } from "../http/response.ts";
 import type { ResponseLike } from "../http/response.ts";
 import { LibraryError } from "../library-errors.ts";
+import { VideoDraftJobError } from "../video-draft-job-errors.ts";
+import {
+  cancelVideoDraftJobForContentItem,
+  createVideoDraftJobForContentItem,
+  updateVideoDraftJobForContentItem
+} from "../video-draft-job-service.ts";
 import {
   renderContentItemDetailPage,
   renderContentItemFootagePage,
@@ -30,6 +36,7 @@ import {
   renderContentItemListPage,
   renderContentItemNotFoundPage,
   renderContentItemScriptPlanPage,
+  renderContentItemVideoDraftPage,
   valuesFromContentItem,
   valuesFromForm
 } from "../views/content-item-pages.ts";
@@ -38,7 +45,8 @@ function statusCodeFor(error: unknown): number {
   if (
     error instanceof ContentItemError ||
     error instanceof CampaignError ||
-    error instanceof LibraryError
+    error instanceof LibraryError ||
+    error instanceof VideoDraftJobError
   ) {
     return error.statusCode;
   }
@@ -49,7 +57,8 @@ function isNotFoundLike(error: unknown): boolean {
   if (
     error instanceof ContentItemError ||
     error instanceof CampaignError ||
-    error instanceof LibraryError
+    error instanceof LibraryError ||
+    error instanceof VideoDraftJobError
   ) {
     return error.statusCode === 400 || error.statusCode === 404;
   }
@@ -215,6 +224,44 @@ export async function handleContentItemPagePost(request: RequestLike, response: 
     return true;
   }
 
+  const requestVideoDraftMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/request$/);
+  if (requestVideoDraftMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      await createVideoDraftJobForContentItem(requestVideoDraftMatch[1], body);
+      redirect(response, `/content-items/${encodeURIComponent(requestVideoDraftMatch[1])}/video-draft?success=Video draft job metadata berhasil dibuat.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Video draft job gagal dibuat.";
+      redirect(response, `/content-items/${encodeURIComponent(requestVideoDraftMatch[1])}/video-draft?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
+  const updateVideoDraftMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/update$/);
+  if (updateVideoDraftMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      await updateVideoDraftJobForContentItem(updateVideoDraftMatch[1], updateVideoDraftMatch[2], body);
+      redirect(response, `/content-items/${encodeURIComponent(updateVideoDraftMatch[1])}/video-draft?success=Video draft job metadata berhasil disimpan.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Video draft job gagal disimpan.";
+      redirect(response, `/content-items/${encodeURIComponent(updateVideoDraftMatch[1])}/video-draft?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
+  const cancelVideoDraftMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/cancel$/);
+  if (cancelVideoDraftMatch && request.method === "POST") {
+    try {
+      await cancelVideoDraftJobForContentItem(cancelVideoDraftMatch[1], cancelVideoDraftMatch[2]);
+      redirect(response, `/content-items/${encodeURIComponent(cancelVideoDraftMatch[1])}/video-draft?success=Video draft job dibatalkan.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Video draft job gagal dibatalkan.";
+      redirect(response, `/content-items/${encodeURIComponent(cancelVideoDraftMatch[1])}/video-draft?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -273,6 +320,18 @@ export async function handleContentItemPageGet(response: ResponseLike, pathname:
     try {
       const item = await getContentItem(scriptPlanMatch[1]);
       sendHtml(response, await renderContentItemScriptPlanPage(item, url));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Konten tidak ditemukan.";
+      sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
+    }
+    return true;
+  }
+
+  const videoDraftMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft$/);
+  if (videoDraftMatch) {
+    try {
+      const item = await getContentItem(videoDraftMatch[1]);
+      sendHtml(response, await renderContentItemVideoDraftPage(item, url));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Konten tidak ditemukan.";
       sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
