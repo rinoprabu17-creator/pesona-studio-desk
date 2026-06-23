@@ -33,6 +33,11 @@ import {
   getRenderPreflightContextForContentItem,
   runRenderPreflightForManifest
 } from "../render-preflight-service.ts";
+import { RenderAttemptError } from "../render-attempt-errors.ts";
+import {
+  getControlledRenderContextForContentItem,
+  runControlledSmokeRenderForManifest
+} from "../render-attempt-service.ts";
 import { VideoDraftJobError } from "../video-draft-job-errors.ts";
 import {
   cancelVideoDraftJobForContentItem,
@@ -46,6 +51,7 @@ import {
   renderContentItemListPage,
   renderContentItemNotFoundPage,
   renderContentItemRenderPreflightPage,
+  renderContentItemRenderAttemptsPage,
   renderContentItemRenderManifestPage,
   renderContentItemScriptPlanPage,
   renderContentItemVideoDraftPage,
@@ -60,6 +66,7 @@ function statusCodeFor(error: unknown): number {
     error instanceof LibraryError ||
     error instanceof RenderManifestError ||
     error instanceof RenderPreflightError ||
+    error instanceof RenderAttemptError ||
     error instanceof VideoDraftJobError
   ) {
     return error.statusCode;
@@ -74,6 +81,7 @@ function isNotFoundLike(error: unknown): boolean {
     error instanceof LibraryError ||
     error instanceof RenderManifestError ||
     error instanceof RenderPreflightError ||
+    error instanceof RenderAttemptError ||
     error instanceof VideoDraftJobError
   ) {
     return error.statusCode === 400 || error.statusCode === 404;
@@ -317,6 +325,22 @@ export async function handleContentItemPagePost(request: RequestLike, response: 
     return true;
   }
 
+  const runSmokeRenderMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/([^/]+)\/render-attempts\/run-smoke$/);
+  if (runSmokeRenderMatch && request.method === "POST") {
+    try {
+      await getControlledRenderContextForContentItem(runSmokeRenderMatch[1], runSmokeRenderMatch[2], runSmokeRenderMatch[3]);
+      const attempt = await runControlledSmokeRenderForManifest(runSmokeRenderMatch[3]);
+      const message = attempt.attempt_status === "succeeded"
+        ? "Controlled smoke render berhasil."
+        : `Controlled smoke render selesai dengan status ${attempt.attempt_status}.`;
+      redirect(response, `/content-items/${encodeURIComponent(runSmokeRenderMatch[1])}/video-draft/${encodeURIComponent(runSmokeRenderMatch[2])}/manifest/${encodeURIComponent(runSmokeRenderMatch[3])}/render-attempts?success=${encodeURIComponent(message)}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Controlled smoke render gagal.";
+      redirect(response, `/content-items/${encodeURIComponent(runSmokeRenderMatch[1])}/video-draft/${encodeURIComponent(runSmokeRenderMatch[2])}/manifest/${encodeURIComponent(runSmokeRenderMatch[3])}/render-attempts?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -413,6 +437,18 @@ export async function handleContentItemPageGet(response: ResponseLike, pathname:
       sendHtml(response, await renderContentItemRenderPreflightPage(item, renderPreflightMatch[2], renderPreflightMatch[3], url));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Render preflight tidak ditemukan.";
+      sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
+    }
+    return true;
+  }
+
+  const renderAttemptsMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/([^/]+)\/render-attempts$/);
+  if (renderAttemptsMatch) {
+    try {
+      const item = await getContentItem(renderAttemptsMatch[1]);
+      sendHtml(response, await renderContentItemRenderAttemptsPage(item, renderAttemptsMatch[2], renderAttemptsMatch[3], url));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Render attempts tidak ditemukan.";
       sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
     }
     return true;
