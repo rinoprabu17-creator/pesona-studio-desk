@@ -1,4 +1,5 @@
 import {
+  batchUpdateFootageAssets,
   createFootageAsset,
   getFootageAsset,
   listFootageAssets,
@@ -16,9 +17,12 @@ export async function handleFootageAssetApiRoute(request: RequestLike, response:
       response,
       await listFootageAssets({
         status: url.searchParams.get("status"),
+        product_id: url.searchParams.get("product_id"),
         product_code: url.searchParams.get("product_code"),
+        school_level: url.searchParams.get("school_level"),
         theme: url.searchParams.get("theme"),
-        shot_type: url.searchParams.get("shot_type")
+        shot_type: url.searchParams.get("shot_type"),
+        incomplete: url.searchParams.get("incomplete")
       })
     );
     return true;
@@ -36,6 +40,11 @@ export async function handleFootageAssetApiRoute(request: RequestLike, response:
 
   if (pathname === "/api/footage-assets/scan/import" && request.method === "POST") {
     sendSuccess(response, await importFootageScan(await readJsonBody(request)), 201);
+    return true;
+  }
+
+  if (pathname === "/api/footage-assets/batch-update" && request.method === "POST") {
+    sendSuccess(response, await batchUpdateFootageAssets(await readJsonBody(request)));
     return true;
   }
 

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import pg from "pg";
 import {
+  batchUpdateFootageAssets,
   createFootageAsset,
   getFootageAsset,
   listFootageAssets,
@@ -40,6 +41,7 @@ async function getProductId(code = "sampul_raport"): Promise<string> {
 test.after(async () => {
   if (pool) {
     await pool.query(`DELETE FROM footage_assets WHERE relative_path LIKE $1`, [`${prefix}/%`]);
+    await pool.query(`DELETE FROM products WHERE code LIKE $1`, [`${prefix}-%`]);
     await pool.end();
   }
   for (const dir of tempDirs) {
@@ -54,6 +56,15 @@ async function createTempFootageRoot(): Promise<{ storageRoot: string; footageRo
   const footageRoot = join(storageRoot, "footage");
   await mkdir(footageRoot, { recursive: true });
   return { storageRoot, footageRoot };
+}
+
+async function createProduct(active = true): Promise<string> {
+  const code = `${prefix}-${active ? "active" : "inactive"}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const result = await pool!.query<{ id: string }>(
+    `INSERT INTO products (code, name, active, sort_order) VALUES ($1, $2, $3, 999) RETURNING id`,
+    [code, `Test ${code}`, active]
+  );
+  return result.rows[0].id;
 }
 
 test("footage relative path validation rejects unsafe paths", () => {
@@ -242,4 +253,132 @@ maybeTest("footage scan import creates metadata only and skips existing catalog 
   assert.equal(afterExisting.mtimeMs, beforeExisting.mtimeMs);
   assert.equal(afterMissing.size, beforeMissing.size);
   assert.equal(afterMissing.mtimeMs, beforeMissing.mtimeMs);
+});
+
+maybeTest("footage batch update validates ids and enum fields", async () => {
+  const missingValidId = "11111111-1111-4111-8111-111111111111";
+  await assert.rejects(
+    () => batchUpdateFootageAssets({ ids: [], updates: { status: "reviewed" } }),
+    /minimal satu footage/i
+  );
+  await assert.rejects(
+    () => batchUpdateFootageAssets({ ids: ["not-a-uuid"], updates: { status: "reviewed" } }),
+    /ID tidak valid/i
+  );
+  await assert.rejects(
+    () => batchUpdateFootageAssets({ ids: [missingValidId], updates: { status: "done" } }),
+    /Status footage tidak valid/i
+  );
+  await assert.rejects(
+    () => batchUpdateFootageAssets({ ids: [missingValidId], updates: { shot_type: "b-roll" } }),
+    /Shot type footage tidak valid/i
+  );
+  await assert.rejects(
+    () => batchUpdateFootageAssets({ ids: [missingValidId], updates: { school_level: "smk" } }),
+    /Jenjang footage tidak valid/i
+  );
+});
+
+maybeTest("footage batch update rejects missing and inactive product", async () => {
+  const created = await createFootageAsset({
+    relative_path: `${prefix}/batch-product.mp4`,
+    size_bytes: 10,
+    status: "new",
+    shot_type: "other"
+  });
+  const inactiveProductId = await createProduct(false);
+
+  await assert.rejects(
+    () =>
+      batchUpdateFootageAssets({
+        ids: [created.id],
+        updates: { product_id: "11111111-1111-4111-8111-111111111111" }
+      }),
+    /Produk tidak ditemukan/i
+  );
+  await assert.rejects(
+    () =>
+      batchUpdateFootageAssets({
+        ids: [created.id],
+        updates: { product_id: inactiveProductId }
+      }),
+    /Produk footage harus aktif/i
+  );
+});
+
+maybeTest("footage batch update changes allowed metadata only and incomplete filter works", async () => {
+  const productId = await getProductId();
+  const first = await createFootageAsset({
+    relative_path: `${prefix}/batch-first.mp4`,
+    size_bytes: 111,
+    status: "new",
+    shot_type: "other"
+  });
+  const second = await createFootageAsset({
+    relative_path: `${prefix}/batch-second.mp4`,
+    size_bytes: 222,
+    status: "new",
+    shot_type: "product"
+  });
+
+  const result = await batchUpdateFootageAssets({
+    ids: [first.id, second.id],
+    updates: {
+      status: "reviewed",
+      shot_type: "packing",
+      school_level: "sd",
+      theme: "Batch review",
+      product_id: productId,
+      quality_score: 4,
+      notes: "Metadata batch review."
+    }
+  });
+  assert.equal(result.requested_count, 2);
+  assert.equal(result.updated_count, 2);
+
+  const firstUpdated = await getFootageAsset(first.id);
+  assert.equal(firstUpdated.relative_path, first.relative_path);
+  assert.equal(firstUpdated.filename, first.filename);
+  assert.equal(firstUpdated.file_extension, first.file_extension);
+  assert.equal(firstUpdated.size_bytes, first.size_bytes);
+  assert.equal(firstUpdated.status, "reviewed");
+  assert.equal(firstUpdated.shot_type, "packing");
+  assert.equal(firstUpdated.school_level, "sd");
+  assert.equal(firstUpdated.theme, "Batch review");
+  assert.equal(firstUpdated.product_id, productId);
+  assert.equal(firstUpdated.quality_score, 4);
+  assert.equal(firstUpdated.notes, "Metadata batch review.");
+
+  const incomplete = await listFootageAssets({ incomplete: true, theme: "Batch review" });
+  assert.equal(incomplete.some((item) => item.id === first.id || item.id === second.id), false);
+
+  await batchUpdateFootageAssets({
+    ids: [first.id],
+    updates: { quality_score: null }
+  });
+  const incompleteAfterClear = await listFootageAssets({ incomplete: true, theme: "Batch review" });
+  assert.equal(incompleteAfterClear.some((item) => item.id === first.id), true);
+});
+
+maybeTest("footage batch update does not mutate physical files", async () => {
+  const { storageRoot, footageRoot } = await createTempFootageRoot();
+  await mkdir(join(footageRoot, prefix), { recursive: true });
+  const filePath = join(footageRoot, prefix, "batch-file.mp4");
+  await writeFile(filePath, "batch-metadata-only");
+  const before = await stat(filePath);
+  const imported = await importFootageScan({}, { storageRoot });
+  const created = imported.created.find((item) => item.relative_path === `${prefix}/batch-file.mp4`);
+  assert.ok(created);
+  const rows = await pool!.query<{ id: string }>(`SELECT id FROM footage_assets WHERE relative_path = $1`, [
+    `${prefix}/batch-file.mp4`
+  ]);
+
+  await batchUpdateFootageAssets({
+    ids: [rows.rows[0].id],
+    updates: { status: "reviewed", shot_type: "workshop", quality_score: 5 }
+  });
+  const after = await stat(filePath);
+
+  assert.equal(after.size, before.size);
+  assert.equal(after.mtimeMs, before.mtimeMs);
 });
