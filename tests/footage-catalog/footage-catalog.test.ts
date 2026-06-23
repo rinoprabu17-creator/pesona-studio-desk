@@ -48,6 +48,15 @@ import {
   validateScriptPlanInput,
   validateShotPlanStepInput
 } from "../../apps/web/src/validation/content-item-script-plan-validation.ts";
+import {
+  cancelVideoDraftJob,
+  createVideoDraftJobForContentItem,
+  getVideoDraftJobById,
+  getVideoDraftJobForContentItem,
+  getVideoDraftReadinessForContentItem,
+  updateVideoDraftJob
+} from "../../apps/web/src/video-draft-job-service.ts";
+import { validateVideoDraftJobInput } from "../../apps/web/src/validation/video-draft-job-validation.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -75,6 +84,11 @@ test.after(async () => {
     ]);
     const ids = campaigns.rows.map((row) => row.id);
     if (ids.length) {
+      await pool.query(
+        `DELETE FROM video_draft_jobs
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
       await pool.query(
         `DELETE FROM content_item_shot_plan_steps
          WHERE script_plan_id IN (
@@ -962,18 +976,238 @@ maybeTest("script plan page and API route before generic content detail", async 
   assert.deepEqual(body.data.steps, []);
 });
 
-test("content footage and script planning runtime files do not add forbidden AI or automation dependencies", () => {
+maybeTest("video draft readiness reports missing script plan", async () => {
+  const contentItemId = await createContent("video-readiness-no-plan");
+  const readiness = await getVideoDraftReadinessForContentItem(contentItemId);
+
+  assert.equal(readiness.has_script_plan, false);
+  assert.equal(readiness.shot_step_count, 0);
+  assert.equal(readiness.selected_footage_count, 0);
+  assert.equal(readiness.is_ready_for_future_render, false);
+  assert.match(readiness.readiness_warnings.join(" "), /Script\/Shot Plan belum dibuat/i);
+});
+
+maybeTest("video draft readiness reports script plan without shot steps", async () => {
+  const contentItemId = await createContent("video-readiness-no-steps");
+  await getOrCreateContentItemScriptPlan(contentItemId);
+
+  const readiness = await getVideoDraftReadinessForContentItem(contentItemId);
+  assert.equal(readiness.has_script_plan, true);
+  assert.equal(readiness.shot_step_count, 0);
+  assert.equal(readiness.selected_footage_count, 0);
+  assert.equal(readiness.is_ready_for_future_render, false);
+  assert.match(readiness.readiness_warnings.join(" "), /Shot plan step belum ada/i);
+});
+
+maybeTest("video draft readiness reports shot steps without selected footage", async () => {
+  const contentItemId = await createContent("video-readiness-no-footage");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  await addShotPlanStep(plan.id, {
+    sequence_number: 1,
+    step_type: "hook"
+  });
+
+  const readiness = await getVideoDraftReadinessForContentItem(contentItemId);
+  assert.equal(readiness.shot_step_count, 1);
+  assert.equal(readiness.selected_footage_count, 0);
+  assert.equal(readiness.steps_with_selected_footage_count, 0);
+  assert.equal(readiness.is_ready_for_future_render, false);
+  assert.match(readiness.readiness_warnings.join(" "), /Footage terpilih belum ada/i);
+});
+
+maybeTest("video draft readiness passes with selected footage and shot steps", async () => {
+  const contentItemId = await createContent("video-readiness-ready");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("video-readiness-ready.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+  await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product"
+  });
+
+  const readiness = await getVideoDraftReadinessForContentItem(contentItemId);
+  assert.equal(readiness.shot_step_count, 1);
+  assert.equal(readiness.selected_footage_count, 1);
+  assert.equal(readiness.steps_with_selected_footage_count, 1);
+  assert.equal(readiness.is_ready_for_future_render, true);
+});
+
+maybeTest("video draft job create rejects missing and mismatched script plans", async () => {
+  const contentItemA = await createContent("video-create-a");
+  const contentItemB = await createContent("video-create-b");
+  const planB = await getOrCreateContentItemScriptPlan(contentItemB);
+
+  await assert.rejects(
+    () => createVideoDraftJobForContentItem(contentItemA, { job_status: "draft_requested" }),
+    /Script\/Shot Plan terlebih dahulu/i
+  );
+
+  await assert.rejects(
+    () =>
+      createVideoDraftJobForContentItem(contentItemA, {
+        script_plan_id: planB.id,
+        job_status: "draft_requested"
+      }),
+    /Script plan tidak dimiliki konten ini/i
+  );
+});
+
+maybeTest("video draft job create, duplicate guard, update metadata only, and cancel without delete", async () => {
+  const contentItemId = await createContent("video-job-create");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const created = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    job_status: "draft_requested",
+    target_format: "vertical_9_16",
+    render_mode: "disabled_metadata_only",
+    duration_target_seconds: 30,
+    planned_output_label: "Draft Reels 1",
+    request_notes: "Metadata only request."
+  });
+
+  assert.equal(created.content_item_id, contentItemId);
+  assert.equal(created.script_plan_id, plan.id);
+  assert.equal(created.render_mode, "disabled_metadata_only");
+
+  await assert.rejects(
+    () => createVideoDraftJobForContentItem(contentItemId, { script_plan_id: plan.id }),
+    /sudah ada/i
+  );
+
+  const updated = await updateVideoDraftJob(created.id, {
+    script_plan_id: plan.id,
+    job_status: "planning_ready",
+    target_format: "square_1_1",
+    render_mode: "disabled_metadata_only",
+    duration_target_seconds: 45,
+    planned_output_label: "Square draft request",
+    request_notes: "Updated request.",
+    blocking_reason: "",
+    review_notes: "Ready for owner review."
+  });
+  assert.equal(updated.id, created.id);
+  assert.equal(updated.job_status, "planning_ready");
+  assert.equal(updated.target_format, "square_1_1");
+  assert.equal(updated.duration_target_seconds, 45);
+
+  const cancelled = await cancelVideoDraftJob(created.id);
+  assert.equal(cancelled.id, created.id);
+  assert.equal(cancelled.job_status, "cancelled");
+
+  const stillExists = await getVideoDraftJobById(created.id);
+  assert.equal(stillExists.id, created.id);
+});
+
+maybeTest("video draft job validation rejects invalid fields", async () => {
+  assert.throws(() => validateVideoDraftJobInput({ job_status: "rendering" }), /Status video draft job tidak valid/i);
+  assert.throws(() => validateVideoDraftJobInput({ target_format: "cinema" }), /Target format video draft tidak valid/i);
+  assert.throws(() => validateVideoDraftJobInput({ render_mode: "enabled" }), /disabled_metadata_only/i);
+  assert.throws(
+    () => validateVideoDraftJobInput({ duration_target_seconds: 181 }),
+    /Target durasi/i
+  );
+});
+
+maybeTest("video draft job does not mutate content planning rows, footage metadata, or physical file", async () => {
+  const { storageRoot, footageRoot } = await createTempFootageRoot();
+  await mkdir(join(footageRoot, prefix), { recursive: true });
+  const filePath = join(footageRoot, prefix, "video-job-physical.mp4");
+  await writeFile(filePath, "video-draft-job-metadata-only");
+  const before = await stat(filePath);
+
+  const contentItemId = await createContent("video-job-physical");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("video-job-physical.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+  const step = await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product"
+  });
+
+  const job = await createVideoDraftJobForContentItem(contentItemId, {
+    script_plan_id: plan.id,
+    job_status: "planning_ready",
+    target_format: "vertical_9_16",
+    render_mode: "disabled_metadata_only"
+  });
+  await updateVideoDraftJob(job.id, {
+    script_plan_id: plan.id,
+    job_status: "blocked",
+    target_format: "horizontal_16_9",
+    render_mode: "disabled_metadata_only",
+    blocking_reason: "Owner review needed."
+  });
+  const after = await stat(filePath);
+  const context = await getVideoDraftJobForContentItem(contentItemId);
+  const stepsAfter = await listShotPlanSteps(plan.id);
+  const selectionAfter = await getContentItemFootageSelection(selection.id);
+  const footageAfter = await getFootageAsset(reviewed.id);
+
+  assert.equal(context.job?.id, job.id);
+  assert.equal(stepsAfter.some((row) => row.id === step.id), true);
+  assert.equal(selectionAfter.id, selection.id);
+  assert.equal(footageAfter.relative_path, reviewed.relative_path);
+  assert.equal(footageAfter.filename, reviewed.filename);
+  assert.equal(footageAfter.file_extension, reviewed.file_extension);
+  assert.equal(footageAfter.size_bytes, reviewed.size_bytes);
+  assert.equal(after.size, before.size);
+  assert.equal(after.mtimeMs, before.mtimeMs);
+  assert.equal(storageRoot.includes(prefix), true);
+});
+
+maybeTest("video draft page and API route before generic content detail", async () => {
+  const contentItemId = await createContent("video-job-route");
+  await getOrCreateContentItemScriptPlan(contentItemId);
+
+  const pageResponse = mockResponse();
+  const pageHandled = await handleContentItemPageGet(
+    pageResponse,
+    `/content-items/${contentItemId}/video-draft`,
+    new URL(`http://localhost/content-items/${contentItemId}/video-draft`)
+  );
+  assert.equal(pageHandled, true);
+  assert.equal(pageResponse.statusCode, 200);
+  assert.match(pageResponse.body, /Video Draft Job/);
+  assert.match(pageResponse.body, /tidak menjalankan FFmpeg/);
+
+  const apiResponse = mockResponse();
+  const apiHandled = await handleContentItemApiRoute(
+    { method: "GET", url: `/api/content-items/${contentItemId}/video-draft`, headers: {}, on() {} } as any,
+    apiResponse,
+    `/api/content-items/${contentItemId}/video-draft`,
+    new URL(`http://localhost/api/content-items/${contentItemId}/video-draft`)
+  );
+  assert.equal(apiHandled, true);
+  assert.equal(apiResponse.statusCode, 200);
+  const body = JSON.parse(apiResponse.body);
+  assert.equal(body.ok, true);
+  assert.equal(body.data.readiness.content_item_id, contentItemId);
+});
+
+test("content footage, script planning, and video draft runtime files do not add forbidden execution dependencies", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
     "apps/web/src/content-item-script-plan-service.ts",
+    "apps/web/src/video-draft-job-service.ts",
     "apps/web/src/routes/content-item-api-routes.ts",
     "apps/web/src/routes/content-item-page-routes.ts",
     "apps/web/src/views/content-item-pages.ts",
     "apps/web/src/validation/content-item-footage-validation.ts",
-    "apps/web/src/validation/content-item-script-plan-validation.ts"
+    "apps/web/src/validation/content-item-script-plan-validation.ts",
+    "apps/web/src/validation/video-draft-job-validation.ts"
   ].map((path) => readFileSync(path, "utf8")).join("\n");
 
-  for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher"]) {
+  for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher", "fluent-ffmpeg", "spawn", "exec", "draft-videos", "approved-videos"]) {
     assert.equal(source.includes(forbidden), false);
   }
 });

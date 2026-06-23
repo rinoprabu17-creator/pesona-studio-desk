@@ -20,6 +20,13 @@ import {
   shotPlanStepTypes
 } from "../validation/content-item-script-plan-validation.ts";
 import {
+  videoDraftJobStatuses,
+  videoDraftRenderModes,
+  videoDraftTargetFormats
+} from "../validation/video-draft-job-validation.ts";
+import type { VideoDraftJobRow, VideoDraftReadiness } from "../video-draft-job-service.ts";
+import { getVideoDraftJobForContentItem } from "../video-draft-job-service.ts";
+import {
   audienceSegments,
   contentPillars,
   productionStatuses,
@@ -98,6 +105,25 @@ export const shotPlanStepTypeLabels: Record<string, string> = {
   cta: "CTA",
   closing: "Closing",
   other: "Lainnya"
+};
+
+export const videoDraftJobStatusLabels: Record<string, string> = {
+  draft_requested: "Draft Requested",
+  planning_ready: "Planning Ready",
+  blocked: "Blocked",
+  cancelled: "Cancelled",
+  archived: "Archived"
+};
+
+export const videoDraftTargetFormatLabels: Record<string, string> = {
+  vertical_9_16: "Vertical 9:16",
+  square_1_1: "Square 1:1",
+  horizontal_16_9: "Horizontal 16:9",
+  other: "Lainnya"
+};
+
+export const videoDraftRenderModeLabels: Record<string, string> = {
+  disabled_metadata_only: "Disabled - metadata only"
 };
 
 function formatDate(value: unknown): string {
@@ -447,6 +473,24 @@ function shotStepTypeOptions(selected = "scene"): string {
     .join("");
 }
 
+function videoDraftStatusOptions(selected = "draft_requested"): string {
+  return videoDraftJobStatuses
+    .map((status) => `<option value="${escapeHtml(status)}" ${status === selected ? "selected" : ""}>${escapeHtml(videoDraftJobStatusLabels[status] || status)}</option>`)
+    .join("");
+}
+
+function videoDraftTargetFormatOptions(selected = "vertical_9_16"): string {
+  return videoDraftTargetFormats
+    .map((format) => `<option value="${escapeHtml(format)}" ${format === selected ? "selected" : ""}>${escapeHtml(videoDraftTargetFormatLabels[format] || format)}</option>`)
+    .join("");
+}
+
+function videoDraftRenderModeOptions(selected = "disabled_metadata_only"): string {
+  return videoDraftRenderModes
+    .map((mode) => `<option value="${escapeHtml(mode)}" ${mode === selected ? "selected" : ""}>${escapeHtml(videoDraftRenderModeLabels[mode] || mode)}</option>`)
+    .join("");
+}
+
 function selectedFootageOptions(selections: ContentItemFootageSelectionRow[], selected: string | null = null): string {
   return [
     `<option value="" ${!selected ? "selected" : ""}>Tanpa footage terpilih</option>`,
@@ -684,6 +728,9 @@ export async function renderContentItemScriptPlanPage(item: ContentItemRow, url:
     ${renderSelectedFootageContext(selections)}
     ${renderShotPlanStepsTable(item, plan, selections, steps)}
     ${renderAddShotPlanStepForm(item, selections, steps)}
+    <div class="button-row" style="margin-top: 14px;">
+      <a class="button" href="/content-items/${escapeHtml(item.id)}/video-draft">Video Draft Job</a>
+    </div>
   `;
 
   return renderLayout(
@@ -691,6 +738,143 @@ export async function renderContentItemScriptPlanPage(item: ContentItemRow, url:
     `Script/Shot Plan - ${item.content_code}`,
     "Script / Shot Planning",
     "Susun script draft dan urutan shot berdasarkan footage terpilih sebelum workflow video.",
+    content
+  );
+}
+
+function renderVideoDraftReadiness(readiness: VideoDraftReadiness): string {
+  const warnings = readiness.readiness_warnings.length
+    ? `<ul>${readiness.readiness_warnings.map((warning) => `<li>${escapeHtml(warning)}</li>`).join("")}</ul>`
+    : `<p class="hint">Tidak ada warning readiness.</p>`;
+
+  return `<section>
+    <h2>Readiness Metadata</h2>
+    ${renderReadOnlyTable(
+      ["Field", "Nilai"],
+      [
+        ["Script plan tersedia", readiness.has_script_plan ? "Ya" : "Tidak"],
+        ["Jumlah shot step", escapeHtml(readiness.shot_step_count)],
+        ["Jumlah footage terpilih", escapeHtml(readiness.selected_footage_count)],
+        ["Shot step dengan footage terpilih", escapeHtml(readiness.steps_with_selected_footage_count)],
+        ["Siap untuk future render", readiness.is_ready_for_future_render ? "Ya" : "Belum"]
+      ]
+    )}
+    <h3>Warning</h3>
+    ${warnings}
+  </section>`;
+}
+
+function renderVideoDraftJobFields(job?: VideoDraftJobRow | null): string {
+  return `
+    <div class="form-grid">
+      <label>Status Job
+        <select name="job_status">${videoDraftStatusOptions(job?.job_status || "draft_requested")}</select>
+      </label>
+      <label>Target Format
+        <select name="target_format">${videoDraftTargetFormatOptions(job?.target_format || "vertical_9_16")}</select>
+      </label>
+      <label>Mode
+        <select name="render_mode">${videoDraftRenderModeOptions(job?.render_mode || "disabled_metadata_only")}</select>
+      </label>
+      <label>Target Durasi Detik
+        <input name="duration_target_seconds" type="number" min="5" max="180" step="1" value="${escapeHtml(job?.duration_target_seconds ?? "")}">
+      </label>
+    </div>
+    <label style="margin-top: 14px;">Label Output Rencana
+      <input name="planned_output_label" maxlength="300" value="${escapeHtml(job?.planned_output_label || "")}" placeholder="contoh: Reels Sampul Raport SD - Draft 1">
+    </label>
+    <label style="margin-top: 14px;">Catatan Request
+      <textarea name="request_notes" maxlength="2000">${escapeHtml(job?.request_notes || "")}</textarea>
+    </label>
+    <label style="margin-top: 14px;">Blocking Reason
+      <textarea name="blocking_reason" maxlength="2000">${escapeHtml(job?.blocking_reason || "")}</textarea>
+    </label>
+    <label style="margin-top: 14px;">Review Notes
+      <textarea name="review_notes" maxlength="2000">${escapeHtml(job?.review_notes || "")}</textarea>
+    </label>
+  `;
+}
+
+function renderVideoDraftJobSection(item: ContentItemRow, job: VideoDraftJobRow | null, readiness: VideoDraftReadiness): string {
+  if (!readiness.has_script_plan) {
+    return `<section>
+      <h2>Video Draft Job</h2>
+      <div class="notice error">Script/Shot Plan belum tersedia. Buat Script/Shot Plan terlebih dahulu sebelum membuat request metadata video draft.</div>
+      <div class="button-row">
+        <a class="button" href="/content-items/${escapeHtml(item.id)}/script-plan">Buat Script/Shot Plan</a>
+      </div>
+    </section>`;
+  }
+
+  if (!job) {
+    return `<section>
+      <h2>Buat Video Draft Job</h2>
+      <form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/request">
+        ${readiness.script_plan_id ? `<input type="hidden" name="script_plan_id" value="${escapeHtml(readiness.script_plan_id)}">` : ""}
+        ${renderVideoDraftJobFields(null)}
+        <div class="button-row" style="margin-top: 14px;">
+          <button type="submit">Buat Metadata Job</button>
+          <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Kembali Detail</a>
+        </div>
+      </form>
+    </section>`;
+  }
+
+  return `<section>
+    <h2>Video Draft Job</h2>
+    ${renderReadOnlyTable(
+      ["Field", "Nilai"],
+      [
+        ["Job ID", escapeHtml(job.id)],
+        ["Script Plan", escapeHtml(job.script_plan_id)],
+        ["Status script plan", escapeHtml(scriptPlanStatusLabels[job.script_plan_status] || job.script_plan_status)],
+        ["Format script plan", escapeHtml(scriptPlanVideoFormatLabels[job.script_video_format] || job.script_video_format)]
+      ]
+    )}
+    <form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(job.id)}/update">
+      <input type="hidden" name="script_plan_id" value="${escapeHtml(job.script_plan_id)}">
+      ${renderVideoDraftJobFields(job)}
+      <div class="button-row" style="margin-top: 14px;">
+        <button type="submit">Simpan Metadata Job</button>
+      </div>
+    </form>
+    <form class="inline-form" method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(job.id)}/cancel">
+      <button class="button-danger" type="submit">Cancel Job</button>
+    </form>
+  </section>`;
+}
+
+export async function renderContentItemVideoDraftPage(item: ContentItemRow, url: URL): Promise<string> {
+  const { readiness, job } = await getVideoDraftJobForContentItem(item.id);
+  const summary = renderReadOnlyTable(
+    ["Field", "Nilai"],
+    [
+      ["Content Code", `<strong>${escapeHtml(item.content_code)}</strong>`],
+      ["Judul", escapeHtml(item.title)],
+      ["Campaign", `${escapeHtml(item.campaign_code)} - ${escapeHtml(item.campaign_name)}`],
+      ["Tanggal", escapeHtml(formatDate(item.planned_content_date))],
+      ["Produk", escapeHtml(productLabel(item))],
+      ["Status", escapeHtml(productionStatusLabels[item.production_status] || item.production_status)]
+    ]
+  );
+
+  const content = `
+    ${renderMessage(url)}
+    <div class="notice">Video draft job ini hanya tracker metadata request. Tidak ada video render, tidak menjalankan FFmpeg, tidak membuat file video, tidak ada AI generation, tidak ada upload, posting otomatis, atau penjadwalan otomatis.</div>
+    ${summary}
+    ${renderVideoDraftReadiness(readiness)}
+    ${renderVideoDraftJobSection(item, job, readiness)}
+    <div class="button-row" style="margin-top: 14px;">
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}/script-plan">Script/Shot Plan</a>
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Detail Konten</a>
+    </div>
+  `;
+
+  return renderLayout(
+    "/content-items",
+    `Video Draft Job - ${item.content_code}`,
+    "Video Draft Job",
+    "Metadata-only request tracker untuk future video draft. Fase ini belum membuat file video.",
     content
   );
 }
@@ -721,6 +905,7 @@ export async function renderContentItemDetailPage(item: ContentItemRow, url: URL
       <a class="button" href="/content-items/${escapeHtml(item.id)}/edit">Edit Konten</a>
       <a class="button" href="/content-items/${escapeHtml(item.id)}/footage">Pilih Footage</a>
       <a class="button" href="/content-items/${escapeHtml(item.id)}/script-plan">Script/Shot Plan</a>
+      <a class="button" href="/content-items/${escapeHtml(item.id)}/video-draft">Video Draft Job</a>
       <a class="button button-secondary" href="/content-items">Kembali</a>
     </div>
     <p class="hint">Publikasi channel akan dikelola pada tahap berikutnya.</p>
