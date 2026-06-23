@@ -1,7 +1,9 @@
-import { query } from "./db.ts";
+import { query, withTransaction } from "./db.ts";
+import type { DatabaseClient } from "./db.ts";
 import { FootageAssetError } from "./footage-asset-errors.ts";
 import { assertUuid } from "./validation/library-validation.ts";
 import {
+  footageSchoolLevels,
   footageShotTypes,
   validateFootageAssetInput,
   validateFootageStatus
@@ -30,9 +32,23 @@ export type FootageAssetRow = {
 
 export type FootageAssetFilters = {
   status?: string | null;
+  product_id?: string | null;
   product_code?: string | null;
+  school_level?: string | null;
   theme?: string | null;
   shot_type?: string | null;
+  incomplete?: boolean | string | null;
+};
+
+export type FootageBatchUpdateInput = {
+  ids?: unknown;
+  updates?: Record<string, unknown>;
+};
+
+export type FootageBatchUpdateResult = {
+  requested_count: number;
+  updated_count: number;
+  ids: string[];
 };
 
 const footageAssetSelect = `
@@ -57,9 +73,12 @@ const footageAssetSelect = `
   LEFT JOIN products p ON p.id = f.product_id
 `;
 
-async function assertActiveProduct(id: string | null): Promise<void> {
+async function assertActiveProduct(id: string | null, client?: DatabaseClient): Promise<void> {
   if (!id) return;
-  const rows = await query<{ id: string; active: boolean }>(`SELECT id, active FROM products WHERE id = $1`, [id]);
+  const sql = `SELECT id, active FROM products WHERE id = $1`;
+  const rows = client
+    ? (await client.query<{ id: string; active: boolean }>(sql, [id])).rows
+    : await query<{ id: string; active: boolean }>(sql, [id]);
   if (!rows[0]) throw new FootageAssetError("product_not_found", "Produk tidak ditemukan.", 404);
   if (!rows[0].active) throw new FootageAssetError("inactive_product", "Produk footage harus aktif.", 400);
 }
@@ -88,11 +107,31 @@ export async function listFootageAssets(filters: FootageAssetFilters = {}): Prom
     where.push(`f.status = $${params.length}`);
   }
 
+  if (filters.product_id) {
+    const productId = String(filters.product_id).trim();
+    if (productId) {
+      assertUuid(productId);
+      params.push(productId);
+      where.push(`f.product_id = $${params.length}`);
+    }
+  }
+
   if (filters.product_code) {
     const productCode = String(filters.product_code).trim();
     if (productCode) {
       params.push(productCode);
       where.push(`p.code = $${params.length}`);
+    }
+  }
+
+  if (filters.school_level) {
+    const schoolLevel = String(filters.school_level).trim();
+    if (schoolLevel) {
+      if (!footageSchoolLevels.includes(schoolLevel as any)) {
+        throw new FootageAssetError("invalid_school_level", "Jenjang footage tidak valid.", 400);
+      }
+      params.push(schoolLevel);
+      where.push(`f.school_level = $${params.length}`);
     }
   }
 
@@ -113,6 +152,10 @@ export async function listFootageAssets(filters: FootageAssetFilters = {}): Prom
     where.push(`f.shot_type = $${params.length}`);
   }
 
+  if (filters.incomplete === true || filters.incomplete === "true" || filters.incomplete === "1") {
+    where.push(`(f.status = 'new' OR f.shot_type = 'other' OR f.product_id IS NULL OR f.theme IS NULL OR f.quality_score IS NULL)`);
+  }
+
   const rows = await query<FootageAssetRow>(
     `${footageAssetSelect}
      ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
@@ -120,6 +163,143 @@ export async function listFootageAssets(filters: FootageAssetFilters = {}): Prom
     params
   );
   return rows.map(mapFootageAssetRow);
+}
+
+function normalizeBatchIds(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    throw new FootageAssetError("invalid_batch_ids", "Daftar footage wajib berupa array ID.", 400);
+  }
+
+  const ids = [...new Set(value.map((item) => String(item || "").trim()).filter(Boolean))];
+  if (ids.length === 0) {
+    throw new FootageAssetError("empty_batch_ids", "Pilih minimal satu footage untuk batch update.", 400);
+  }
+  if (ids.length > 100) {
+    throw new FootageAssetError("too_many_batch_ids", "Batch update maksimal 100 footage sekaligus.", 400);
+  }
+
+  for (const id of ids) {
+    assertUuid(id);
+  }
+  return ids;
+}
+
+function normalizeNullableTextField(value: unknown, max: number, code: string, message: string): string | null {
+  const text = typeof value === "string" ? value.trim() : "";
+  if (!text) return null;
+  if (text.length > max) {
+    throw new FootageAssetError(code, message, 400);
+  }
+  return text;
+}
+
+function normalizeNullableUuidField(value: unknown): string | null {
+  const text = typeof value === "string" ? value.trim() : "";
+  if (!text) return null;
+  assertUuid(text);
+  return text;
+}
+
+function normalizeNullableQualityScoreField(value: unknown): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1 || parsed > 5) {
+    throw new FootageAssetError("invalid_quality_score", "Quality score harus kosong atau angka 1 sampai 5.", 400);
+  }
+  return parsed;
+}
+
+function normalizeBatchUpdates(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new FootageAssetError("invalid_batch_updates", "Update batch wajib berisi field metadata yang diizinkan.", 400);
+  }
+
+  const input = value as Record<string, unknown>;
+  const updates: Record<string, unknown> = {};
+  const allowed = new Set(["status", "shot_type", "school_level", "theme", "product_id", "quality_score", "notes"]);
+
+  for (const key of Object.keys(input)) {
+    if (!allowed.has(key)) {
+      throw new FootageAssetError("invalid_batch_update_field", `Field batch update tidak diizinkan: ${key}.`, 400);
+    }
+  }
+
+  if ("status" in input) updates.status = validateFootageStatus(input.status);
+
+  if ("shot_type" in input) {
+    const shotType = typeof input.shot_type === "string" ? input.shot_type.trim() : "";
+    if (!footageShotTypes.includes(shotType as any)) {
+      throw new FootageAssetError("invalid_shot_type", "Shot type footage tidak valid.", 400);
+    }
+    updates.shot_type = shotType;
+  }
+
+  if ("school_level" in input) {
+    const schoolLevel = typeof input.school_level === "string" ? input.school_level.trim() : "";
+    if (schoolLevel && !footageSchoolLevels.includes(schoolLevel as any)) {
+      throw new FootageAssetError("invalid_school_level", "Jenjang footage tidak valid.", 400);
+    }
+    updates.school_level = schoolLevel || null;
+  }
+
+  if ("theme" in input) {
+    updates.theme = normalizeNullableTextField(input.theme, 160, "invalid_theme", "Tema footage maksimal 160 karakter.");
+  }
+
+  if ("product_id" in input) {
+    updates.product_id = normalizeNullableUuidField(input.product_id);
+  }
+
+  if ("quality_score" in input) {
+    updates.quality_score = normalizeNullableQualityScoreField(input.quality_score);
+  }
+
+  if ("notes" in input) {
+    updates.notes = normalizeNullableTextField(input.notes, 2000, "invalid_notes", "Catatan footage maksimal 2000 karakter.");
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new FootageAssetError("empty_batch_updates", "Pilih minimal satu metadata untuk diupdate.", 400);
+  }
+
+  return updates;
+}
+
+export async function batchUpdateFootageAssets(input: FootageBatchUpdateInput): Promise<FootageBatchUpdateResult> {
+  const ids = normalizeBatchIds(input.ids);
+  const updates = normalizeBatchUpdates(input.updates);
+
+  return withTransaction(async (client) => {
+    if ("product_id" in updates) {
+      await assertActiveProduct(updates.product_id as string | null, client);
+    }
+
+    const existing = await client.query<{ id: string }>(`SELECT id FROM footage_assets WHERE id = ANY($1::uuid[]) FOR UPDATE`, [ids]);
+    if (existing.rows.length !== ids.length) {
+      throw new FootageAssetError("footage_asset_not_found", "Sebagian footage tidak ditemukan.", 404);
+    }
+
+    const params: unknown[] = [ids];
+    const setClauses = Object.entries(updates).map(([field, value]) => {
+      params.push(value);
+      return `${field} = $${params.length}`;
+    });
+
+    const result = await client.query<{ id: string }>(
+      `UPDATE footage_assets
+       SET ${setClauses.join(", ")},
+           updated_at = now()
+       WHERE id = ANY($1::uuid[])
+       RETURNING id`,
+      params
+    );
+
+    return {
+      requested_count: ids.length,
+      updated_count: result.rows.length,
+      ids: result.rows.map((row) => row.id)
+    };
+  });
 }
 
 export async function getFootageAsset(id: string): Promise<FootageAssetRow> {

@@ -1,5 +1,6 @@
 import { FootageAssetError } from "../footage-asset-errors.ts";
 import {
+  batchUpdateFootageAssets,
   createFootageAsset,
   getFootageAsset,
   updateFootageAsset
@@ -15,7 +16,9 @@ import {
   renderFootageAssetFormPage,
   renderFootageAssetListPage,
   renderFootageAssetNotFoundPage,
+  renderFootageAssetReviewPage,
   renderFootageAssetScanPage,
+  valuesFromBatchReviewForm,
   valuesFromFootageAsset,
   valuesFromForm
 } from "../views/footage-asset-pages.ts";
@@ -33,6 +36,19 @@ function isNotFoundLike(error: unknown): boolean {
 }
 
 export async function handleFootageAssetPagePost(request: RequestLike, response: ResponseLike, pathname: string): Promise<boolean> {
+  if (pathname === "/footage-assets/batch-update" && request.method === "POST") {
+    const body = await readFormBody(request);
+    const values = valuesFromBatchReviewForm(body);
+    try {
+      const result = await batchUpdateFootageAssets(values);
+      redirect(response, `/footage-assets/review?success=${encodeURIComponent(`${result.updated_count} metadata footage berhasil diupdate.`)}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Batch update metadata footage gagal.";
+      sendHtml(response, await renderFootageAssetReviewPage(new URL("http://localhost/footage-assets/review"), message), statusCodeFor(error));
+    }
+    return true;
+  }
+
   if (pathname === "/footage-assets/scan/import" && request.method === "POST") {
     const body = await readFormBody(request);
     try {
@@ -111,6 +127,11 @@ export async function handleFootageAssetPageGet(response: ResponseLike, pathname
 
   if (pathname === "/footage-assets/scan") {
     sendHtml(response, await renderFootageAssetScanPage(url));
+    return true;
+  }
+
+  if (pathname === "/footage-assets/review") {
+    sendHtml(response, await renderFootageAssetReviewPage(url));
     return true;
   }
 

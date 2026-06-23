@@ -1,4 +1,4 @@
-import type { FootageAssetRow } from "../footage-asset-service.ts";
+import type { FootageAssetRow, FootageBatchUpdateInput } from "../footage-asset-service.ts";
 import { listFootageAssets } from "../footage-asset-service.ts";
 import { scanFootageDirectory } from "../footage-scan-service.ts";
 import { listProducts } from "../library-service.ts";
@@ -87,6 +87,23 @@ export function valuesFromFootageAsset(footage: FootageAssetRow): FootageAssetIn
   };
 }
 
+export function valuesFromBatchReviewForm(body: Record<string, string>): FootageBatchUpdateInput {
+  const ids = Object.entries(body)
+    .filter(([key, value]) => key.startsWith("select_") && value)
+    .map(([, value]) => value);
+  const updates: Record<string, unknown> = {};
+
+  if (body.apply_status === "1") updates.status = body.status;
+  if (body.apply_shot_type === "1") updates.shot_type = body.shot_type;
+  if (body.apply_school_level === "1") updates.school_level = body.school_level || null;
+  if (body.apply_theme === "1") updates.theme = body.theme || null;
+  if (body.apply_product_id === "1") updates.product_id = body.product_id || null;
+  if (body.apply_quality_score === "1") updates.quality_score = body.quality_score || null;
+  if (body.apply_notes === "1") updates.notes = body.notes || null;
+
+  return { ids, updates };
+}
+
 function productLabel(footage: FootageAssetRow): string {
   return footage.product_name || "Tanpa produk";
 }
@@ -133,6 +150,7 @@ export async function renderFootageAssetListPage(url: URL): Promise<string> {
       <div class="button-row" style="margin-top: 14px;">
         <button type="submit">Filter</button>
         <a class="button button-secondary" href="/footage-assets">Reset</a>
+        <a class="button button-secondary" href="/footage-assets/review">Review Metadata</a>
         <a class="button button-secondary" href="/footage-assets/scan">Scan Folder</a>
         <a class="button" href="/footage-assets/new">Catat Footage</a>
       </div>
@@ -162,6 +180,130 @@ export async function renderFootageAssetListPage(url: URL): Promise<string> {
     "Local Footage Catalog",
     "Catat metadata footage yang sudah tersimpan di storage/footage. Fase ini tidak upload, scan otomatis, atau mengubah file footage.",
     `${renderMessage(url)}${filter}${table}`
+  );
+}
+
+export async function renderFootageAssetReviewPage(url: URL, errorMessage?: string): Promise<string> {
+  const status = url.searchParams.get("status") || "";
+  const productId = url.searchParams.get("product_id") || "";
+  const schoolLevel = url.searchParams.get("school_level") || "";
+  const shotType = url.searchParams.get("shot_type") || "";
+  const incomplete = url.searchParams.get("incomplete") === "1" || url.searchParams.get("incomplete") === "true";
+  const [items, products] = await Promise.all([
+    listFootageAssets({
+      status,
+      product_id: productId,
+      school_level: schoolLevel,
+      shot_type: shotType,
+      incomplete
+    }),
+    listProducts()
+  ]);
+  const productList = products as any[];
+  const error = errorMessage ? `<div class="notice error">${escapeHtml(errorMessage)}</div>` : "";
+
+  const filter = `
+    <form method="get" action="/footage-assets/review">
+      <div class="form-grid">
+        <label>Status
+          <select name="status">
+            <option value="">Semua status</option>
+            ${footageStatuses.map((item) => `<option value="${escapeHtml(item)}" ${item === status ? "selected" : ""}>${escapeHtml(footageStatusLabels[item])}</option>`).join("")}
+          </select>
+        </label>
+        <label>Produk
+          <select name="product_id">
+            <option value="">Semua produk</option>
+            ${productList.map((product) => `<option value="${escapeHtml(product.id)}" ${product.id === productId ? "selected" : ""}>${escapeHtml(product.name)}</option>`).join("")}
+          </select>
+        </label>
+        <label>Jenjang
+          <select name="school_level">
+            <option value="">Semua jenjang</option>
+            ${footageSchoolLevels.map((item) => `<option value="${escapeHtml(item)}" ${item === schoolLevel ? "selected" : ""}>${escapeHtml(footageSchoolLevelLabels[item])}</option>`).join("")}
+          </select>
+        </label>
+        <label>Shot Type
+          <select name="shot_type">
+            <option value="">Semua shot</option>
+            ${footageShotTypes.map((item) => `<option value="${escapeHtml(item)}" ${item === shotType ? "selected" : ""}>${escapeHtml(footageShotTypeLabels[item])}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <label style="margin-top: 12px;">
+        <span><input type="checkbox" name="incomplete" value="1" ${incomplete ? "checked" : ""} style="width: auto;"> Metadata belum lengkap</span>
+      </label>
+      <div class="button-row" style="margin-top: 14px;">
+        <button type="submit">Filter Review</button>
+        <a class="button button-secondary" href="/footage-assets/review">Reset</a>
+        <a class="button button-secondary" href="/footage-assets">Kembali</a>
+      </div>
+    </form>
+  `;
+
+  const rows = items.map((item) => [
+    `<input type="checkbox" name="select_${escapeHtml(item.id)}" value="${escapeHtml(item.id)}" aria-label="Pilih ${escapeHtml(item.filename)}">`,
+    `<strong>${escapeHtml(item.filename)}</strong><br><span class="muted">${escapeHtml(item.relative_path)}</span>`,
+    escapeHtml(productLabel(item)),
+    escapeHtml(item.school_level ? footageSchoolLevelLabels[item.school_level] || item.school_level : "-"),
+    escapeHtml(item.theme || "-"),
+    escapeHtml(footageShotTypeLabels[item.shot_type] || item.shot_type),
+    escapeHtml(footageStatusLabels[item.status] || item.status),
+    escapeHtml(qualityLabel(item.quality_score)),
+    escapeHtml(item.notes || "-")
+  ]);
+
+  const batchControls = `
+    <div class="notice">Batch update hanya mengubah metadata database. File footage fisik, path, nama file, ekstensi, ukuran file, dan tanggal dibuat tidak diubah.</div>
+    <form method="post" action="/footage-assets/batch-update">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Pilih</th><th>Path</th><th>Produk</th><th>Jenjang</th><th>Tema</th><th>Shot</th><th>Status</th><th>Quality</th><th>Catatan</th></tr></thead>
+          <tbody>${rows.length ? rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("") : `<tr><td colspan="9" class="muted">Tidak ada footage sesuai filter review.</td></tr>`}</tbody>
+        </table>
+      </div>
+      <h2>Batch Metadata</h2>
+      <div class="form-grid">
+        <label><span><input type="checkbox" name="apply_status" value="1" style="width: auto;"> Status</span>
+          <select name="status">${enumOptions(footageStatuses, footageStatusLabels, "reviewed")}</select>
+        </label>
+        <label><span><input type="checkbox" name="apply_shot_type" value="1" style="width: auto;"> Shot Type</span>
+          <select name="shot_type">${enumOptions(footageShotTypes, footageShotTypeLabels, "other")}</select>
+        </label>
+        <label><span><input type="checkbox" name="apply_school_level" value="1" style="width: auto;"> Jenjang</span>
+          <select name="school_level">${enumOptions(footageSchoolLevels, footageSchoolLevelLabels, null, "Kosongkan jenjang")}</select>
+        </label>
+        <label><span><input type="checkbox" name="apply_product_id" value="1" style="width: auto;"> Produk</span>
+          <select name="product_id">
+            <option value="">Kosongkan produk</option>
+            ${productList.filter((product) => product.active).map((product) => `<option value="${escapeHtml(product.id)}">${escapeHtml(product.name)}</option>`).join("")}
+          </select>
+        </label>
+      </div>
+      <div class="form-grid" style="margin-top: 14px;">
+        <label><span><input type="checkbox" name="apply_theme" value="1" style="width: auto;"> Tema</span>
+          <input name="theme" maxlength="160" placeholder="contoh: packing raport">
+        </label>
+        <label><span><input type="checkbox" name="apply_quality_score" value="1" style="width: auto;"> Quality Score</span>
+          <input name="quality_score" type="number" min="1" max="5" step="1" placeholder="1-5">
+        </label>
+      </div>
+      <label style="margin-top: 14px;"><span><input type="checkbox" name="apply_notes" value="1" style="width: auto;"> Catatan</span>
+        <textarea name="notes" maxlength="2000"></textarea>
+      </label>
+      <div class="button-row" style="margin-top: 14px;">
+        <button type="submit">Update Metadata Terpilih</button>
+        <a class="button button-secondary" href="/footage-assets">Kembali</a>
+      </div>
+    </form>
+  `;
+
+  return renderLayout(
+    "/footage-assets",
+    "Review Metadata Footage",
+    "Batch Metadata Review",
+    "Review dan rapikan metadata footage hasil scan/import. Workflow ini metadata-only dan tidak menyentuh file footage fisik.",
+    `${renderMessage(url)}${error}${filter}${batchControls}`
   );
 }
 
