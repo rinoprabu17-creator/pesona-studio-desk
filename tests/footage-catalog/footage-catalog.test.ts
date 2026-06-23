@@ -16,6 +16,16 @@ import {
   updateContentItemFootageSelectionForContentItem
 } from "../../apps/web/src/content-item-footage-service.ts";
 import {
+  addShotPlanStep,
+  getContentItemScriptPlan,
+  getOrCreateContentItemScriptPlan,
+  getShotPlanStep,
+  listShotPlanSteps,
+  removeShotPlanStep,
+  updateContentItemScriptPlan,
+  updateShotPlanStep
+} from "../../apps/web/src/content-item-script-plan-service.ts";
+import {
   batchUpdateFootageAssets,
   createFootageAsset,
   getFootageAsset,
@@ -34,6 +44,10 @@ import {
   validateFootageRelativePath
 } from "../../apps/web/src/validation/footage-asset-validation.ts";
 import { validateContentItemFootageSelectionInput } from "../../apps/web/src/validation/content-item-footage-validation.ts";
+import {
+  validateScriptPlanInput,
+  validateShotPlanStepInput
+} from "../../apps/web/src/validation/content-item-script-plan-validation.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -61,6 +75,19 @@ test.after(async () => {
     ]);
     const ids = campaigns.rows.map((row) => row.id);
     if (ids.length) {
+      await pool.query(
+        `DELETE FROM content_item_shot_plan_steps
+         WHERE script_plan_id IN (
+           SELECT id FROM content_item_script_plans
+           WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))
+         )`,
+        [ids]
+      );
+      await pool.query(
+        `DELETE FROM content_item_script_plans
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
       await pool.query(
         `DELETE FROM content_item_footage_selections
          WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
@@ -702,13 +729,248 @@ maybeTest("content footage selection page and API route before generic content d
   assert.equal(body.data[0].footage_asset_id, reviewed.id);
 });
 
-test("content footage selection runtime files do not add forbidden AI or automation dependencies", () => {
+maybeTest("script plan create/get and update fields", async () => {
+  const contentItemId = await createContent("script-plan-create");
+  const created = await getOrCreateContentItemScriptPlan(contentItemId, {
+    plan_status: "draft",
+    video_format: "reels",
+    hook_text: "Opening hook.",
+    main_message: "Main message.",
+    cta_text: "Chat WA.",
+    notes: "Manual planning only."
+  });
+
+  assert.equal(created.content_item_id, contentItemId);
+  assert.equal(created.video_format, "reels");
+  assert.equal(created.hook_text, "Opening hook.");
+
+  const idempotent = await getOrCreateContentItemScriptPlan(contentItemId, {
+    plan_status: "approved",
+    video_format: "story",
+    hook_text: "Should not overwrite existing plan."
+  });
+  assert.equal(idempotent.id, created.id);
+  assert.equal(idempotent.video_format, "reels");
+
+  const updated = await updateContentItemScriptPlan(created.id, {
+    plan_status: "reviewed",
+    video_format: "short_video",
+    hook_text: "Updated hook.",
+    main_message: "Updated message.",
+    cta_text: "Updated CTA.",
+    notes: ""
+  });
+  assert.equal(updated.plan_status, "reviewed");
+  assert.equal(updated.video_format, "short_video");
+  assert.equal(updated.hook_text, "Updated hook.");
+  assert.equal(updated.notes, null);
+
+  const loaded = await getContentItemScriptPlan(contentItemId);
+  assert.equal(loaded?.id, created.id);
+});
+
+maybeTest("script plan validation rejects invalid plan status and video format", async () => {
+  assert.throws(() => validateScriptPlanInput({ plan_status: "done" }), /Status script plan tidak valid/i);
+  assert.throws(() => validateScriptPlanInput({ video_format: "feature_film" }), /Format video script plan tidak valid/i);
+});
+
+maybeTest("shot plan steps add with and without selected footage and list in sequence", async () => {
+  const contentItemId = await createContent("script-plan-steps");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("script-step-reviewed.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+
+  const withoutFootage = await addShotPlanStep(plan.id, {
+    sequence_number: 2,
+    step_type: "cta",
+    visual_note: "Closing visual without a footage reference.",
+    narration_text: "Hubungi WA.",
+    overlay_text: "Ketik MOCKUP",
+    duration_seconds: 5
+  });
+  const withFootage = await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product",
+    visual_note: "Show selected product footage.",
+    narration_text: "Produk terlihat rapi.",
+    overlay_text: "Sampul Raport",
+    duration_seconds: 8
+  });
+
+  assert.equal(withFootage.content_item_footage_selection_id, selection.id);
+  assert.equal(withFootage.footage_relative_path, reviewed.relative_path);
+  assert.equal(withoutFootage.content_item_footage_selection_id, null);
+
+  const steps = await listShotPlanSteps(plan.id);
+  assert.deepEqual(steps.map((step) => step.sequence_number), [1, 2]);
+  assert.deepEqual(steps.map((step) => step.id), [withFootage.id, withoutFootage.id]);
+});
+
+maybeTest("shot plan rejects selected footage from another content item and duplicate sequence", async () => {
+  const contentItemA = await createContent("script-plan-owner-a");
+  const contentItemB = await createContent("script-plan-owner-b");
+  const planA = await getOrCreateContentItemScriptPlan(contentItemA);
+  const reviewed = await createFootage("script-owner.mp4", "reviewed");
+  const selectionB = await addContentItemFootageSelection(contentItemB, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+
+  await assert.rejects(
+    () =>
+      addShotPlanStep(planA.id, {
+        content_item_footage_selection_id: selectionB.id,
+        sequence_number: 1,
+        step_type: "product"
+      }),
+    /tidak dimiliki konten script plan ini/i
+  );
+
+  await addShotPlanStep(planA.id, {
+    sequence_number: 1,
+    step_type: "hook"
+  });
+
+  await assert.rejects(
+    () =>
+      addShotPlanStep(planA.id, {
+        sequence_number: 1,
+        step_type: "cta"
+      }),
+    /Urutan shot plan sudah dipakai/i
+  );
+});
+
+maybeTest("shot plan validation rejects invalid step type and duration", async () => {
+  assert.throws(
+    () => validateShotPlanStepInput({ sequence_number: 1, step_type: "hero" }),
+    /Tipe shot plan tidak valid/i
+  );
+  assert.throws(
+    () => validateShotPlanStepInput({ sequence_number: 1, step_type: "scene", duration_seconds: 0 }),
+    /Durasi shot/i
+  );
+  assert.throws(
+    () => validateShotPlanStepInput({ sequence_number: 0, step_type: "scene" }),
+    /angka positif/i
+  );
+});
+
+maybeTest("shot plan update changes planning metadata only", async () => {
+  const contentItemId = await createContent("script-plan-update-step");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("script-update-step.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "opening"
+  });
+  const step = await addShotPlanStep(plan.id, {
+    sequence_number: 1,
+    step_type: "hook"
+  });
+
+  const updated = await updateShotPlanStep(step.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 2,
+    step_type: "product",
+    visual_note: "Updated visual.",
+    narration_text: "Updated narration.",
+    overlay_text: "Updated overlay.",
+    duration_seconds: 6
+  });
+
+  assert.equal(updated.id, step.id);
+  assert.equal(updated.content_item_footage_selection_id, selection.id);
+  assert.equal(updated.sequence_number, 2);
+  assert.equal(updated.step_type, "product");
+  assert.equal(updated.footage_relative_path, reviewed.relative_path);
+  const footageAfter = await getFootageAsset(reviewed.id);
+  assert.equal(footageAfter.relative_path, reviewed.relative_path);
+  assert.equal(footageAfter.filename, reviewed.filename);
+  assert.equal(footageAfter.size_bytes, reviewed.size_bytes);
+});
+
+maybeTest("shot plan remove keeps plan, content, selected footage, footage asset, and physical file untouched", async () => {
+  const { storageRoot, footageRoot } = await createTempFootageRoot();
+  await mkdir(join(footageRoot, prefix), { recursive: true });
+  const filePath = join(footageRoot, prefix, "script-remove-physical.mp4");
+  await writeFile(filePath, "script-plan-metadata-only");
+  const before = await stat(filePath);
+
+  const contentItemId = await createContent("script-plan-remove-step");
+  const plan = await getOrCreateContentItemScriptPlan(contentItemId);
+  const reviewed = await createFootage("script-remove-physical.mp4", "reviewed");
+  const selection = await addContentItemFootageSelection(contentItemId, {
+    footage_asset_id: reviewed.id,
+    sequence_number: 1,
+    role: "product"
+  });
+  const step = await addShotPlanStep(plan.id, {
+    content_item_footage_selection_id: selection.id,
+    sequence_number: 1,
+    step_type: "product"
+  });
+
+  const removed = await removeShotPlanStep(step.id);
+  const after = await stat(filePath);
+  const planAfter = await getContentItemScriptPlan(contentItemId);
+  const selectionAfter = await getContentItemFootageSelection(selection.id);
+  const footageAfter = await getFootageAsset(reviewed.id);
+
+  assert.equal(removed.removed, true);
+  await assert.rejects(() => getShotPlanStep(step.id), /Shot plan step tidak ditemukan/i);
+  assert.equal(planAfter?.id, plan.id);
+  assert.equal(selectionAfter.id, selection.id);
+  assert.equal(footageAfter.id, reviewed.id);
+  assert.equal(after.size, before.size);
+  assert.equal(after.mtimeMs, before.mtimeMs);
+  assert.equal(storageRoot.includes(prefix), true);
+});
+
+maybeTest("script plan page and API route before generic content detail", async () => {
+  const contentItemId = await createContent("script-plan-route");
+  const pageResponse = mockResponse();
+  const pageHandled = await handleContentItemPageGet(
+    pageResponse,
+    `/content-items/${contentItemId}/script-plan`,
+    new URL(`http://localhost/content-items/${contentItemId}/script-plan`)
+  );
+  assert.equal(pageHandled, true);
+  assert.equal(pageResponse.statusCode, 200);
+  assert.match(pageResponse.body, /Script \/ Shot Planning/);
+  assert.match(pageResponse.body, /Tidak ada AI generation/);
+
+  const apiResponse = mockResponse();
+  const apiHandled = await handleContentItemApiRoute(
+    { method: "GET", url: `/api/content-items/${contentItemId}/script-plan`, headers: {}, on() {} } as any,
+    apiResponse,
+    `/api/content-items/${contentItemId}/script-plan`,
+    new URL(`http://localhost/api/content-items/${contentItemId}/script-plan`)
+  );
+  assert.equal(apiHandled, true);
+  assert.equal(apiResponse.statusCode, 200);
+  const body = JSON.parse(apiResponse.body);
+  assert.equal(body.ok, true);
+  assert.equal(body.data.plan.content_item_id, contentItemId);
+  assert.deepEqual(body.data.steps, []);
+});
+
+test("content footage and script planning runtime files do not add forbidden AI or automation dependencies", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
+    "apps/web/src/content-item-script-plan-service.ts",
     "apps/web/src/routes/content-item-api-routes.ts",
     "apps/web/src/routes/content-item-page-routes.ts",
     "apps/web/src/views/content-item-pages.ts",
-    "apps/web/src/validation/content-item-footage-validation.ts"
+    "apps/web/src/validation/content-item-footage-validation.ts",
+    "apps/web/src/validation/content-item-script-plan-validation.ts"
   ].map((path) => readFileSync(path, "utf8")).join("\n");
 
   for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher"]) {

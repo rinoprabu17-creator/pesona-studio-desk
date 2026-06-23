@@ -11,6 +11,13 @@ import {
   removeContentItemFootageSelectionForContentItem,
   updateContentItemFootageSelectionForContentItem
 } from "../content-item-footage-service.ts";
+import {
+  addShotPlanStep,
+  getOrCreateContentItemScriptPlan,
+  removeShotPlanStepForPlan,
+  updateContentItemScriptPlan,
+  updateShotPlanStepForPlan
+} from "../content-item-script-plan-service.ts";
 import { readFormBody } from "../http/request.ts";
 import type { RequestLike } from "../http/request.ts";
 import { redirect, sendHtml } from "../http/response.ts";
@@ -22,6 +29,7 @@ import {
   renderContentItemFormPage,
   renderContentItemListPage,
   renderContentItemNotFoundPage,
+  renderContentItemScriptPlanPage,
   valuesFromContentItem,
   valuesFromForm
 } from "../views/content-item-pages.ts";
@@ -152,6 +160,61 @@ export async function handleContentItemPagePost(request: RequestLike, response: 
     return true;
   }
 
+  const saveScriptPlanMatch = pathname.match(/^\/content-items\/([^/]+)\/script-plan\/save$/);
+  if (saveScriptPlanMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      const plan = await getOrCreateContentItemScriptPlan(saveScriptPlanMatch[1]);
+      await updateContentItemScriptPlan(plan.id, body);
+      redirect(response, `/content-items/${encodeURIComponent(saveScriptPlanMatch[1])}/script-plan?success=Script plan berhasil disimpan.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Script plan gagal disimpan.";
+      redirect(response, `/content-items/${encodeURIComponent(saveScriptPlanMatch[1])}/script-plan?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
+  const addScriptStepMatch = pathname.match(/^\/content-items\/([^/]+)\/script-plan\/steps\/add$/);
+  if (addScriptStepMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      const plan = await getOrCreateContentItemScriptPlan(addScriptStepMatch[1]);
+      await addShotPlanStep(plan.id, body);
+      redirect(response, `/content-items/${encodeURIComponent(addScriptStepMatch[1])}/script-plan?success=Shot plan step berhasil ditambahkan.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Shot plan step gagal ditambahkan.";
+      redirect(response, `/content-items/${encodeURIComponent(addScriptStepMatch[1])}/script-plan?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
+  const updateScriptStepMatch = pathname.match(/^\/content-items\/([^/]+)\/script-plan\/steps\/([^/]+)\/update$/);
+  if (updateScriptStepMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      const plan = await getOrCreateContentItemScriptPlan(updateScriptStepMatch[1]);
+      await updateShotPlanStepForPlan(plan.id, updateScriptStepMatch[2], body);
+      redirect(response, `/content-items/${encodeURIComponent(updateScriptStepMatch[1])}/script-plan?success=Shot plan step berhasil disimpan.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Shot plan step gagal disimpan.";
+      redirect(response, `/content-items/${encodeURIComponent(updateScriptStepMatch[1])}/script-plan?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
+  const removeScriptStepMatch = pathname.match(/^\/content-items\/([^/]+)\/script-plan\/steps\/([^/]+)\/remove$/);
+  if (removeScriptStepMatch && request.method === "POST") {
+    try {
+      const plan = await getOrCreateContentItemScriptPlan(removeScriptStepMatch[1]);
+      await removeShotPlanStepForPlan(plan.id, removeScriptStepMatch[2]);
+      redirect(response, `/content-items/${encodeURIComponent(removeScriptStepMatch[1])}/script-plan?success=Shot plan step berhasil dihapus.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Shot plan step gagal dihapus.";
+      redirect(response, `/content-items/${encodeURIComponent(removeScriptStepMatch[1])}/script-plan?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -198,6 +261,18 @@ export async function handleContentItemPageGet(response: ResponseLike, pathname:
     try {
       const item = await getContentItem(footageMatch[1]);
       sendHtml(response, await renderContentItemFootagePage(item, url));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Konten tidak ditemukan.";
+      sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
+    }
+    return true;
+  }
+
+  const scriptPlanMatch = pathname.match(/^\/content-items\/([^/]+)\/script-plan$/);
+  if (scriptPlanMatch) {
+    try {
+      const item = await getContentItem(scriptPlanMatch[1]);
+      sendHtml(response, await renderContentItemScriptPlanPage(item, url));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Konten tidak ditemukan.";
       sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);

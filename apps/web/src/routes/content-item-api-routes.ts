@@ -11,6 +11,14 @@ import {
   removeContentItemFootageSelection,
   updateContentItemFootageSelection
 } from "../content-item-footage-service.ts";
+import {
+  addShotPlanStep,
+  getOrCreateContentItemScriptPlan,
+  listShotPlanSteps,
+  removeShotPlanStep,
+  updateContentItemScriptPlan,
+  updateShotPlanStep
+} from "../content-item-script-plan-service.ts";
 import { readJsonBody } from "../http/request.ts";
 import type { RequestLike } from "../http/request.ts";
 import { sendSuccess } from "../http/response.ts";
@@ -48,6 +56,44 @@ export async function handleContentItemApiRoute(request: RequestLike, response: 
 
   if (footageMatch && request.method === "POST") {
     sendSuccess(response, await addContentItemFootageSelection(footageMatch[1], await readJsonBody(request)), 201);
+    return true;
+  }
+
+  const scriptPlanMatch = pathname.match(/^\/api\/content-items\/([^/]+)\/script-plan$/);
+  if (scriptPlanMatch && request.method === "GET") {
+    const plan = await getOrCreateContentItemScriptPlan(scriptPlanMatch[1]);
+    const steps = await listShotPlanSteps(plan.id);
+    sendSuccess(response, { plan, steps });
+    return true;
+  }
+
+  if (scriptPlanMatch && request.method === "POST") {
+    const plan = await getOrCreateContentItemScriptPlan(scriptPlanMatch[1], await readJsonBody(request));
+    sendSuccess(response, plan, 201);
+    return true;
+  }
+
+  const scriptPlanUpdateMatch = pathname.match(/^\/api\/script-plans\/([^/]+)$/);
+  if (scriptPlanUpdateMatch && request.method === "POST") {
+    sendSuccess(response, await updateContentItemScriptPlan(scriptPlanUpdateMatch[1], await readJsonBody(request)));
+    return true;
+  }
+
+  const scriptPlanStepAddMatch = pathname.match(/^\/api\/script-plans\/([^/]+)\/steps$/);
+  if (scriptPlanStepAddMatch && request.method === "POST") {
+    sendSuccess(response, await addShotPlanStep(scriptPlanStepAddMatch[1], await readJsonBody(request)), 201);
+    return true;
+  }
+
+  const scriptPlanStepMatch = pathname.match(/^\/api\/script-plan-steps\/([^/]+)$/);
+  if (scriptPlanStepMatch && request.method === "POST") {
+    sendSuccess(response, await updateShotPlanStep(scriptPlanStepMatch[1], await readJsonBody(request)));
+    return true;
+  }
+
+  const removeScriptPlanStepMatch = pathname.match(/^\/api\/script-plan-steps\/([^/]+)\/remove$/);
+  if (removeScriptPlanStepMatch && request.method === "POST") {
+    sendSuccess(response, await removeShotPlanStep(removeScriptPlanStepMatch[1]));
     return true;
   }
 
