@@ -8,7 +8,7 @@ import { getManualPublishReportPackageDetail } from "../manual-publish-report-se
 import { escapeHtml, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
 
 function safetyNotice(): string {
-  return `<div class="notice">Closeout adalah sertifikat DB-only. Tidak publish, tidak upload, tidak scheduler, tidak OpenAI, tidak social API, tidak membuat content_publications, dan tidak mutasi file video.</div>`;
+  return `<div class="notice">Closeout adalah sertifikat DB-only. Tidak publish, tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak membuat content_publications, dan tidak mutasi file video.</div>`;
 }
 
 function eligibilityTable(eligibility: ManualPublishCloseoutEligibility): string {
