@@ -9,6 +9,7 @@ import {
   getManualPublicationPackageCreateContextForPromotion,
   listManualPublicationPackages
 } from "../manual-publication-package-service.ts";
+import { getManualPublicationPackageCompletionSummary } from "../manual-publish-checklist-service.ts";
 import type {
   ManualPublicationPackageChannelRow,
   ManualPublicationPackageListRow
@@ -200,6 +201,7 @@ function channelUpdateForms(packageId: string, channels: ManualPublicationPackag
 
 export async function renderManualPublicationPackageDetailPage(packageId: string, url: URL): Promise<string> {
   const context = await getManualPublicationPackageContext(packageId);
+  const completion = await getManualPublicationPackageCompletionSummary(packageId);
   const pkg = context.package;
   const summary = renderReadOnlyTable(
     ["Field", "Nilai"],
@@ -242,6 +244,11 @@ export async function renderManualPublicationPackageDetailPage(packageId: string
     ${renderMessage(url)}
     <div class="notice">published_manually hanya catatan manual. Tidak ada API call, tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, dan tidak mutasi file video.</div>
     ${summary}
+    <section>
+      <h2>Manual Publish Checklist</h2>
+      <p class="hint">Checklist ${escapeHtml(completion.checklist_done)} / ${escapeHtml(completion.checklist_total)} done. Evidence ${escapeHtml(completion.evidence_count)}. Manual URL channels: ${completion.channels_with_manual_url.length ? escapeHtml(completion.channels_with_manual_url.join(", ")) : "-"}.</p>
+      <a class="button" href="/publication-packages/${escapeHtml(pkg.id)}/checklist">Open Checklist & Evidence</a>
+    </section>
     <section><h2>Status Package</h2><div class="button-row">${statusForms(pkg.id)}</div></section>
     <section><h2>Manual Copy</h2>${updateForm}</section>
     <section><h2>Channels</h2>${channels}</section>

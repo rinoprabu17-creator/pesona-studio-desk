@@ -45,6 +45,8 @@ const requiredPaths = [
   "apps/web/src/approved-video-handoff-errors.ts",
   "apps/web/src/manual-publication-package-service.ts",
   "apps/web/src/manual-publication-package-errors.ts",
+  "apps/web/src/manual-publish-checklist-service.ts",
+  "apps/web/src/manual-publish-checklist-errors.ts",
   "apps/web/src/content-publication-service.ts",
   "apps/web/src/content-publication-errors.ts",
   "apps/web/src/footage-asset-service.ts",
@@ -67,6 +69,8 @@ const requiredPaths = [
   "apps/web/src/routes/approved-video-page-routes.ts",
   "apps/web/src/routes/manual-publication-package-api-routes.ts",
   "apps/web/src/routes/manual-publication-package-page-routes.ts",
+  "apps/web/src/routes/manual-publish-checklist-api-routes.ts",
+  "apps/web/src/routes/manual-publish-checklist-page-routes.ts",
   "apps/web/src/routes/content-item-api-routes.ts",
   "apps/web/src/routes/content-item-page-routes.ts",
   "apps/web/src/routes/content-publication-api-routes.ts",
@@ -81,6 +85,7 @@ const requiredPaths = [
   "apps/web/src/views/campaign-plan-import-pages.ts",
   "apps/web/src/views/approved-video-pages.ts",
   "apps/web/src/views/manual-publication-package-pages.ts",
+  "apps/web/src/views/manual-publish-checklist-pages.ts",
   "apps/web/src/views/content-calendar-page.ts",
   "apps/web/src/views/content-item-pages.ts",
   "apps/web/src/views/content-publication-pages.ts",
@@ -101,6 +106,7 @@ const requiredPaths = [
   "apps/web/src/validation/render-approved-promotion-validation.ts",
   "apps/web/src/validation/approved-video-handoff-validation.ts",
   "apps/web/src/validation/manual-publication-package-validation.ts",
+  "apps/web/src/validation/manual-publish-checklist-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/footage-asset-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
@@ -147,6 +153,7 @@ const requiredPaths = [
   "migrations/014_phase2e_approved_render_promotions.sql",
   "migrations/015_phase2e_approved_video_handoff_board.sql",
   "migrations/016_phase2f_manual_publication_packages.sql",
+  "migrations/017_phase2f_manual_publish_checklist_evidence.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "scripts/prepare-test-db.mjs",
@@ -781,6 +788,40 @@ for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
     fail(`Migration Phase 2F.1 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
   } else {
     pass(`Migration Phase 2F.1 tidak memuat destructive SQL: ${forbiddenText}`);
+  }
+}
+
+const manualPublishChecklistMigrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("017_"));
+if (manualPublishChecklistMigrationFiles.length === 1 && manualPublishChecklistMigrationFiles[0] === "017_phase2f_manual_publish_checklist_evidence.sql") {
+  pass("Migration 017 Phase 2F manual publish checklist/evidence tersedia");
+} else {
+  fail(`Migration 017 Phase 2F harus tepat satu file: ${manualPublishChecklistMigrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const manualPublishChecklistMigrationSource = existsSync("migrations/017_phase2f_manual_publish_checklist_evidence.sql")
+  ? readFileSync("migrations/017_phase2f_manual_publish_checklist_evidence.sql", "utf8")
+  : "";
+for (const requiredText of [
+  "CREATE TABLE manual_publish_checklist_items",
+  "CREATE TABLE manual_publish_evidence_logs",
+  "package_id uuid NOT NULL REFERENCES manual_publication_packages(id)",
+  "manual_publish_checklist_items_channel_key UNIQUE (package_channel_id, checklist_key)",
+  "evidence_type = ANY",
+  "manual_publish_checklist_items_package_id_idx",
+  "manual_publish_evidence_logs_package_id_idx"
+]) {
+  if (manualPublishChecklistMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 2F.2 checklist/evidence memuat: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 2F.2 checklist/evidence belum memuat: ${requiredText}`);
+  }
+}
+
+for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
+  if (manualPublishChecklistMigrationSource.includes(forbiddenText)) {
+    fail(`Migration Phase 2F.2 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
+  } else {
+    pass(`Migration Phase 2F.2 tidak memuat destructive SQL: ${forbiddenText}`);
   }
 }
 
