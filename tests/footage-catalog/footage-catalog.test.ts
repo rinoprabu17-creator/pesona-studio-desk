@@ -141,6 +141,33 @@ import {
   handleApprovedVideoPageGet,
   handleApprovedVideoPagePost
 } from "../../apps/web/src/routes/approved-video-page-routes.ts";
+import {
+  archiveManualPublicationPackage,
+  createManualPublicationPackageFromHandoff,
+  createManualPublicationPackageFromPromotion,
+  getManualPublicationPackageByHandoffId,
+  getManualPublicationPackageContext,
+  getManualPublicationPackageCreateContext,
+  listManualPublicationPackages,
+  markManualPublicationPackageHold,
+  markManualPublicationPackageNeedsRevision,
+  markManualPublicationPackagePublishedManually,
+  markManualPublicationPackageReady,
+  updateManualPublicationPackage,
+  updateManualPublicationPackageChannel,
+  validateManualPublicationPackageEligibility
+} from "../../apps/web/src/manual-publication-package-service.ts";
+import {
+  validateManualPublicationPackageChannelInput,
+  validateManualPublicationPackageChannelStatus,
+  validateManualPublicationPackageInput,
+  validateManualPublicationPackageStatus
+} from "../../apps/web/src/validation/manual-publication-package-validation.ts";
+import { handleManualPublicationPackageApiRoute } from "../../apps/web/src/routes/manual-publication-package-api-routes.ts";
+import {
+  handleManualPublicationPackagePageGet,
+  handleManualPublicationPackagePagePost
+} from "../../apps/web/src/routes/manual-publication-package-page-routes.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -168,6 +195,16 @@ test.after(async () => {
     ]);
     const ids = campaigns.rows.map((row) => row.id);
     if (ids.length) {
+      await pool.query(
+        `DELETE FROM manual_publication_package_channels
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
+      await pool.query(
+        `DELETE FROM manual_publication_packages
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
       await pool.query(
         `DELETE FROM video_approved_handoff_records
          WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
@@ -506,6 +543,43 @@ async function createSucceededHandoffFixture(codeSuffix: string) {
     promotion,
     approvedPath: join(fixture.storageRoot, "approved-videos", promotion.approved_output_relative_path!)
   };
+}
+
+async function createReadyHandoffFixture(codeSuffix: string) {
+  const fixture = await createSucceededHandoffFixture(codeSuffix);
+  let handoff: Awaited<ReturnType<typeof markApprovedVideoReadyForManualPublish>> | null = null;
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    handoff = await markApprovedVideoReadyForManualPublish(fixture.promotion.id, {
+      handoff_by_name: "Owner",
+      handoff_note: "Ready for manual publish."
+    });
+  });
+  assert.ok(handoff);
+  return { ...fixture, handoff };
+}
+
+async function createManualPublicationPackageFixture(codeSuffix: string) {
+  const fixture = await createReadyHandoffFixture(`package-${codeSuffix}`);
+  let packageContext: Awaited<ReturnType<typeof createManualPublicationPackageFromHandoff>> | null = null;
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    packageContext = await createManualPublicationPackageFromHandoff(fixture.handoff.id, {
+      package_title: `Package ${codeSuffix}`,
+      caption_text: "Caption manual aman.",
+      hashtags_text: "#sampulraport",
+      call_to_action: "Chat WA untuk tanya Sampul Raport.",
+      manual_publish_note: "DB-only package fixture.",
+      created_by_name: "Owner",
+      selected_channels: ["instagram", "facebook", "tiktok", "youtube"],
+      channel_formats: {
+        instagram: "reel",
+        facebook: "feed_video",
+        tiktok: "short",
+        youtube: "short"
+      }
+    });
+  });
+  assert.ok(packageContext);
+  return { ...fixture, packageContext };
 }
 
 async function insertApprovedPromotionWithStatus(
@@ -3121,6 +3195,289 @@ maybeTest("approved video page and API routes match before generic approved vide
   });
 });
 
+maybeTest("manual publication package eligibility rejects missing, non-ready, failed promotion, and missing approved file", async () => {
+  await assert.rejects(
+    () => validateManualPublicationPackageEligibility("11111111-1111-4111-8111-111111111111"),
+    /Handoff approved video tidak ditemukan/i
+  );
+
+  const holdFixture = await createSucceededHandoffFixture("package-hold");
+  await withAppStorageRoot(holdFixture.storageRoot, async () => {
+    const hold = await markApprovedVideoHold(holdFixture.promotion.id, { handoff_by_name: "Owner" });
+    const eligibility = await validateManualPublicationPackageEligibility(hold.id);
+    assert.equal(eligibility.ok, false);
+    assert.match(eligibility.blocking_reasons.join(" "), /ready_for_manual_publish/i);
+  });
+
+  const failedFixture = await createSucceededReviewFixture("package-failed-promotion");
+  await withAppStorageRoot(failedFixture.storageRoot, async () => {
+    const review = await approveRenderAttempt(failedFixture.attempt.id, { reviewed_by_name: "Owner" });
+    const failedPromotionId = await insertApprovedPromotionWithStatus(failedFixture, review.id, "failed", null, null);
+    const handoff = await pool!.query<{ id: string }>(
+      `INSERT INTO video_approved_handoff_records (
+         promotion_id,
+         render_attempt_id,
+         render_attempt_review_id,
+         render_manifest_id,
+         video_draft_job_id,
+         content_item_id,
+         handoff_status,
+         approved_output_relative_path_snapshot,
+         approved_size_bytes_snapshot,
+         approved_sha256_snapshot,
+         handoff_at
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, 'ready_for_manual_publish', $7, 128, NULL, now())
+       RETURNING id`,
+      [
+        failedPromotionId,
+        failedFixture.attempt.id,
+        review.id,
+        failedFixture.manifest.id,
+        failedFixture.job.id,
+        failedFixture.contentItemId,
+        "smoke/missing-failed-promotion.mp4"
+      ]
+    );
+    const eligibility = await validateManualPublicationPackageEligibility(handoff.rows[0].id);
+    assert.equal(eligibility.ok, false);
+    assert.match(eligibility.blocking_reasons.join(" "), /Promotion harus succeeded|fisik tidak ditemukan/i);
+  });
+
+  const missingFixture = await createSucceededReviewFixture("package-missing-approved");
+  await withAppStorageRoot(missingFixture.storageRoot, async () => {
+    const review = await approveRenderAttempt(missingFixture.attempt.id, { reviewed_by_name: "Owner" });
+    const promotionId = await insertApprovedPromotionWithStatus(missingFixture, review.id, "succeeded", "smoke/missing-package-approved.mp4", 128);
+    const handoff = await pool!.query<{ id: string }>(
+      `INSERT INTO video_approved_handoff_records (
+         promotion_id,
+         render_attempt_id,
+         render_attempt_review_id,
+         render_manifest_id,
+         video_draft_job_id,
+         content_item_id,
+         handoff_status,
+         approved_output_relative_path_snapshot,
+         approved_size_bytes_snapshot,
+         approved_sha256_snapshot,
+         handoff_at
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, 'ready_for_manual_publish', 'smoke/missing-package-approved.mp4', 128, NULL, now())
+       RETURNING id`,
+      [promotionId, missingFixture.attempt.id, review.id, missingFixture.manifest.id, missingFixture.job.id, missingFixture.contentItemId]
+    );
+    const eligibility = await validateManualPublicationPackageEligibility(handoff.rows[0].id);
+    assert.equal(eligibility.ok, false);
+    assert.match(eligibility.blocking_reasons.join(" "), /fisik tidak ditemukan/i);
+  });
+});
+
+maybeTest("manual publication package validation normalizes package and channel input", () => {
+  assert.equal(validateManualPublicationPackageStatus("ready_manual_publish"), "ready_manual_publish");
+  assert.equal(validateManualPublicationPackageStatus(""), "draft_package");
+  assert.equal(validateManualPublicationPackageChannelStatus("published_manually"), "published_manually");
+  assert.throws(() => validateManualPublicationPackageStatus("scheduled"), /Status package/i);
+  assert.throws(() => validateManualPublicationPackageChannelStatus("posted"), /Status channel/i);
+  const input = validateManualPublicationPackageInput({
+    package_title: "  Siap Posting  ",
+    caption_text: " Caption ",
+    selected_channels: ["instagram", "youtube"],
+    channel_formats: { instagram: "reel", youtube: "short" }
+  });
+  assert.equal(input.package_title, "Siap Posting");
+  assert.deepEqual(input.selected_channels, ["instagram", "youtube"]);
+  assert.equal(input.channel_formats.instagram, "reel");
+  assert.throws(() => validateManualPublicationPackageInput({ selected_channels: [] }), /minimal satu channel/i);
+  assert.throws(() => validateManualPublicationPackageInput({ selected_channels: ["instagram", "instagram"] }), /duplikat/i);
+  assert.equal(validateManualPublicationPackageChannelInput({ manual_publish_url: "https://example.com/post" }).manual_publish_url, "https://example.com/post");
+  assert.throws(() => validateManualPublicationPackageChannelInput({ manual_publish_url: "ftp://example.com/post" }), /http/i);
+});
+
+maybeTest("manual publication package creates package and channels, blocks duplicate, and read context has no side effects", async () => {
+  const fixture = await createReadyHandoffFixture("create");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    assert.equal(await getManualPublicationPackageByHandoffId(fixture.handoff.id), null);
+    const createContext = await getManualPublicationPackageCreateContext(fixture.handoff.id);
+    assert.equal(createContext.existingPackage, null);
+    assert.equal(createContext.eligibility.ok, true);
+    assert.equal(await getManualPublicationPackageByHandoffId(fixture.handoff.id), null);
+
+    const packageContext = await createManualPublicationPackageFromHandoff(fixture.handoff.id, {
+      package_title: "Package Siap Posting",
+      caption_text: "Caption manual tanpa AI.",
+      hashtags_text: "#sampulraport #pesonagama",
+      call_to_action: "Chat WA untuk konsultasi.",
+      manual_publish_note: "Posting manual saja.",
+      created_by_name: "Owner",
+      selected_channels: ["instagram", "facebook", "tiktok", "youtube"],
+      channel_formats: {
+        instagram: "reel",
+        facebook: "feed_video",
+        tiktok: "short",
+        youtube: "short"
+      }
+    });
+
+    assert.equal(packageContext.package.handoff_id, fixture.handoff.id);
+    assert.equal(packageContext.package.promotion_id, fixture.promotion.id);
+    assert.equal(packageContext.package.package_status, "draft_package");
+    assert.equal(packageContext.package.approved_output_relative_path_snapshot, fixture.promotion.approved_output_relative_path);
+    assert.equal(packageContext.package.approved_size_bytes_snapshot, (await stat(fixture.approvedPath)).size);
+    assert.match(packageContext.package.approved_sha256_snapshot || "", /^[a-f0-9]{64}$/);
+    assert.equal(packageContext.channels.length, 4);
+    assert.deepEqual(packageContext.channels.map((channel) => channel.channel).sort(), ["facebook", "instagram", "tiktok", "youtube"]);
+
+    const stored = await getManualPublicationPackageByHandoffId(fixture.handoff.id);
+    assert.equal(stored?.id, packageContext.package.id);
+    await assert.rejects(
+      () => createManualPublicationPackageFromHandoff(fixture.handoff.id, { selected_channels: ["instagram"] }),
+      /sudah ada/i
+    );
+  });
+});
+
+maybeTest("manual publication package updates status and channel rows without mutating parents, files, or content publications", async () => {
+  const fixture = await createManualPublicationPackageFixture("lifecycle");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    const handoffBefore = await getHandoffByPromotionId(fixture.promotion.id);
+    const promotionBefore = await getRenderApprovedPromotionByAttemptId(fixture.attempt.id);
+    const attemptBefore = await getRenderAttemptById(fixture.attempt.id);
+    const reviewBefore = await getRenderAttemptReviewByAttemptId(fixture.attempt.id);
+    const approvedBefore = await stat(fixture.approvedPath);
+    const draftBefore = await stat(fixture.outputPath);
+    const sourceBefore = await stat(fixture.sourcePath);
+    const contentPublicationsBefore = await pool!.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM content_publications WHERE content_item_id = $1`,
+      [fixture.contentItemId]
+    );
+
+    const updated = await updateManualPublicationPackage(fixture.packageContext.package.id, {
+      package_title: "Updated Package",
+      caption_text: "Updated manual caption.",
+      hashtags_text: "#updated",
+      call_to_action: "Manual CTA",
+      manual_publish_note: "Still DB-only.",
+      created_by_name: "Owner"
+    });
+    assert.equal(updated.package.package_title, "Updated Package");
+    assert.equal(updated.package.caption_text, "Updated manual caption.");
+
+    const ready = await markManualPublicationPackageReady(fixture.packageContext.package.id);
+    assert.equal(ready.package.package_status, "ready_manual_publish");
+    assert.ok(ready.package.ready_at);
+    assert.equal((await markManualPublicationPackageHold(fixture.packageContext.package.id)).package.package_status, "hold");
+    assert.equal((await markManualPublicationPackageNeedsRevision(fixture.packageContext.package.id)).package.package_status, "needs_revision");
+    const published = await markManualPublicationPackagePublishedManually(fixture.packageContext.package.id);
+    assert.equal(published.package.package_status, "published_manually");
+    assert.ok(published.package.published_manually_at);
+    assert.equal((await archiveManualPublicationPackage(fixture.packageContext.package.id)).package.package_status, "archived");
+
+    const channelUpdated = await updateManualPublicationPackageChannel(fixture.packageContext.package.id, "instagram", {
+      channel_status: "published_manually",
+      publication_format: "reel",
+      manual_publish_url: "https://instagram.com/p/manual-test",
+      manual_publish_note: "Posted manually outside system."
+    });
+    const instagram = channelUpdated.channels.find((channel) => channel.channel === "instagram");
+    assert.equal(instagram?.channel_status, "published_manually");
+    assert.equal(instagram?.manual_publish_url, "https://instagram.com/p/manual-test");
+    assert.ok(instagram?.manual_published_at);
+
+    const contentPublicationsAfter = await pool!.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM content_publications WHERE content_item_id = $1`,
+      [fixture.contentItemId]
+    );
+    assert.deepEqual(await getHandoffByPromotionId(fixture.promotion.id), handoffBefore);
+    assert.deepEqual(await getRenderApprovedPromotionByAttemptId(fixture.attempt.id), promotionBefore);
+    assert.deepEqual(await getRenderAttemptById(fixture.attempt.id), attemptBefore);
+    assert.deepEqual(await getRenderAttemptReviewByAttemptId(fixture.attempt.id), reviewBefore);
+    assert.equal(contentPublicationsAfter.rows[0].count, contentPublicationsBefore.rows[0].count);
+    assert.equal((await stat(fixture.approvedPath)).size, approvedBefore.size);
+    assert.equal((await stat(fixture.approvedPath)).mtimeMs, approvedBefore.mtimeMs);
+    assert.equal((await stat(fixture.outputPath)).size, draftBefore.size);
+    assert.equal((await stat(fixture.outputPath)).mtimeMs, draftBefore.mtimeMs);
+    assert.equal((await stat(fixture.sourcePath)).size, sourceBefore.size);
+    assert.equal((await stat(fixture.sourcePath)).mtimeMs, sourceBefore.mtimeMs);
+  });
+});
+
+maybeTest("manual publication package list filters and page/API routes are ordered safely", async () => {
+  const fixture = await createManualPublicationPackageFixture("routes");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    const ready = await markManualPublicationPackageReady(fixture.packageContext.package.id);
+    const listed = await listManualPublicationPackages({ package_status: "ready_manual_publish", channel: "youtube", q: fixture.packageContext.content.content_code });
+    assert.equal(listed.some((row) => row.id === ready.package.id), true);
+
+    const listPageResponse = mockResponse();
+    const listHandled = await handleManualPublicationPackagePageGet(listPageResponse, "/publication-packages", new URL("http://localhost/publication-packages"));
+    assert.equal(listHandled, true);
+    assert.equal(listPageResponse.statusCode, 200);
+    assert.match(listPageResponse.body, /Publication Packages/);
+    assert.match(listPageResponse.body, /DB-only/);
+
+    const createPagePath = `/approved-videos/${fixture.promotion.id}/publication-package/new`;
+    const createPageResponse = mockResponse();
+    const createPageHandled = await handleManualPublicationPackagePageGet(createPageResponse, createPagePath, new URL(`http://localhost${createPagePath}`));
+    assert.equal(createPageHandled, true);
+    assert.equal(createPageResponse.statusCode, 200);
+    assert.match(createPageResponse.body, /Create Publication Package/);
+
+    const detailPath = `/publication-packages/${ready.package.id}`;
+    const detailPageResponse = mockResponse();
+    const detailHandled = await handleManualPublicationPackagePageGet(detailPageResponse, detailPath, new URL(`http://localhost${detailPath}`));
+    assert.equal(detailHandled, true);
+    assert.equal(detailPageResponse.statusCode, 200);
+    assert.match(detailPageResponse.body, /published_manually hanya catatan manual/);
+
+    const apiListResponse = mockResponse();
+    const apiListPath = `/api/publication-packages?channel=youtube&q=${encodeURIComponent(fixture.packageContext.content.content_code)}`;
+    const apiListHandled = await handleManualPublicationPackageApiRoute(
+      { method: "GET", url: apiListPath, headers: {}, on() {} } as any,
+      apiListResponse,
+      "/api/publication-packages",
+      new URL(`http://localhost${apiListPath}`)
+    );
+    assert.equal(apiListHandled, true);
+    assert.equal(apiListResponse.statusCode, 200);
+    assert.equal(JSON.parse(apiListResponse.body).data.some((row: any) => row.id === ready.package.id), true);
+
+    const apiDetailResponse = mockResponse();
+    const apiDetailPath = `/api/publication-packages/${ready.package.id}`;
+    const apiDetailHandled = await handleManualPublicationPackageApiRoute(
+      { method: "GET", url: apiDetailPath, headers: {}, on() {} } as any,
+      apiDetailResponse,
+      apiDetailPath,
+      new URL(`http://localhost${apiDetailPath}`)
+    );
+    assert.equal(apiDetailHandled, true);
+    assert.equal(apiDetailResponse.statusCode, 200);
+    assert.equal(JSON.parse(apiDetailResponse.body).data.package.id, ready.package.id);
+
+    const channelResponse = mockResponse();
+    const channelPath = `/api/publication-packages/${ready.package.id}/channels/youtube/update`;
+    const channelRequest = jsonRequest({ channel_status: "hold", publication_format: "short", manual_publish_note: "route hold" });
+    const channelHandled = await handleManualPublicationPackageApiRoute(
+      { ...channelRequest, url: channelPath } as any,
+      channelResponse,
+      channelPath,
+      new URL(`http://localhost${channelPath}`)
+    );
+    assert.equal(channelHandled, true);
+    assert.equal(channelResponse.statusCode, 200);
+    assert.equal(JSON.parse(channelResponse.body).data.channels.find((row: any) => row.channel === "youtube").channel_status, "hold");
+
+    const pageStatusResponse = mockResponse();
+    const pageStatusPath = `/publication-packages/${ready.package.id}/status/hold`;
+    const pageStatusHandled = await handleManualPublicationPackagePagePost(
+      { ...jsonRequest({}), url: pageStatusPath } as any,
+      pageStatusResponse,
+      pageStatusPath
+    );
+    assert.equal(pageStatusHandled, true);
+    assert.equal(pageStatusResponse.statusCode, 303);
+  });
+});
+
 test("content footage, script planning, video draft, render manifest, preflight, and controlled render runtime files keep dependencies guarded", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
@@ -3139,7 +3496,8 @@ test("content footage, script planning, video draft, render manifest, preflight,
     "apps/web/src/validation/render-attempt-validation.ts",
     "apps/web/src/validation/render-attempt-review-validation.ts",
     "apps/web/src/validation/render-approved-promotion-validation.ts",
-    "apps/web/src/validation/approved-video-handoff-validation.ts"
+    "apps/web/src/validation/approved-video-handoff-validation.ts",
+    "apps/web/src/validation/manual-publication-package-validation.ts"
   ].map((path) => readFileSync(path, "utf8")).join("\n");
 
   for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher", "fluent-ffmpeg", "child_process", "spawn", "exec", "execFile", "approved-videos", "workers/video", "writeFile", "copyFile", "createWriteStream", "appendFile", "truncate"]) {
@@ -3197,4 +3555,27 @@ test("content footage, script planning, video draft, render manifest, preflight,
   assert.equal(handoffViewSource.includes("scheduler"), true);
   assert.equal(handoffViewSource.includes("publisher"), true);
   assert.equal(handoffViewSource.includes("upload"), true);
+
+  const packageRuntimeSource = [
+    "apps/web/src/manual-publication-package-service.ts",
+    "apps/web/src/routes/manual-publication-package-api-routes.ts",
+    "apps/web/src/routes/manual-publication-package-page-routes.ts"
+  ].map((path) => readFileSync(path, "utf8")).join("\n");
+  for (const forbidden of ["exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "mkdir", "workers/video", "OpenAI", "openai", "scheduler", "publisher", "upload", "graph.facebook", "facebook.com", "googleapis", "axios", "fetch("]) {
+    assert.equal(packageRuntimeSource.includes(forbidden), false);
+  }
+  assert.equal(packageRuntimeSource.includes("createReadStream"), true);
+  assert.equal(packageRuntimeSource.includes("\"approved-videos\""), true);
+  assert.equal(packageRuntimeSource.includes("\"smoke\""), true);
+
+  const packageViewSource = readFileSync("apps/web/src/views/manual-publication-package-pages.ts", "utf8");
+  for (const forbidden of ["exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "mkdir", "workers/video", "graph.facebook", "facebook.com", "googleapis", "axios", "fetch("]) {
+    assert.equal(packageViewSource.includes(forbidden), false);
+  }
+  assert.equal(packageViewSource.includes("OpenAI"), true);
+  assert.equal(packageViewSource.includes("scheduler"), true);
+  assert.equal(packageViewSource.includes("publisher"), true);
+  assert.equal(packageViewSource.includes("upload"), true);
+  assert.equal(packageViewSource.includes("TikTok"), true);
+  assert.equal(packageViewSource.includes("YouTube"), true);
 });

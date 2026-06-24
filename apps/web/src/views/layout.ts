@@ -10,6 +10,7 @@ export const navItems: NavItem[] = [
   { href: "/content-calendar", label: "Kalender Konten" },
   { href: "/content-items", label: "Konten" },
   { href: "/approved-videos", label: "Approved Videos" },
+  { href: "/publication-packages", label: "Publication Packages" },
   { href: "/footage-assets", label: "Footage" },
   { href: "/products", label: "Product Library" },
   { href: "/colors", label: "Color Library" },

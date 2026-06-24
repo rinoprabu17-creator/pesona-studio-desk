@@ -129,12 +129,16 @@ export async function renderApprovedVideoDetailPage(promotionId: string, url: UR
          ${form("archive", "Archive")}`
       : `<p class="hint">Handoff belum eligible: ${escapeHtml(eligibility.blocking_reasons.join(" "))}</p>`}
   </section>`;
+  const packageAction = handoff?.handoff_status === "ready_for_manual_publish"
+    ? `<a class="button" href="/approved-videos/${escapeHtml(libraryItem.promotion_id)}/publication-package/new">Create Publication Package</a>`
+    : "";
   const content = `
     ${renderMessage(url)}
     <div class="notice">Handoff ini DB-only. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak worker daemon, dan tidak mutasi file video.</div>
     ${summary}
     ${actions}
     <div class="button-row" style="margin-top: 14px;">
+      ${packageAction}
       <a class="button button-secondary" href="/approved-videos">Approved Video Library</a>
     </div>
   `;
