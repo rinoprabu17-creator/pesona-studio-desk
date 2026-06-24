@@ -5,6 +5,8 @@ WORKDIR /app
 ENV NODE_ENV=development
 ENV APP_PORT=3000
 
+RUN apk add --no-cache ffmpeg
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
