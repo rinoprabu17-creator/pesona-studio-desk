@@ -14,6 +14,8 @@ import { handleCampaignPlanReviewPageGet, handleCampaignPlanReviewPagePost } fro
 import { handleCampaignPlanRunApiRoute } from "./routes/campaign-plan-run-api-routes.ts";
 import { handleCampaignPlanRunPageGet, handleCampaignPlanRunPagePost } from "./routes/campaign-plan-run-page-routes.ts";
 import { handleCampaignPageGet, handleCampaignPagePost } from "./routes/campaign-page-routes.ts";
+import { handleApprovedVideoApiRoute } from "./routes/approved-video-api-routes.ts";
+import { handleApprovedVideoPageGet, handleApprovedVideoPagePost } from "./routes/approved-video-page-routes.ts";
 import { handleContentCalendarApiRoute } from "./routes/content-calendar-api-routes.ts";
 import { handleContentCalendarPageGet } from "./routes/content-calendar-page-routes.ts";
 import { handleContentItemApiRoute } from "./routes/content-item-api-routes.ts";
@@ -59,6 +61,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
         (await handleCampaignPlanImportApiRoute(request, response, pathname)) ||
         (await handleCampaignPlanReviewApiRoute(request, response, pathname)) ||
         (await handleCampaignPlanRunApiRoute(request, response, pathname)) ||
+        (await handleApprovedVideoApiRoute(request, response, pathname, url)) ||
         (await handleContentCalendarApiRoute(request, response, pathname, url)) ||
         (await handleContentItemApiRoute(request, response, pathname, url)) ||
         (await handleContentPublicationApiRoute(request, response, pathname)) ||
@@ -76,6 +79,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
         (await handleCampaignPlanImportPagePost(request, response, pathname)) ||
         (await handleCampaignPlanReviewPagePost(request, response, pathname)) ||
         (await handleCampaignPlanRunPagePost(request, response, pathname)) ||
+        (await handleApprovedVideoPagePost(request, response, pathname)) ||
         (await handleContentItemPagePost(request, response, pathname)) ||
         (await handleContentPublicationPagePost(request, response, pathname)) ||
         (await handleFootageAssetPagePost(request, response, pathname));
@@ -91,6 +95,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
       (await handleCampaignPlanImportPageGet(response, pathname, url)) ||
       (await handleCampaignPlanReviewPageGet(response, pathname, url)) ||
       (await handleCampaignPlanRunPageGet(response, pathname, url)) ||
+      (await handleApprovedVideoPageGet(response, pathname, url)) ||
       (await handleContentCalendarPageGet(response, pathname, url)) ||
       (await handleContentItemPageGet(response, pathname, url)) ||
       (await handleContentPublicationPageGet(response, pathname, url)) ||

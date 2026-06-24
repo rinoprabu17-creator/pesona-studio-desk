@@ -41,6 +41,8 @@ const requiredPaths = [
   "apps/web/src/render-attempt-review-errors.ts",
   "apps/web/src/render-approved-promotion-service.ts",
   "apps/web/src/render-approved-promotion-errors.ts",
+  "apps/web/src/approved-video-handoff-service.ts",
+  "apps/web/src/approved-video-handoff-errors.ts",
   "apps/web/src/content-publication-service.ts",
   "apps/web/src/content-publication-errors.ts",
   "apps/web/src/footage-asset-service.ts",
@@ -59,6 +61,8 @@ const requiredPaths = [
   "apps/web/src/routes/campaign-plan-review-page-routes.ts",
   "apps/web/src/routes/campaign-plan-import-api-routes.ts",
   "apps/web/src/routes/campaign-plan-import-page-routes.ts",
+  "apps/web/src/routes/approved-video-api-routes.ts",
+  "apps/web/src/routes/approved-video-page-routes.ts",
   "apps/web/src/routes/content-item-api-routes.ts",
   "apps/web/src/routes/content-item-page-routes.ts",
   "apps/web/src/routes/content-publication-api-routes.ts",
@@ -71,6 +75,7 @@ const requiredPaths = [
   "apps/web/src/views/campaign-plan-run-pages.ts",
   "apps/web/src/views/campaign-plan-review-pages.ts",
   "apps/web/src/views/campaign-plan-import-pages.ts",
+  "apps/web/src/views/approved-video-pages.ts",
   "apps/web/src/views/content-calendar-page.ts",
   "apps/web/src/views/content-item-pages.ts",
   "apps/web/src/views/content-publication-pages.ts",
@@ -89,6 +94,7 @@ const requiredPaths = [
   "apps/web/src/validation/render-attempt-validation.ts",
   "apps/web/src/validation/render-attempt-review-validation.ts",
   "apps/web/src/validation/render-approved-promotion-validation.ts",
+  "apps/web/src/validation/approved-video-handoff-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/footage-asset-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
@@ -133,6 +139,7 @@ const requiredPaths = [
   "migrations/012_phase2e_controlled_render_attempts.sql",
   "migrations/013_phase2e_render_review_gate.sql",
   "migrations/014_phase2e_approved_render_promotions.sql",
+  "migrations/015_phase2e_approved_video_handoff_board.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "scripts/prepare-test-db.mjs",
@@ -699,6 +706,39 @@ for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
     fail(`Migration Phase 2E.5 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
   } else {
     pass(`Migration Phase 2E.5 tidak memuat destructive SQL: ${forbiddenText}`);
+  }
+}
+
+const approvedVideoHandoffMigrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("015_"));
+if (approvedVideoHandoffMigrationFiles.length === 1 && approvedVideoHandoffMigrationFiles[0] === "015_phase2e_approved_video_handoff_board.sql") {
+  pass("Migration 015 Phase 2E approved video handoff board tersedia");
+} else {
+  fail(`Migration 015 Phase 2E harus tepat satu file: ${approvedVideoHandoffMigrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const approvedVideoHandoffMigrationSource = existsSync("migrations/015_phase2e_approved_video_handoff_board.sql")
+  ? readFileSync("migrations/015_phase2e_approved_video_handoff_board.sql", "utf8")
+  : "";
+for (const requiredText of [
+  "CREATE TABLE video_approved_handoff_records",
+  "promotion_id uuid NOT NULL REFERENCES video_render_approved_promotions(id)",
+  "handoff_status text NOT NULL DEFAULT 'pending_handoff'",
+  "video_approved_handoff_records_promotion_key UNIQUE (promotion_id)",
+  "approved_output_relative_path_snapshot ~ '^smoke/'",
+  "CREATE INDEX video_approved_handoff_records_promotion_id_idx"
+]) {
+  if (approvedVideoHandoffMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 2E.6 handoff board memuat: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 2E.6 handoff board belum memuat: ${requiredText}`);
+  }
+}
+
+for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
+  if (approvedVideoHandoffMigrationSource.includes(forbiddenText)) {
+    fail(`Migration Phase 2E.6 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
+  } else {
+    pass(`Migration Phase 2E.6 tidak memuat destructive SQL: ${forbiddenText}`);
   }
 }
 
