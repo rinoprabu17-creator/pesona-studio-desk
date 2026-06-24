@@ -121,6 +121,26 @@ import {
   validateRenderApprovedPromotionInput,
   validateRenderApprovedPromotionStatus
 } from "../../apps/web/src/validation/render-approved-promotion-validation.ts";
+import {
+  archiveApprovedVideoHandoff,
+  getApprovedVideoHandoffContext,
+  getApprovedVideoHandoffContextForContentItem,
+  getHandoffByPromotionId,
+  listApprovedVideoLibrary,
+  markApprovedVideoHold,
+  markApprovedVideoNeedsRevision,
+  markApprovedVideoReadyForManualPublish,
+  validateApprovedVideoHandoffEligibility
+} from "../../apps/web/src/approved-video-handoff-service.ts";
+import {
+  validateApprovedVideoHandoffInput,
+  validateApprovedVideoHandoffStatus
+} from "../../apps/web/src/validation/approved-video-handoff-validation.ts";
+import { handleApprovedVideoApiRoute } from "../../apps/web/src/routes/approved-video-api-routes.ts";
+import {
+  handleApprovedVideoPageGet,
+  handleApprovedVideoPagePost
+} from "../../apps/web/src/routes/approved-video-page-routes.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -148,6 +168,11 @@ test.after(async () => {
     ]);
     const ids = campaigns.rows.map((row) => row.id);
     if (ids.length) {
+      await pool.query(
+        `DELETE FROM video_approved_handoff_records
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
       await pool.query(
         `DELETE FROM video_render_approved_promotions
          WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
@@ -464,6 +489,68 @@ async function createApprovedPromotionFixture(codeSuffix: string) {
     });
   });
   return fixture;
+}
+
+async function createSucceededHandoffFixture(codeSuffix: string) {
+  const fixture = await createApprovedPromotionFixture(`handoff-${codeSuffix}`);
+  let promotion: Awaited<ReturnType<typeof promoteApprovedRenderAttempt>> | null = null;
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    promotion = await promoteApprovedRenderAttempt(fixture.attempt.id, {
+      promoted_by_name: "Owner",
+      promotion_note: "Ready for handoff."
+    });
+  });
+  assert.ok(promotion);
+  return {
+    ...fixture,
+    promotion,
+    approvedPath: join(fixture.storageRoot, "approved-videos", promotion.approved_output_relative_path!)
+  };
+}
+
+async function insertApprovedPromotionWithStatus(
+  fixture: Awaited<ReturnType<typeof createSucceededReviewFixture>>,
+  reviewId: string,
+  promotionStatus: string,
+  approvedOutputRelativePath: string | null,
+  approvedSizeBytes: number | null,
+  approvedSha256: string | null = null
+): Promise<string> {
+  const result = await pool!.query<{ id: string }>(
+    `INSERT INTO video_render_approved_promotions (
+       render_attempt_review_id,
+       render_attempt_id,
+       render_manifest_id,
+       video_draft_job_id,
+       content_item_id,
+       promotion_status,
+       promotion_mode,
+       source_output_relative_path,
+       approved_output_relative_path,
+       source_size_bytes,
+       approved_size_bytes,
+       source_sha256,
+       approved_sha256,
+       started_at,
+       completed_at
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, 'manual_copy', $7, $8, $9, $10, NULL, $11, now(), CASE WHEN $6 IN ('succeeded', 'failed', 'blocked') THEN now() ELSE NULL END)
+     RETURNING id`,
+    [
+      reviewId,
+      fixture.attempt.id,
+      fixture.manifest.id,
+      fixture.job.id,
+      fixture.contentItemId,
+      promotionStatus,
+      fixture.outputRelativePath,
+      approvedOutputRelativePath,
+      fixture.attempt.output_size_bytes,
+      approvedSizeBytes,
+      approvedSha256
+    ]
+  );
+  return result.rows[0].id;
 }
 
 function jsonRequest(body: Record<string, unknown> = {}) {
@@ -2774,6 +2861,266 @@ maybeTest("approved promotion page and API routes match before generic attempt r
   });
 });
 
+maybeTest("approved video library lists succeeded promotions and filters by handoff status and query", async () => {
+  const readyFixture = await createSucceededHandoffFixture("library-ready");
+  const pendingFixture = await createSucceededHandoffFixture("library-pending");
+  const failedFixture = await createSucceededReviewFixture("handoff-library-failed");
+  await withAppStorageRoot(failedFixture.storageRoot, async () => {
+    const review = await approveRenderAttempt(failedFixture.attempt.id, { reviewed_by_name: "Owner" });
+    await insertApprovedPromotionWithStatus(failedFixture, review.id, "failed", null, null);
+  });
+
+  await withAppStorageRoot(readyFixture.storageRoot, async () => {
+    await markApprovedVideoReadyForManualPublish(readyFixture.promotion.id, {
+      handoff_by_name: "Owner",
+      handoff_note: "Ready for manual publish."
+    });
+  });
+
+  const library = await listApprovedVideoLibrary({ q: prefix });
+  assert.equal(library.some((row) => row.promotion_id === readyFixture.promotion.id), true);
+  assert.equal(library.some((row) => row.promotion_id === pendingFixture.promotion.id), true);
+  assert.equal(library.some((row) => row.render_attempt_id === failedFixture.attempt.id), false);
+
+  const readyRows = await listApprovedVideoLibrary({ handoff_status: "ready_for_manual_publish", q: prefix });
+  assert.equal(readyRows.some((row) => row.promotion_id === readyFixture.promotion.id), true);
+  assert.equal(readyRows.some((row) => row.promotion_id === pendingFixture.promotion.id), false);
+
+  const pendingRows = await listApprovedVideoLibrary({ handoff_status: "pending_handoff", q: pendingFixture.contentItemId });
+  assert.equal(pendingRows.length, 0);
+  const contentRows = await listApprovedVideoLibrary({ content_item_id: pendingFixture.contentItemId });
+  assert.equal(contentRows.length, 1);
+  assert.equal(contentRows[0].promotion_id, pendingFixture.promotion.id);
+});
+
+maybeTest("approved video handoff context rejects invalid promotions and does not create handoff rows", async () => {
+  await assert.rejects(
+    () => getApprovedVideoHandoffContext("11111111-1111-4111-8111-111111111111"),
+    /tidak ditemukan/i
+  );
+
+  const failedFixture = await createSucceededReviewFixture("handoff-context-failed");
+  let failedPromotionId = "";
+  await withAppStorageRoot(failedFixture.storageRoot, async () => {
+    const review = await approveRenderAttempt(failedFixture.attempt.id, { reviewed_by_name: "Owner" });
+    failedPromotionId = await insertApprovedPromotionWithStatus(failedFixture, review.id, "failed", null, null);
+  });
+  await assert.rejects(
+    () => getApprovedVideoHandoffContext(failedPromotionId),
+    /succeeded/i
+  );
+
+  const fixture = await createSucceededHandoffFixture("context");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    assert.equal(await getHandoffByPromotionId(fixture.promotion.id), null);
+    const context = await getApprovedVideoHandoffContext(fixture.promotion.id);
+    assert.equal(context.libraryItem.promotion_id, fixture.promotion.id);
+    assert.equal(context.handoff, null);
+    assert.equal(context.eligibility.ok, true);
+    assert.equal(await getHandoffByPromotionId(fixture.promotion.id), null);
+
+    const ownedContext = await getApprovedVideoHandoffContextForContentItem(
+      fixture.contentItemId,
+      fixture.job.id,
+      fixture.manifest.id,
+      fixture.attempt.id,
+      fixture.promotion.id
+    );
+    assert.equal(ownedContext.libraryItem.promotion_id, fixture.promotion.id);
+    await assert.rejects(
+      () => getApprovedVideoHandoffContextForContentItem(
+        "11111111-1111-4111-8111-111111111111",
+        fixture.job.id,
+        fixture.manifest.id,
+        fixture.attempt.id,
+        fixture.promotion.id
+      ),
+      /tidak dimiliki/i
+    );
+  });
+});
+
+maybeTest("approved video handoff validation normalizes statuses and input", () => {
+  assert.equal(validateApprovedVideoHandoffStatus("ready_for_manual_publish"), "ready_for_manual_publish");
+  assert.equal(validateApprovedVideoHandoffStatus(""), "pending_handoff");
+  assert.throws(() => validateApprovedVideoHandoffStatus("published"), /Status handoff/i);
+  assert.deepEqual(validateApprovedVideoHandoffInput({ handoff_note: "  siap  ", handoff_by_name: " Owner " }), {
+    handoff_note: "siap",
+    handoff_by_name: "Owner"
+  });
+  assert.throws(() => validateApprovedVideoHandoffInput({ handoff_note: "x".repeat(2001) }), /Catatan handoff maksimal/i);
+});
+
+maybeTest("approved video handoff requires safe physical non-empty approved output", async () => {
+  const missingFixture = await createSucceededReviewFixture("handoff-missing-output");
+  let missingPromotionId = "";
+  await withAppStorageRoot(missingFixture.storageRoot, async () => {
+    const review = await approveRenderAttempt(missingFixture.attempt.id, { reviewed_by_name: "Owner" });
+    missingPromotionId = await insertApprovedPromotionWithStatus(
+      missingFixture,
+      review.id,
+      "succeeded",
+      "smoke/missing-handoff-output.mp4",
+      128
+    );
+    await assert.rejects(
+      () => markApprovedVideoReadyForManualPublish(missingPromotionId, { handoff_by_name: "Owner" }),
+      /fisik tidak ditemukan/i
+    );
+  });
+
+  const zeroFixture = await createSucceededReviewFixture("handoff-zero-output");
+  let zeroPromotionId = "";
+  const zeroRelativePath = `smoke/zero-handoff-${zeroFixture.manifest.id.slice(0, 8)}.mp4`;
+  await mkdir(dirname(join(zeroFixture.storageRoot, "approved-videos", zeroRelativePath)), { recursive: true });
+  await writeFile(join(zeroFixture.storageRoot, "approved-videos", zeroRelativePath), "");
+  await withAppStorageRoot(zeroFixture.storageRoot, async () => {
+    const review = await approveRenderAttempt(zeroFixture.attempt.id, { reviewed_by_name: "Owner" });
+    zeroPromotionId = await insertApprovedPromotionWithStatus(zeroFixture, review.id, "succeeded", zeroRelativePath, 0);
+    const eligibility = await validateApprovedVideoHandoffEligibility(zeroPromotionId);
+    assert.equal(eligibility.ok, false);
+    assert.match(eligibility.blocking_reasons.join(" "), /kosong|non-empty/i);
+    await assert.rejects(
+      () => markApprovedVideoReadyForManualPublish(zeroPromotionId, { handoff_by_name: "Owner" }),
+      /kosong|non-empty/i
+    );
+  });
+
+  assert.throws(() => validateRenderAttemptOutputRelativePath("../outside.mp4"), /path|smoke|slash/i);
+});
+
+maybeTest("approved video handoff inserts then updates one row and keeps promotion, attempt, review, and files unchanged", async () => {
+  const fixture = await createSucceededHandoffFixture("lifecycle");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    const promotionBefore = await getRenderApprovedPromotionByAttemptId(fixture.attempt.id);
+    const attemptBefore = await getRenderAttemptById(fixture.attempt.id);
+    const reviewBefore = await getRenderAttemptReviewByAttemptId(fixture.attempt.id);
+    const approvedBefore = await stat(fixture.approvedPath);
+    const draftBefore = await stat(fixture.outputPath);
+    const sourceBefore = await stat(fixture.sourcePath);
+
+    const ready = await markApprovedVideoReadyForManualPublish(fixture.promotion.id, {
+      handoff_by_name: "Owner",
+      handoff_note: "Manual publish handoff."
+    });
+
+    assert.equal(ready.promotion_id, fixture.promotion.id);
+    assert.equal(ready.handoff_status, "ready_for_manual_publish");
+    assert.equal(ready.approved_output_relative_path_snapshot, fixture.promotion.approved_output_relative_path);
+    assert.equal(ready.approved_size_bytes_snapshot, approvedBefore.size);
+    assert.match(ready.approved_sha256_snapshot || "", /^[a-f0-9]{64}$/);
+    assert.equal(ready.handoff_by_name, "Owner");
+    assert.equal(ready.handoff_note, "Manual publish handoff.");
+    assert.ok(ready.handoff_at);
+
+    const hold = await markApprovedVideoHold(fixture.promotion.id, {
+      handoff_by_name: "Owner",
+      handoff_note: "Hold for timing."
+    });
+    assert.equal(hold.id, ready.id);
+    assert.equal(hold.handoff_status, "hold");
+    const needsRevision = await markApprovedVideoNeedsRevision(fixture.promotion.id, {
+      handoff_by_name: "Owner",
+      handoff_note: "Caption needs revision."
+    });
+    assert.equal(needsRevision.id, ready.id);
+    assert.equal(needsRevision.handoff_status, "needs_revision");
+    const archived = await archiveApprovedVideoHandoff(fixture.promotion.id, {
+      handoff_by_name: "Owner",
+      handoff_note: "Archive test."
+    });
+    assert.equal(archived.id, ready.id);
+    assert.equal(archived.handoff_status, "archived");
+
+    const count = await pool!.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM video_approved_handoff_records WHERE promotion_id = $1`,
+      [fixture.promotion.id]
+    );
+    assert.equal(count.rows[0].count, "1");
+    assert.deepEqual(await getRenderApprovedPromotionByAttemptId(fixture.attempt.id), promotionBefore);
+    assert.deepEqual(await getRenderAttemptById(fixture.attempt.id), attemptBefore);
+    assert.deepEqual(await getRenderAttemptReviewByAttemptId(fixture.attempt.id), reviewBefore);
+    assert.equal((await stat(fixture.approvedPath)).size, approvedBefore.size);
+    assert.equal((await stat(fixture.approvedPath)).mtimeMs, approvedBefore.mtimeMs);
+    assert.equal((await stat(fixture.outputPath)).size, draftBefore.size);
+    assert.equal((await stat(fixture.outputPath)).mtimeMs, draftBefore.mtimeMs);
+    assert.equal((await stat(fixture.sourcePath)).size, sourceBefore.size);
+    assert.equal((await stat(fixture.sourcePath)).mtimeMs, sourceBefore.mtimeMs);
+  });
+});
+
+maybeTest("approved video page and API routes match before generic approved video detail route", async () => {
+  const fixture = await createSucceededHandoffFixture("routes");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    const listPageResponse = mockResponse();
+    const listHandled = await handleApprovedVideoPageGet(listPageResponse, "/approved-videos", new URL("http://localhost/approved-videos"));
+    assert.equal(listHandled, true);
+    assert.equal(listPageResponse.statusCode, 200);
+    assert.match(listPageResponse.body, /Approved Video Library/);
+    assert.match(listPageResponse.body, /DB-only/);
+    assert.match(listPageResponse.body, new RegExp(fixture.promotion.id));
+
+    const detailPath = `/approved-videos/${fixture.promotion.id}`;
+    const detailPageResponse = mockResponse();
+    const detailHandled = await handleApprovedVideoPageGet(detailPageResponse, detailPath, new URL(`http://localhost${detailPath}`));
+    assert.equal(detailHandled, true);
+    assert.equal(detailPageResponse.statusCode, 200);
+    assert.match(detailPageResponse.body, /Approved Video Detail/);
+    assert.match(detailPageResponse.body, /Mark Ready for Manual Publish/);
+    assert.match(detailPageResponse.body, /Tidak upload/i);
+    assert.match(detailPageResponse.body, /tidak mutasi file/i);
+
+    const apiListResponse = mockResponse();
+    const apiListPath = `/api/approved-videos?q=${encodeURIComponent(prefix)}`;
+    const apiListHandled = await handleApprovedVideoApiRoute(
+      { method: "GET", url: apiListPath, headers: {}, on() {} } as any,
+      apiListResponse,
+      "/api/approved-videos",
+      new URL(`http://localhost${apiListPath}`)
+    );
+    assert.equal(apiListHandled, true);
+    assert.equal(apiListResponse.statusCode, 200);
+    assert.equal(JSON.parse(apiListResponse.body).data.some((row: any) => row.promotion_id === fixture.promotion.id), true);
+
+    const apiDetailResponse = mockResponse();
+    const apiDetailPath = `/api/approved-videos/${fixture.promotion.id}`;
+    const apiDetailHandled = await handleApprovedVideoApiRoute(
+      { method: "GET", url: apiDetailPath, headers: {}, on() {} } as any,
+      apiDetailResponse,
+      apiDetailPath,
+      new URL(`http://localhost${apiDetailPath}`)
+    );
+    assert.equal(apiDetailHandled, true);
+    assert.equal(apiDetailResponse.statusCode, 200);
+    assert.equal(JSON.parse(apiDetailResponse.body).data.libraryItem.promotion_id, fixture.promotion.id);
+
+    const readyResponse = mockResponse();
+    const readyPath = `/api/approved-videos/${fixture.promotion.id}/handoff/ready`;
+    const readyRequest = jsonRequest({ handoff_by_name: "Owner", handoff_note: "route ready" });
+    const readyHandled = await handleApprovedVideoApiRoute(
+      { ...readyRequest, url: readyPath } as any,
+      readyResponse,
+      readyPath,
+      new URL(`http://localhost${readyPath}`)
+    );
+    assert.equal(readyHandled, true);
+    assert.equal(readyResponse.statusCode, 201);
+    assert.equal(JSON.parse(readyResponse.body).data.handoff_status, "ready_for_manual_publish");
+
+    const holdResponse = mockResponse();
+    const holdPath = `/approved-videos/${fixture.promotion.id}/handoff/hold`;
+    const holdRequest = jsonRequest({ handoff_by_name: "Owner", handoff_note: "page hold" });
+    const holdHandled = await handleApprovedVideoPagePost(
+      { ...holdRequest, url: holdPath } as any,
+      holdResponse,
+      holdPath
+    );
+    assert.equal(holdHandled, true);
+    assert.equal(holdResponse.statusCode, 303);
+    assert.match(holdResponse.headers.Location, new RegExp(`/approved-videos/${fixture.promotion.id}`));
+  });
+});
+
 test("content footage, script planning, video draft, render manifest, preflight, and controlled render runtime files keep dependencies guarded", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
@@ -2791,7 +3138,8 @@ test("content footage, script planning, video draft, render manifest, preflight,
     "apps/web/src/validation/render-preflight-validation.ts",
     "apps/web/src/validation/render-attempt-validation.ts",
     "apps/web/src/validation/render-attempt-review-validation.ts",
-    "apps/web/src/validation/render-approved-promotion-validation.ts"
+    "apps/web/src/validation/render-approved-promotion-validation.ts",
+    "apps/web/src/validation/approved-video-handoff-validation.ts"
   ].map((path) => readFileSync(path, "utf8")).join("\n");
 
   for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher", "fluent-ffmpeg", "child_process", "spawn", "exec", "execFile", "approved-videos", "workers/video", "writeFile", "copyFile", "createWriteStream", "appendFile", "truncate"]) {
@@ -2828,4 +3176,25 @@ test("content footage, script planning, video draft, render manifest, preflight,
   assert.equal(renderPromotionSource.includes("\"approved-videos\""), true);
   assert.equal(renderPromotionSource.includes("\"draft-videos\""), true);
   assert.equal(renderPromotionSource.includes("\"smoke\""), true);
+
+  const handoffRuntimeSource = [
+    "apps/web/src/approved-video-handoff-service.ts",
+    "apps/web/src/routes/approved-video-api-routes.ts",
+    "apps/web/src/routes/approved-video-page-routes.ts"
+  ].map((path) => readFileSync(path, "utf8")).join("\n");
+  for (const forbidden of ["exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "mkdir", "workers/video", "OpenAI", "openai", "scheduler", "publisher", "upload"]) {
+    assert.equal(handoffRuntimeSource.includes(forbidden), false);
+  }
+  assert.equal(handoffRuntimeSource.includes("createReadStream"), true);
+  assert.equal(handoffRuntimeSource.includes("\"approved-videos\""), true);
+  assert.equal(handoffRuntimeSource.includes("\"smoke\""), true);
+
+  const handoffViewSource = readFileSync("apps/web/src/views/approved-video-pages.ts", "utf8");
+  for (const forbidden of ["exec(", "execFile", "shell:", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "mkdir", "workers/video"]) {
+    assert.equal(handoffViewSource.includes(forbidden), false);
+  }
+  assert.equal(handoffViewSource.includes("OpenAI"), true);
+  assert.equal(handoffViewSource.includes("scheduler"), true);
+  assert.equal(handoffViewSource.includes("publisher"), true);
+  assert.equal(handoffViewSource.includes("upload"), true);
 });
