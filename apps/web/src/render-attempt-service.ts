@@ -31,7 +31,9 @@ export type ControlledRenderContext = {
   manifest: RenderAttemptManifestSnapshot;
   latestPreflight: RenderAttemptPreflightSnapshot | null;
   eligibleItem: RenderAttemptItemSnapshot | null;
+  eligibleMultiShotItems: RenderAttemptItemSnapshot[];
   eligibility: ControlledRenderEligibility;
+  multiShotEligibility: ControlledRenderEligibility;
   attempts: RenderAttemptRow[];
 };
 
@@ -147,6 +149,12 @@ function targetScaleFilter(targetFormat: string): string {
   return "scale=720:1280:force_original_aspect_ratio=decrease,pad=720:1280:(ow-iw)/2:(oh-ih)/2";
 }
 
+function targetDimensions(targetFormat: string): { width: number; height: number } {
+  if (targetFormat === "square_1_1") return { width: 720, height: 720 };
+  if (targetFormat === "horizontal_16_9") return { width: 1280, height: 720 };
+  return { width: 720, height: 1280 };
+}
+
 export function buildSafeFfmpegArgs(sourceAbsolutePath: string, outputAbsolutePath: string, options: { target_format?: string } = {}): string[] {
   return [
     "-hide_banner",
@@ -166,6 +174,45 @@ export function buildSafeFfmpegArgs(sourceAbsolutePath: string, outputAbsolutePa
     "-an",
     outputAbsolutePath
   ];
+}
+
+export function buildSafeFfmpegMultiShotArgs(
+  sourceAbsolutePaths: string[],
+  outputAbsolutePath: string,
+  options: { target_format?: string; clip_seconds?: number } = {}
+): string[] {
+  if (sourceAbsolutePaths.length < 2 || sourceAbsolutePaths.length > 3) {
+    throw new RenderAttemptError("invalid_multishot_source_count", "Multi-shot smoke render membutuhkan 2 sampai 3 source footage.", 400);
+  }
+  const clipSeconds = options.clip_seconds || 5;
+  if (clipSeconds < 1 || clipSeconds > 5) {
+    throw new RenderAttemptError("invalid_multishot_clip_seconds", "Durasi per source multi-shot tidak valid.", 400);
+  }
+  const { width, height } = targetDimensions(options.target_format || "vertical_9_16");
+  const filters = sourceAbsolutePaths.map((_, index) => {
+    return `[${index}:v]trim=duration=${clipSeconds},setpts=PTS-STARTPTS,scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,setsar=1[v${index}]`;
+  });
+  const concatInputs = sourceAbsolutePaths.map((_, index) => `[v${index}]`).join("");
+  const filterComplex = `${filters.join(";")};${concatInputs}concat=n=${sourceAbsolutePaths.length}:v=1:a=0[v]`;
+  const args = ["-hide_banner", "-loglevel", "error", "-n"];
+  for (const sourceAbsolutePath of sourceAbsolutePaths) {
+    args.push("-i", sourceAbsolutePath);
+  }
+  args.push(
+    "-filter_complex",
+    filterComplex,
+    "-map",
+    "[v]",
+    "-t",
+    String(Math.min(15, sourceAbsolutePaths.length * clipSeconds)),
+    "-c:v",
+    "libx264",
+    "-pix_fmt",
+    "yuv420p",
+    "-an",
+    outputAbsolutePath
+  );
+  return args;
 }
 
 function defaultFfmpegRunner(args: string[]): Promise<FfmpegRunResult> {
@@ -368,6 +415,68 @@ export async function validateControlledRenderEligibility(
   };
 }
 
+export async function validateControlledMultiShotRenderEligibility(
+  manifestId: string,
+  options: ControlledRenderOptions = {}
+): Promise<ControlledRenderEligibility> {
+  assertUuid(manifestId);
+  const root = storageRoot(options);
+  const footageRoot = join(root, "footage");
+  const draftSmokeRoot = join(root, "draft-videos", "smoke");
+  const manifest = await getManifestSnapshot(manifestId);
+  const latestPreflight = await getLatestPreflight(manifestId);
+  const items = await listAttemptItems(manifestId);
+  const now = options.now || new Date();
+  const outputRelativePath = validateRenderAttemptOutputRelativePath(options.output_relative_path || makeOutputRelativePath(manifest, now));
+  const outputAbsolutePath = resolveInside(join(root, "draft-videos"), outputRelativePath);
+  const reasons: string[] = [];
+  const eligibleItems = items.filter((item) => isSafeRenderSourceRelativePath(item.source_relative_path_snapshot)).slice(0, 3);
+
+  if (!["reviewed", "approved"].includes(manifest.manifest_status)) {
+    reasons.push("Render manifest harus reviewed atau approved.");
+  }
+  if (manifest.manifest_mode !== "metadata_only") {
+    reasons.push("Render manifest harus metadata_only.");
+  }
+  if (!latestPreflight) {
+    reasons.push("Render preflight ready belum tersedia.");
+  } else if (latestPreflight.preflight_result !== "ready" || latestPreflight.run_status !== "completed") {
+    reasons.push("Preflight terakhir belum ready.");
+  }
+  if (manifest.job_status === "cancelled" || manifest.job_status === "archived") {
+    reasons.push("Video draft job dibatalkan atau diarsipkan.");
+  }
+  if (eligibleItems.length < 2) {
+    reasons.push("Multi-shot smoke render membutuhkan minimal 2 source footage snapshot yang aman.");
+  }
+
+  for (const item of eligibleItems) {
+    const sourceAbsolutePath = resolveInside(footageRoot, item.source_relative_path_snapshot!);
+    try {
+      const sourceStat = await stat(sourceAbsolutePath);
+      if (!sourceStat.isFile()) {
+        reasons.push(`Source footage item ${item.sequence_number} bukan file reguler.`);
+      }
+    } catch {
+      reasons.push(`Source footage item ${item.sequence_number} fisik tidak ditemukan di storage footage.`);
+    }
+  }
+
+  if (!outputAbsolutePath.startsWith(`${draftSmokeRoot}${sep}`) && outputAbsolutePath !== draftSmokeRoot) {
+    reasons.push("Output render harus berada di folder draft smoke.");
+  }
+  if (await outputExists(outputAbsolutePath)) {
+    reasons.push("Output render sudah ada; tidak boleh overwrite.");
+  }
+
+  return {
+    ok: reasons.length === 0,
+    blocking_reasons: reasons,
+    source_relative_path: eligibleItems.map((item) => item.source_relative_path_snapshot).filter(Boolean).join(", ") || null,
+    output_relative_path_preview: outputRelativePath
+  };
+}
+
 export async function getControlledRenderContextForManifest(
   manifestId: string,
   options: ControlledRenderOptions = {}
@@ -383,8 +492,16 @@ export async function getControlledRenderContextForManifest(
     source_relative_path: null,
     output_relative_path_preview: null
   }));
+  const multiShotEligibility = await validateControlledMultiShotRenderEligibility(manifestId, options).catch((error) => ({
+    ok: false,
+    blocking_reasons: [error instanceof Error ? error.message : "Multi-shot render tidak eligible."],
+    source_relative_path: null,
+    output_relative_path_preview: null
+  }));
   const eligibleItem = items.find((item) => item.source_relative_path_snapshot === eligibility.source_relative_path) || null;
-  return { manifest, latestPreflight, eligibleItem, eligibility, attempts };
+  const eligibleMultiShotPaths = new Set((multiShotEligibility.source_relative_path || "").split(", ").filter(Boolean));
+  const eligibleMultiShotItems = items.filter((item) => item.source_relative_path_snapshot && eligibleMultiShotPaths.has(item.source_relative_path_snapshot));
+  return { manifest, latestPreflight, eligibleItem, eligibleMultiShotItems, eligibility, multiShotEligibility, attempts };
 }
 
 export async function getControlledRenderContextForContentItem(
@@ -520,6 +637,143 @@ export async function runControlledSmokeRenderForManifest(
        WHERE id = $1
        RETURNING id`,
       [attemptId, result.exitCode, truncateMessage(result.errorMessage || "FFmpeg gagal.")]
+    );
+    return getRenderAttemptById(rows[0].id);
+  }
+
+  const outputStat = await stat(outputAbsolutePath);
+  const rows = await query<{ id: string }>(
+    `UPDATE video_render_attempts
+     SET attempt_status = 'succeeded',
+         output_size_bytes = $2,
+         ffmpeg_exit_code = 0,
+         completed_at = now(),
+         updated_at = now()
+     WHERE id = $1
+     RETURNING id`,
+    [attemptId, outputStat.size]
+  );
+  return getRenderAttemptById(rows[0].id);
+}
+
+export async function runControlledMultiShotSmokeRenderForManifest(
+  manifestId: string,
+  options: ControlledRenderOptions = {}
+): Promise<RenderAttemptRow> {
+  assertUuid(manifestId);
+  const root = storageRoot(options);
+  const footageRoot = join(root, "footage");
+  const draftRoot = join(root, "draft-videos");
+  const draftSmokeRoot = join(draftRoot, "smoke");
+  const ffmpegRunner = options.ffmpegRunner || defaultFfmpegRunner;
+  const now = options.now || new Date();
+
+  const setup = await withTransaction(async (client) => {
+    const manifest = await getManifestSnapshot(manifestId, client);
+    const latestPreflight = await getLatestPreflight(manifestId, client);
+    if (!latestPreflight) {
+      throw new RenderAttemptError("ready_preflight_required", "Render preflight ready wajib ada sebelum manual multi-shot smoke render.", 400);
+    }
+    const items = await listAttemptItems(manifestId, client);
+    const outputRelativePath = validateRenderAttemptOutputRelativePath(options.output_relative_path || makeOutputRelativePath(manifest, now));
+    const eligibleItems = items.filter((item) => isSafeRenderSourceRelativePath(item.source_relative_path_snapshot)).slice(0, 3);
+    const reasons: string[] = [];
+
+    if (latestPreflight.preflight_result !== "ready" || latestPreflight.run_status !== "completed") {
+      reasons.push("Preflight terakhir belum ready.");
+    }
+    if (!["reviewed", "approved"].includes(manifest.manifest_status)) {
+      reasons.push("Render manifest harus reviewed atau approved.");
+    }
+    if (manifest.job_status === "cancelled" || manifest.job_status === "archived") {
+      reasons.push("Video draft job dibatalkan atau diarsipkan.");
+    }
+    if (eligibleItems.length < 2) {
+      reasons.push("Multi-shot smoke render membutuhkan minimal 2 source footage snapshot yang aman.");
+    }
+
+    if (reasons.length > 0) {
+      const blockedId = await insertBlockedAttempt(manifest, latestPreflight, reasons.join(" "), client);
+      return { blockedId };
+    }
+
+    return { manifest, latestPreflight, eligibleItems, outputRelativePath };
+  });
+
+  if ("blockedId" in setup) {
+    return getRenderAttemptById(setup.blockedId);
+  }
+
+  const sourceAbsolutePaths = setup.eligibleItems.map((item) => resolveInside(footageRoot, item.source_relative_path_snapshot!));
+  const outputAbsolutePath = resolveInside(draftRoot, setup.outputRelativePath);
+  const commandPreview = [
+    "ffmpeg",
+    ...setup.eligibleItems.flatMap((item) => ["-i", `storage/footage/${item.source_relative_path_snapshot}`]),
+    "-filter_complex",
+    "trim/scale/concat",
+    "storage/draft-videos/" + setup.outputRelativePath
+  ].join(" ");
+
+  for (let index = 0; index < sourceAbsolutePaths.length; index += 1) {
+    try {
+      const sourceStat = await stat(sourceAbsolutePaths[index]);
+      if (!sourceStat.isFile()) {
+        const blockedId = await insertBlockedAttempt(setup.manifest, setup.latestPreflight, `Source footage item ${setup.eligibleItems[index].sequence_number} bukan file reguler.`);
+        return getRenderAttemptById(blockedId);
+      }
+    } catch {
+      const blockedId = await insertBlockedAttempt(setup.manifest, setup.latestPreflight, `Source footage item ${setup.eligibleItems[index].sequence_number} fisik tidak ditemukan di storage footage.`);
+      return getRenderAttemptById(blockedId);
+    }
+  }
+
+  if (await outputExists(outputAbsolutePath)) {
+    const blockedId = await insertBlockedAttempt(setup.manifest, setup.latestPreflight, "Output render sudah ada; tidak boleh overwrite.");
+    return getRenderAttemptById(blockedId);
+  }
+
+  await mkdir(draftSmokeRoot, { recursive: true });
+
+  const attemptId = await withTransaction(async (client) => {
+    const created = await client.query<{ id: string }>(
+      `INSERT INTO video_render_attempts (
+         render_manifest_id,
+         preflight_run_id,
+         video_draft_job_id,
+         content_item_id,
+         attempt_status,
+         attempt_mode,
+         output_relative_path,
+         ffmpeg_command_preview,
+         started_at
+       )
+       VALUES ($1, $2, $3, $4, 'running', 'manual_smoke', $5, $6, now())
+       RETURNING id`,
+      [
+        setup.manifest.id,
+        setup.latestPreflight.id,
+        setup.manifest.video_draft_job_id,
+        setup.manifest.content_item_id,
+        setup.outputRelativePath,
+        commandPreview
+      ]
+    );
+    return created.rows[0].id;
+  });
+
+  const args = buildSafeFfmpegMultiShotArgs(sourceAbsolutePaths, outputAbsolutePath, { target_format: setup.manifest.target_format });
+  const result = await ffmpegRunner(args);
+  if (result.exitCode !== 0) {
+    const rows = await query<{ id: string }>(
+      `UPDATE video_render_attempts
+       SET attempt_status = 'failed',
+           ffmpeg_exit_code = $2,
+           error_message = $3,
+           completed_at = now(),
+           updated_at = now()
+       WHERE id = $1
+       RETURNING id`,
+      [attemptId, result.exitCode, truncateMessage(result.errorMessage || "FFmpeg multi-shot gagal.")]
     );
     return getRenderAttemptById(rows[0].id);
   }

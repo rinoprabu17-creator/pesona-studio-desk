@@ -36,6 +36,7 @@ import {
 import { RenderAttemptError } from "../render-attempt-errors.ts";
 import {
   getControlledRenderContextForContentItem,
+  runControlledMultiShotSmokeRenderForManifest,
   runControlledSmokeRenderForManifest
 } from "../render-attempt-service.ts";
 import { VideoDraftJobError } from "../video-draft-job-errors.ts";
@@ -337,6 +338,22 @@ export async function handleContentItemPagePost(request: RequestLike, response: 
     } catch (error) {
       const message = error instanceof Error ? error.message : "Controlled smoke render gagal.";
       redirect(response, `/content-items/${encodeURIComponent(runSmokeRenderMatch[1])}/video-draft/${encodeURIComponent(runSmokeRenderMatch[2])}/manifest/${encodeURIComponent(runSmokeRenderMatch[3])}/render-attempts?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
+  const runMultiShotSmokeRenderMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/([^/]+)\/render-attempts\/run-multishot-smoke$/);
+  if (runMultiShotSmokeRenderMatch && request.method === "POST") {
+    try {
+      await getControlledRenderContextForContentItem(runMultiShotSmokeRenderMatch[1], runMultiShotSmokeRenderMatch[2], runMultiShotSmokeRenderMatch[3]);
+      const attempt = await runControlledMultiShotSmokeRenderForManifest(runMultiShotSmokeRenderMatch[3]);
+      const message = attempt.attempt_status === "succeeded"
+        ? "Controlled multi-shot smoke render berhasil."
+        : `Controlled multi-shot smoke render selesai dengan status ${attempt.attempt_status}.`;
+      redirect(response, `/content-items/${encodeURIComponent(runMultiShotSmokeRenderMatch[1])}/video-draft/${encodeURIComponent(runMultiShotSmokeRenderMatch[2])}/manifest/${encodeURIComponent(runMultiShotSmokeRenderMatch[3])}/render-attempts?success=${encodeURIComponent(message)}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Controlled multi-shot smoke render gagal.";
+      redirect(response, `/content-items/${encodeURIComponent(runMultiShotSmokeRenderMatch[1])}/video-draft/${encodeURIComponent(runMultiShotSmokeRenderMatch[2])}/manifest/${encodeURIComponent(runMultiShotSmokeRenderMatch[3])}/render-attempts?error=${encodeURIComponent(message)}`);
     }
     return true;
   }

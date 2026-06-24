@@ -1181,9 +1181,9 @@ export async function renderContentItemRenderPreflightPage(item: ContentItemRow,
   );
 }
 
-function renderRenderAttemptEligibility(eligibility: Awaited<ReturnType<typeof getControlledRenderContextForContentItem>>["eligibility"]): string {
+function renderRenderAttemptEligibility(title: string, eligibility: Awaited<ReturnType<typeof getControlledRenderContextForContentItem>>["eligibility"]): string {
   return `<section>
-    <h2>Eligibility</h2>
+    <h2>${escapeHtml(title)}</h2>
     ${renderReadOnlyTable(
       ["Field", "Nilai"],
       [
@@ -1217,7 +1217,7 @@ function renderRenderAttemptList(attempts: RenderAttemptRow[]): string {
 }
 
 export async function renderContentItemRenderAttemptsPage(item: ContentItemRow, jobId: string, manifestId: string, url: URL): Promise<string> {
-  const { manifest, latestPreflight, eligibility, attempts } = await getControlledRenderContextForContentItem(item.id, jobId, manifestId);
+  const { manifest, latestPreflight, eligibility, multiShotEligibility, attempts } = await getControlledRenderContextForContentItem(item.id, jobId, manifestId);
   const summary = renderReadOnlyTable(
     ["Field", "Nilai"],
     [
@@ -1237,12 +1237,16 @@ export async function renderContentItemRenderAttemptsPage(item: ContentItemRow, 
     ${renderMessage(url)}
     <div class="notice">Controlled smoke render ini manual-only dan local-only. Output hanya boleh ke storage/draft-videos/smoke, tidak membuat approved video, tidak unggah, tidak ada penjadwalan, tidak ada penerbitan, tidak ada AI eksternal, dan tidak ada worker daemon.</div>
     ${summary}
-    ${renderRenderAttemptEligibility(eligibility)}
+    ${renderRenderAttemptEligibility("Single-Shot Eligibility", eligibility)}
+    ${renderRenderAttemptEligibility("Multi-Shot Eligibility", multiShotEligibility)}
     <section>
       <h2>Run Manual Smoke</h2>
       <p class="hint">Aksi ini membaca source dari storage footage dan menulis maksimal satu file MP4 smoke draft jika semua guard lolos. Source footage tidak diubah.</p>
       <form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifest.id)}/render-attempts/run-smoke" style="margin-top: 14px;">
         <button type="submit">Run Controlled Smoke Render</button>
+      </form>
+      <form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifest.id)}/render-attempts/run-multishot-smoke" style="margin-top: 10px;">
+        <button type="submit">Run Multi-Shot Smoke Render</button>
       </form>
     </section>
     ${renderRenderAttemptList(attempts)}
