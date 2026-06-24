@@ -11,6 +11,7 @@ export const navItems: NavItem[] = [
   { href: "/content-items", label: "Konten" },
   { href: "/approved-videos", label: "Approved Videos" },
   { href: "/publication-packages", label: "Publication Packages" },
+  { href: "/manual-publish-report", label: "Manual Publish Report" },
   { href: "/footage-assets", label: "Footage" },
   { href: "/products", label: "Product Library" },
   { href: "/colors", label: "Color Library" },

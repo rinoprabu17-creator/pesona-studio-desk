@@ -188,6 +188,15 @@ import {
   handleManualPublishChecklistPageGet,
   handleManualPublishChecklistPagePost
 } from "../../apps/web/src/routes/manual-publish-checklist-page-routes.ts";
+import {
+  exportManualPublishReportCsv,
+  getManualPublishReportBoard,
+  getManualPublishReportPackageDetail,
+  getManualPublishReportSummary
+} from "../../apps/web/src/manual-publish-report-service.ts";
+import { validateManualPublishReportFilters } from "../../apps/web/src/validation/manual-publish-report-validation.ts";
+import { handleManualPublishReportApiRoute } from "../../apps/web/src/routes/manual-publish-report-api-routes.ts";
+import { handleManualPublishReportPageGet } from "../../apps/web/src/routes/manual-publish-report-page-routes.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -3727,6 +3736,220 @@ maybeTest("manual publish checklist page and API routes are ordered before gener
   });
 });
 
+async function markPackageChecklistComplete(packageId: string) {
+  const initialized = await initializeManualPublishChecklist(packageId);
+  for (const item of initialized.checklistItems) {
+    await setManualPublishChecklistItemStatus(item.id, {
+      checklist_status: "done",
+      checked_by_name: "Owner",
+      checklist_note: "Report fixture checklist complete."
+    });
+  }
+  return getManualPublishChecklistContext(packageId);
+}
+
+maybeTest("manual publish report derives package and channel statuses read-only", async () => {
+  const noChecklist = await createManualPublicationPackageFixture("report-no-checklist");
+  const partial = await createManualPublicationPackageFixture("report-partial");
+  const missingUrl = await createManualPublicationPackageFixture("report-missing-url");
+  const ready = await createManualPublicationPackageFixture("report-ready");
+
+  const partialInit = await initializeManualPublishChecklist(partial.packageContext.package.id);
+  const partialItem = partialInit.checklistItems.find((row) => row.channel === "instagram" && row.checklist_key === "caption_ready");
+  assert.ok(partialItem);
+  await setManualPublishChecklistItemStatus(partialItem.id, { checklist_status: "done", checked_by_name: "Owner" });
+  await markPackageChecklistComplete(missingUrl.packageContext.package.id);
+  await markPackageChecklistComplete(ready.packageContext.package.id);
+  await addManualPublishEvidence(ready.packageContext.package.id, "instagram", {
+    evidence_type: "manual_post_url",
+    evidence_value: "https://instagram.com/p/report-ready",
+    recorded_by_name: "Owner"
+  });
+  await addManualPublishEvidence(ready.packageContext.package.id, "facebook", {
+    evidence_type: "manual_post_url",
+    evidence_value: "https://facebook.com/report-ready",
+    recorded_by_name: "Owner"
+  });
+  await addManualPublishEvidence(ready.packageContext.package.id, "tiktok", {
+    evidence_type: "manual_post_url",
+    evidence_value: "https://tiktok.com/@pesona/video/1",
+    recorded_by_name: "Owner"
+  });
+  await addManualPublishEvidence(ready.packageContext.package.id, "youtube", {
+    evidence_type: "manual_post_url",
+    evidence_value: "https://youtube.com/shorts/report-ready",
+    recorded_by_name: "Owner"
+  });
+
+  const beforeCounts = await pool!.query<{
+    packages: string;
+    channels: string;
+    checklist: string;
+    evidence: string;
+    publications: string;
+  }>(
+    `SELECT
+       (SELECT count(*)::text FROM manual_publication_packages) AS packages,
+       (SELECT count(*)::text FROM manual_publication_package_channels) AS channels,
+       (SELECT count(*)::text FROM manual_publish_checklist_items) AS checklist,
+       (SELECT count(*)::text FROM manual_publish_evidence_logs) AS evidence,
+       (SELECT count(*)::text FROM content_publications) AS publications`
+  );
+  const board = await getManualPublishReportBoard({ q: "report-", limit: 200 });
+  const summary = await getManualPublishReportSummary({ q: "report-", limit: 200 });
+  const byId = new Map(board.packages.map((row) => [row.package_id, row]));
+  assert.equal(byId.get(noChecklist.packageContext.package.id)?.report_status, "no_checklist");
+  assert.equal(byId.get(partial.packageContext.package.id)?.report_status, "checklist_incomplete");
+  assert.equal(byId.get(missingUrl.packageContext.package.id)?.report_status, "missing_manual_url");
+  assert.equal(byId.get(ready.packageContext.package.id)?.report_status, "ready_evidence_complete");
+  assert.equal(byId.get(noChecklist.packageContext.package.id)?.channels[0].channel_report_status, "no_checklist");
+  assert.equal(byId.get(partial.packageContext.package.id)?.channels.find((row) => row.channel === "instagram")?.channel_report_status, "checklist_incomplete");
+  assert.equal(byId.get(missingUrl.packageContext.package.id)?.channels.find((row) => row.channel === "instagram")?.channel_report_status, "missing_manual_url");
+  assert.equal(byId.get(ready.packageContext.package.id)?.channels.find((row) => row.channel === "instagram")?.channel_report_status, "ready_evidence_complete");
+  assert.equal(summary.no_checklist >= 1, true);
+  assert.equal(summary.checklist_incomplete >= 1, true);
+  assert.equal(summary.missing_manual_url >= 1, true);
+  assert.equal(summary.ready_evidence_complete >= 1, true);
+
+  assert.equal((await getManualPublishReportBoard({ q: ready.packageContext.content.content_code })).packages.some((row) => row.package_id === ready.packageContext.package.id), true);
+  assert.equal((await getManualPublishReportBoard({ package_status: "draft_package", q: "report-" })).packages.length >= 1, true);
+  assert.equal((await getManualPublishReportBoard({ channel: "youtube", q: "report-" })).packages.every((row) => row.channels.some((channel) => channel.channel === "youtube")), true);
+  assert.equal((await getManualPublishReportBoard({ report_status: "ready_evidence_complete", q: "report-" })).packages.some((row) => row.package_id === ready.packageContext.package.id), true);
+  assert.equal((await getManualPublishReportBoard({ missing_manual_url: "true", q: "report-" })).packages.some((row) => row.package_id === missingUrl.packageContext.package.id), true);
+  assert.equal((await getManualPublishReportBoard({ checklist_initialized: "false", q: "report-" })).packages.some((row) => row.package_id === noChecklist.packageContext.package.id), true);
+
+  const afterCounts = await pool!.query<{
+    packages: string;
+    channels: string;
+    checklist: string;
+    evidence: string;
+    publications: string;
+  }>(
+    `SELECT
+       (SELECT count(*)::text FROM manual_publication_packages) AS packages,
+       (SELECT count(*)::text FROM manual_publication_package_channels) AS channels,
+       (SELECT count(*)::text FROM manual_publish_checklist_items) AS checklist,
+       (SELECT count(*)::text FROM manual_publish_evidence_logs) AS evidence,
+       (SELECT count(*)::text FROM content_publications) AS publications`
+  );
+  assert.deepEqual(afterCounts.rows[0], beforeCounts.rows[0]);
+});
+
+maybeTest("manual publish report detail, CSV export, and routes are read-only", async () => {
+  const fixture = await createManualPublicationPackageFixture("report-csv");
+  const packageId = fixture.packageContext.package.id;
+  await pool!.query(`UPDATE content_items SET title = $2 WHERE id = $1`, [
+    fixture.contentItemId,
+    "CSV comma, quote \" and newline\ncontent"
+  ]);
+  await markPackageChecklistComplete(packageId);
+  await addManualPublishEvidence(packageId, "instagram", {
+    evidence_type: "manual_post_url",
+    evidence_value: "https://instagram.com/p/report-csv",
+    recorded_by_name: "Owner"
+  });
+
+  const beforeCounts = await pool!.query<{
+    checklist: string;
+    evidence: string;
+    publications: string;
+  }>(
+    `SELECT
+       (SELECT count(*)::text FROM manual_publish_checklist_items WHERE package_id = $1) AS checklist,
+       (SELECT count(*)::text FROM manual_publish_evidence_logs WHERE package_id = $1) AS evidence,
+       (SELECT count(*)::text FROM content_publications WHERE content_item_id = $2) AS publications`,
+    [packageId, fixture.contentItemId]
+  );
+
+  const detail = await getManualPublishReportPackageDetail(packageId);
+  assert.equal(detail.package_id, packageId);
+  assert.equal(detail.channels.find((row) => row.channel === "instagram")?.has_manual_post_url, true);
+  await assert.rejects(() => getManualPublishReportPackageDetail("11111111-1111-4111-8111-111111111111"), /tidak ditemukan/i);
+  assert.throws(() => validateManualPublishReportFilters({ report_status: "posted" }), /Status report/i);
+
+  const csv = await exportManualPublishReportCsv({ q: "report-csv", limit: 200 });
+  assert.match(csv, /^package_id,content_code,content_title/m);
+  assert.match(csv, /"CSV comma, quote "" and newline\ncontent"/);
+  assert.equal(readFileSync("apps/web/src/manual-publish-report-service.ts", "utf8").includes("writeFile"), false);
+
+  const pageResponse = mockResponse();
+  const pageHandled = await handleManualPublishReportPageGet(pageResponse, "/manual-publish-report", new URL("http://localhost/manual-publish-report?q=report-csv"));
+  assert.equal(pageHandled, true);
+  assert.equal(pageResponse.statusCode, 200);
+  assert.match(pageResponse.body, /Report ini read-only/);
+  assert.match(pageResponse.body, /Tidak upload/);
+  assert.match(pageResponse.body, /tidak scheduler/);
+  assert.match(pageResponse.body, /tidak publisher/);
+  assert.match(pageResponse.body, /tidak OpenAI/);
+  assert.match(pageResponse.body, /tidak social API/);
+  assert.match(pageResponse.body, /tidak mutasi file video/);
+
+  const detailPageResponse = mockResponse();
+  const detailPath = `/manual-publish-report/packages/${packageId}`;
+  const detailPageHandled = await handleManualPublishReportPageGet(detailPageResponse, detailPath, new URL(`http://localhost${detailPath}`));
+  assert.equal(detailPageHandled, true);
+  assert.equal(detailPageResponse.statusCode, 200);
+  assert.match(detailPageResponse.body, /Channel Report/);
+
+  const apiResponse = mockResponse();
+  const apiHandled = await handleManualPublishReportApiRoute(
+    { method: "GET", url: "/api/manual-publish-report?q=report-csv", headers: {}, on() {} } as any,
+    apiResponse,
+    "/api/manual-publish-report",
+    new URL("http://localhost/api/manual-publish-report?q=report-csv")
+  );
+  assert.equal(apiHandled, true);
+  assert.equal(apiResponse.statusCode, 200);
+  assert.equal(JSON.parse(apiResponse.body).data.packages.some((row: any) => row.package_id === packageId), true);
+
+  const summaryResponse = mockResponse();
+  const summaryHandled = await handleManualPublishReportApiRoute(
+    { method: "GET", url: "/api/manual-publish-report/summary?q=report-csv", headers: {}, on() {} } as any,
+    summaryResponse,
+    "/api/manual-publish-report/summary",
+    new URL("http://localhost/api/manual-publish-report/summary?q=report-csv")
+  );
+  assert.equal(summaryHandled, true);
+  assert.equal(summaryResponse.statusCode, 200);
+
+  const csvResponse = mockResponse();
+  const csvHandled = await handleManualPublishReportApiRoute(
+    { method: "GET", url: "/api/manual-publish-report/export.csv?q=report-csv", headers: {}, on() {} } as any,
+    csvResponse,
+    "/api/manual-publish-report/export.csv",
+    new URL("http://localhost/api/manual-publish-report/export.csv?q=report-csv")
+  );
+  assert.equal(csvHandled, true);
+  assert.equal(csvResponse.statusCode, 200);
+  assert.match(csvResponse.headers["Content-Type"], /text\/csv/);
+  assert.match(csvResponse.body, /report-csv/);
+
+  const apiDetailResponse = mockResponse();
+  const apiDetailPath = `/api/manual-publish-report/packages/${packageId}`;
+  const apiDetailHandled = await handleManualPublishReportApiRoute(
+    { method: "GET", url: apiDetailPath, headers: {}, on() {} } as any,
+    apiDetailResponse,
+    apiDetailPath,
+    new URL(`http://localhost${apiDetailPath}`)
+  );
+  assert.equal(apiDetailHandled, true);
+  assert.equal(apiDetailResponse.statusCode, 200);
+  assert.equal(JSON.parse(apiDetailResponse.body).data.package_id, packageId);
+
+  const afterCounts = await pool!.query<{
+    checklist: string;
+    evidence: string;
+    publications: string;
+  }>(
+    `SELECT
+       (SELECT count(*)::text FROM manual_publish_checklist_items WHERE package_id = $1) AS checklist,
+       (SELECT count(*)::text FROM manual_publish_evidence_logs WHERE package_id = $1) AS evidence,
+       (SELECT count(*)::text FROM content_publications WHERE content_item_id = $2) AS publications`,
+    [packageId, fixture.contentItemId]
+  );
+  assert.deepEqual(afterCounts.rows[0], beforeCounts.rows[0]);
+});
+
 test("content footage, script planning, video draft, render manifest, preflight, and controlled render runtime files keep dependencies guarded", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
@@ -3846,4 +4069,24 @@ test("content footage, script planning, video draft, render manifest, preflight,
   assert.equal(checklistViewSource.includes("scheduler"), true);
   assert.equal(checklistViewSource.includes("publisher"), true);
   assert.equal(checklistViewSource.includes("upload"), true);
+
+  const reportRuntimeSource = [
+    "apps/web/src/manual-publish-report-service.ts",
+    "apps/web/src/routes/manual-publish-report-api-routes.ts",
+    "apps/web/src/routes/manual-publish-report-page-routes.ts",
+    "apps/web/src/validation/manual-publish-report-validation.ts"
+  ].map((path) => readFileSync(path, "utf8")).join("\n");
+  for (const forbidden of ["INSERT INTO", "UPDATE ", "DELETE FROM", "DROP", "TRUNCATE", "ALTER TABLE", "exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "mkdir", "createReadStream", "storage/approved-videos", "storage/draft-videos", "storage/footage", "workers/video", "OpenAI", "openai", "scheduler", "publisher", "upload", "graph.facebook", "facebook.com", "googleapis", "axios", "fetch("]) {
+    assert.equal(reportRuntimeSource.includes(forbidden), false);
+  }
+  assert.equal(reportRuntimeSource.includes("SELECT"), true);
+
+  const reportViewSource = readFileSync("apps/web/src/views/manual-publish-report-pages.ts", "utf8");
+  for (const forbidden of ["INSERT INTO", "UPDATE ", "DELETE FROM", "DROP", "TRUNCATE", "ALTER TABLE", "exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "mkdir", "createReadStream", "storage/approved-videos", "storage/draft-videos", "storage/footage", "workers/video", "graph.facebook", "facebook.com", "googleapis", "axios", "fetch("]) {
+    assert.equal(reportViewSource.includes(forbidden), false);
+  }
+  assert.equal(reportViewSource.includes("OpenAI"), true);
+  assert.equal(reportViewSource.includes("scheduler"), true);
+  assert.equal(reportViewSource.includes("publisher"), true);
+  assert.equal(reportViewSource.includes("upload"), true);
 });

@@ -20,6 +20,8 @@ import { handleManualPublicationPackageApiRoute } from "./routes/manual-publicat
 import { handleManualPublicationPackagePageGet, handleManualPublicationPackagePagePost } from "./routes/manual-publication-package-page-routes.ts";
 import { handleManualPublishChecklistApiRoute } from "./routes/manual-publish-checklist-api-routes.ts";
 import { handleManualPublishChecklistPageGet, handleManualPublishChecklistPagePost } from "./routes/manual-publish-checklist-page-routes.ts";
+import { handleManualPublishReportApiRoute } from "./routes/manual-publish-report-api-routes.ts";
+import { handleManualPublishReportPageGet } from "./routes/manual-publish-report-page-routes.ts";
 import { handleContentCalendarApiRoute } from "./routes/content-calendar-api-routes.ts";
 import { handleContentCalendarPageGet } from "./routes/content-calendar-page-routes.ts";
 import { handleContentItemApiRoute } from "./routes/content-item-api-routes.ts";
@@ -65,6 +67,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
         (await handleCampaignPlanImportApiRoute(request, response, pathname)) ||
         (await handleCampaignPlanReviewApiRoute(request, response, pathname)) ||
         (await handleCampaignPlanRunApiRoute(request, response, pathname)) ||
+        (await handleManualPublishReportApiRoute(request, response, pathname, url)) ||
         (await handleManualPublishChecklistApiRoute(request, response, pathname, url)) ||
         (await handleManualPublicationPackageApiRoute(request, response, pathname, url)) ||
         (await handleApprovedVideoApiRoute(request, response, pathname, url)) ||
@@ -103,6 +106,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
       (await handleCampaignPlanImportPageGet(response, pathname, url)) ||
       (await handleCampaignPlanReviewPageGet(response, pathname, url)) ||
       (await handleCampaignPlanRunPageGet(response, pathname, url)) ||
+      (await handleManualPublishReportPageGet(response, pathname, url)) ||
       (await handleManualPublishChecklistPageGet(response, pathname, url)) ||
       (await handleManualPublicationPackagePageGet(response, pathname, url)) ||
       (await handleApprovedVideoPageGet(response, pathname, url)) ||
