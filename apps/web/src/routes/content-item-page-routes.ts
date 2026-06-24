@@ -39,6 +39,12 @@ import {
   runControlledMultiShotSmokeRenderForManifest,
   runControlledSmokeRenderForManifest
 } from "../render-attempt-service.ts";
+import { RenderAttemptReviewError } from "../render-attempt-review-errors.ts";
+import {
+  approveRenderAttempt,
+  getRenderAttemptReviewContextForContentItem,
+  rejectRenderAttempt
+} from "../render-attempt-review-service.ts";
 import { VideoDraftJobError } from "../video-draft-job-errors.ts";
 import {
   cancelVideoDraftJobForContentItem,
@@ -53,6 +59,7 @@ import {
   renderContentItemNotFoundPage,
   renderContentItemRenderPreflightPage,
   renderContentItemRenderAttemptsPage,
+  renderContentItemRenderAttemptReviewPage,
   renderContentItemRenderManifestPage,
   renderContentItemScriptPlanPage,
   renderContentItemVideoDraftPage,
@@ -68,6 +75,7 @@ function statusCodeFor(error: unknown): number {
     error instanceof RenderManifestError ||
     error instanceof RenderPreflightError ||
     error instanceof RenderAttemptError ||
+    error instanceof RenderAttemptReviewError ||
     error instanceof VideoDraftJobError
   ) {
     return error.statusCode;
@@ -83,6 +91,7 @@ function isNotFoundLike(error: unknown): boolean {
     error instanceof RenderManifestError ||
     error instanceof RenderPreflightError ||
     error instanceof RenderAttemptError ||
+    error instanceof RenderAttemptReviewError ||
     error instanceof VideoDraftJobError
   ) {
     return error.statusCode === 400 || error.statusCode === 404;
@@ -358,6 +367,44 @@ export async function handleContentItemPagePost(request: RequestLike, response: 
     return true;
   }
 
+  const approveRenderAttemptReviewMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/([^/]+)\/render-attempts\/([^/]+)\/review\/approve$/);
+  if (approveRenderAttemptReviewMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      await getRenderAttemptReviewContextForContentItem(
+        approveRenderAttemptReviewMatch[1],
+        approveRenderAttemptReviewMatch[2],
+        approveRenderAttemptReviewMatch[3],
+        approveRenderAttemptReviewMatch[4]
+      );
+      await approveRenderAttempt(approveRenderAttemptReviewMatch[4], body);
+      redirect(response, `/content-items/${encodeURIComponent(approveRenderAttemptReviewMatch[1])}/video-draft/${encodeURIComponent(approveRenderAttemptReviewMatch[2])}/manifest/${encodeURIComponent(approveRenderAttemptReviewMatch[3])}/render-attempts/${encodeURIComponent(approveRenderAttemptReviewMatch[4])}/review?success=Render attempt disetujui secara DB-only.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Review render gagal disetujui.";
+      redirect(response, `/content-items/${encodeURIComponent(approveRenderAttemptReviewMatch[1])}/video-draft/${encodeURIComponent(approveRenderAttemptReviewMatch[2])}/manifest/${encodeURIComponent(approveRenderAttemptReviewMatch[3])}/render-attempts/${encodeURIComponent(approveRenderAttemptReviewMatch[4])}/review?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
+  const rejectRenderAttemptReviewMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/([^/]+)\/render-attempts\/([^/]+)\/review\/reject$/);
+  if (rejectRenderAttemptReviewMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      await getRenderAttemptReviewContextForContentItem(
+        rejectRenderAttemptReviewMatch[1],
+        rejectRenderAttemptReviewMatch[2],
+        rejectRenderAttemptReviewMatch[3],
+        rejectRenderAttemptReviewMatch[4]
+      );
+      await rejectRenderAttempt(rejectRenderAttemptReviewMatch[4], body);
+      redirect(response, `/content-items/${encodeURIComponent(rejectRenderAttemptReviewMatch[1])}/video-draft/${encodeURIComponent(rejectRenderAttemptReviewMatch[2])}/manifest/${encodeURIComponent(rejectRenderAttemptReviewMatch[3])}/render-attempts/${encodeURIComponent(rejectRenderAttemptReviewMatch[4])}/review?success=Render attempt ditolak secara DB-only.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Review render gagal ditolak.";
+      redirect(response, `/content-items/${encodeURIComponent(rejectRenderAttemptReviewMatch[1])}/video-draft/${encodeURIComponent(rejectRenderAttemptReviewMatch[2])}/manifest/${encodeURIComponent(rejectRenderAttemptReviewMatch[3])}/render-attempts/${encodeURIComponent(rejectRenderAttemptReviewMatch[4])}/review?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -466,6 +513,18 @@ export async function handleContentItemPageGet(response: ResponseLike, pathname:
       sendHtml(response, await renderContentItemRenderAttemptsPage(item, renderAttemptsMatch[2], renderAttemptsMatch[3], url));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Render attempts tidak ditemukan.";
+      sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
+    }
+    return true;
+  }
+
+  const renderAttemptReviewMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/([^/]+)\/render-attempts\/([^/]+)\/review$/);
+  if (renderAttemptReviewMatch) {
+    try {
+      const item = await getContentItem(renderAttemptReviewMatch[1]);
+      sendHtml(response, await renderContentItemRenderAttemptReviewPage(item, renderAttemptReviewMatch[2], renderAttemptReviewMatch[3], renderAttemptReviewMatch[4], url));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Review render attempt tidak ditemukan.";
       sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
     }
     return true;

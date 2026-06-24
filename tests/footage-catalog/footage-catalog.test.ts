@@ -96,6 +96,19 @@ import {
   validateRenderAttemptOutputRelativePath,
   validateRenderAttemptStatus
 } from "../../apps/web/src/validation/render-attempt-validation.ts";
+import {
+  approveRenderAttempt,
+  getRenderAttemptReviewByAttemptId,
+  getRenderAttemptReviewContext,
+  getRenderAttemptReviewContextForContentItem,
+  listRenderAttemptReviewsForManifest,
+  rejectRenderAttempt,
+  validateRenderAttemptReviewEligibility
+} from "../../apps/web/src/render-attempt-review-service.ts";
+import {
+  validateRenderAttemptReviewInput,
+  validateRenderAttemptReviewStatus
+} from "../../apps/web/src/validation/render-attempt-review-validation.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -123,6 +136,11 @@ test.after(async () => {
     ]);
     const ids = campaigns.rows.map((row) => row.id);
     if (ids.length) {
+      await pool.query(
+        `DELETE FROM video_render_attempt_reviews
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
       await pool.query(
         `DELETE FROM video_render_attempts
          WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
@@ -315,6 +333,96 @@ async function createReadyRenderAttemptFixture(
     preflight,
     sourcePath: sourcePaths[0],
     sourcePaths
+  };
+}
+
+async function withAppStorageRoot<T>(storageRoot: string, fn: () => Promise<T>): Promise<T> {
+  const previous = process.env.APP_STORAGE_DIR;
+  process.env.APP_STORAGE_DIR = storageRoot;
+  try {
+    return await fn();
+  } finally {
+    if (previous === undefined) {
+      delete process.env.APP_STORAGE_DIR;
+    } else {
+      process.env.APP_STORAGE_DIR = previous;
+    }
+  }
+}
+
+async function createSucceededReviewFixture(codeSuffix: string) {
+  const fixture = await createReadyRenderAttemptFixture(`review-${codeSuffix}`, {
+    createSourceFile: true,
+    manifestStatus: "approved"
+  });
+  const outputRelativePath = `smoke/review-${fixture.manifest.id.slice(0, 8)}-${codeSuffix}.mp4`;
+  const attempt = await runControlledSmokeRenderForManifest(fixture.manifest.id, {
+    storageRoot: fixture.storageRoot,
+    output_relative_path: outputRelativePath,
+    ffmpegRunner: async (args) => {
+      const outputPath = String(args.at(-1) || "");
+      await mkdir(dirname(outputPath), { recursive: true });
+      await writeFile(outputPath, `review output ${codeSuffix}`);
+      return { exitCode: 0, errorMessage: null };
+    }
+  });
+  return {
+    ...fixture,
+    attempt,
+    outputRelativePath,
+    outputPath: join(fixture.storageRoot, "draft-videos", outputRelativePath)
+  };
+}
+
+async function insertRenderAttemptWithStatus(
+  fixture: Awaited<ReturnType<typeof createReadyRenderAttemptFixture>>,
+  attemptStatus: string,
+  outputRelativePath: string | null,
+  outputSizeBytes: number | null
+): Promise<string> {
+  const result = await pool!.query<{ id: string }>(
+    `INSERT INTO video_render_attempts (
+       render_manifest_id,
+       preflight_run_id,
+       video_draft_job_id,
+       content_item_id,
+       attempt_status,
+       attempt_mode,
+       output_relative_path,
+       output_size_bytes,
+       ffmpeg_exit_code,
+       error_message,
+       completed_at
+     )
+     VALUES ($1, $2, $3, $4, $5, 'manual_smoke', $6, $7, CASE WHEN $5 = 'succeeded' THEN 0 ELSE NULL END, NULL, CASE WHEN $5 IN ('succeeded', 'failed', 'blocked') THEN now() ELSE NULL END)
+     RETURNING id`,
+    [
+      fixture.manifest.id,
+      fixture.preflight!.id,
+      fixture.job.id,
+      fixture.contentItemId,
+      attemptStatus,
+      outputRelativePath,
+      outputSizeBytes
+    ]
+  );
+  return result.rows[0].id;
+}
+
+function jsonRequest(body: Record<string, unknown> = {}) {
+  const raw = JSON.stringify(body);
+  return {
+    method: "POST",
+    url: "",
+    headers: { "content-type": "application/json" },
+    on(event: string, listener: (chunk?: Buffer) => void) {
+      if (event === "data") {
+        listener(Buffer.from(raw));
+      }
+      if (event === "end") {
+        listener();
+      }
+    }
   };
 }
 
@@ -2243,6 +2351,192 @@ maybeTest("controlled render page and API route before generic render manifest r
   assert.equal(manifestContext.latestPreflight?.id, fixture.preflight?.id);
 });
 
+maybeTest("render attempt review context rejects missing and mismatched attempts", async () => {
+  await assert.rejects(
+    () => getRenderAttemptReviewContext("11111111-1111-4111-8111-111111111111"),
+    /tidak ditemukan/i
+  );
+
+  const fixture = await createSucceededReviewFixture("context");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    await assert.rejects(
+      () => getRenderAttemptReviewContextForContentItem(
+        "22222222-2222-4222-8222-222222222222",
+        fixture.job.id,
+        fixture.manifest.id,
+        fixture.attempt.id
+      ),
+      /tidak dimiliki/i
+    );
+  });
+});
+
+maybeTest("render attempt review validation normalizes safe inputs", async () => {
+  assert.equal(validateRenderAttemptReviewStatus("approved"), "approved");
+  assert.equal(validateRenderAttemptReviewStatus(""), "pending_review");
+  assert.throws(() => validateRenderAttemptReviewStatus("published"), /Status review render tidak valid/i);
+  assert.deepEqual(validateRenderAttemptReviewInput({ review_note: "  siap  ", reviewed_by_name: " Owner " }), {
+    review_note: "siap",
+    reviewed_by_name: "Owner"
+  });
+  assert.throws(() => validateRenderAttemptReviewInput({ review_note: "x".repeat(2001) }), /Catatan review maksimal/i);
+});
+
+maybeTest("render attempt review approve requires succeeded smoke output file and metadata", async () => {
+  const fixture = await createReadyRenderAttemptFixture("review-eligibility", {
+    createSourceFile: true,
+    manifestStatus: "approved"
+  });
+  const blockedAttempt = await runControlledSmokeRenderForManifest(fixture.manifest.id, {
+    storageRoot: fixture.storageRoot,
+    output_relative_path: `smoke/review-blocked-${fixture.manifest.id.slice(0, 8)}.mp4`,
+    ffmpegRunner: async () => ({ exitCode: 1, errorMessage: "mock failure" })
+  });
+
+  const statuses = ["requested", "running", "failed", "blocked"];
+  const attempts = [blockedAttempt.id];
+  for (const statusValue of statuses.slice(0, 3)) {
+    attempts.push(await insertRenderAttemptWithStatus(fixture, statusValue, null, null));
+  }
+
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    for (const attemptId of attempts) {
+      await assert.rejects(
+        () => approveRenderAttempt(attemptId, { reviewed_by_name: "Owner" }),
+        /succeeded|Output render belum tersedia|tidak bisa direview/i
+      );
+    }
+
+    const missingOutputAttemptId = await insertRenderAttemptWithStatus(fixture, "succeeded", "smoke/missing-review-output.mp4", 128);
+    await assert.rejects(
+      () => approveRenderAttempt(missingOutputAttemptId, { reviewed_by_name: "Owner" }),
+      /fisik tidak ditemukan/i
+    );
+
+    const zeroRelativePath = `smoke/zero-${fixture.manifest.id.slice(0, 8)}.mp4`;
+    await mkdir(dirname(join(fixture.storageRoot, "draft-videos", zeroRelativePath)), { recursive: true });
+    await writeFile(join(fixture.storageRoot, "draft-videos", zeroRelativePath), "");
+    const zeroAttemptId = await insertRenderAttemptWithStatus(fixture, "succeeded", zeroRelativePath, 0);
+    await assert.rejects(
+      () => approveRenderAttempt(zeroAttemptId, { reviewed_by_name: "Owner" }),
+      /non-empty|kosong/i
+    );
+  });
+});
+
+maybeTest("render attempt review approve writes only review row and keeps attempt and files unchanged", async () => {
+  const fixture = await createSucceededReviewFixture("approve");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    const attemptBefore = await getRenderAttemptById(fixture.attempt.id);
+    const outputBefore = await stat(fixture.outputPath);
+    const sourceBefore = await stat(fixture.sourcePath);
+
+    const review = await approveRenderAttempt(fixture.attempt.id, {
+      reviewed_by_name: "Owner",
+      review_note: "DB-only approval."
+    });
+
+    const attemptAfter = await getRenderAttemptById(fixture.attempt.id);
+    const outputAfter = await stat(fixture.outputPath);
+    const sourceAfter = await stat(fixture.sourcePath);
+    const storedReview = await getRenderAttemptReviewByAttemptId(fixture.attempt.id);
+    const reviews = await listRenderAttemptReviewsForManifest(fixture.manifest.id);
+    const eligibility = await validateRenderAttemptReviewEligibility(fixture.attempt.id);
+
+    assert.equal(review.review_status, "approved");
+    assert.ok(review.reviewed_at);
+    assert.equal(storedReview?.id, review.id);
+    assert.equal(reviews.some((row) => row.id === review.id), true);
+    assert.equal(eligibility.ok, true);
+    assert.deepEqual(attemptAfter, attemptBefore);
+    assert.equal(outputAfter.size, outputBefore.size);
+    assert.equal(outputAfter.mtimeMs, outputBefore.mtimeMs);
+    assert.equal(sourceAfter.size, sourceBefore.size);
+    assert.equal(sourceAfter.mtimeMs, sourceBefore.mtimeMs);
+  });
+});
+
+maybeTest("render attempt review reject stores note and terminal reviews cannot be changed", async () => {
+  const rejected = await createSucceededReviewFixture("reject");
+  await withAppStorageRoot(rejected.storageRoot, async () => {
+    const review = await rejectRenderAttempt(rejected.attempt.id, {
+      reviewed_by_name: "Owner",
+      review_note: "Perlu revisi cut."
+    });
+    assert.equal(review.review_status, "rejected");
+    assert.equal(review.review_note, "Perlu revisi cut.");
+    assert.equal(review.reviewed_by_name, "Owner");
+    assert.ok(review.reviewed_at);
+
+    await assert.rejects(
+      () => approveRenderAttempt(rejected.attempt.id, { reviewed_by_name: "Owner" }),
+      /terminal/i
+    );
+  });
+
+  const approved = await createSucceededReviewFixture("terminal");
+  await withAppStorageRoot(approved.storageRoot, async () => {
+    await approveRenderAttempt(approved.attempt.id, { reviewed_by_name: "Owner" });
+    await assert.rejects(
+      () => rejectRenderAttempt(approved.attempt.id, { reviewed_by_name: "Owner", review_note: "ubah" }),
+      /terminal/i
+    );
+  });
+});
+
+maybeTest("render attempt review page and API routes match before generic attempt route", async () => {
+  const fixture = await createSucceededReviewFixture("routes");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    const pageResponse = mockResponse();
+    const pagePath = `/content-items/${fixture.contentItemId}/video-draft/${fixture.job.id}/manifest/${fixture.manifest.id}/render-attempts/${fixture.attempt.id}/review`;
+    const pageHandled = await handleContentItemPageGet(pageResponse, pagePath, new URL(`http://localhost${pagePath}`));
+    assert.equal(pageHandled, true);
+    assert.equal(pageResponse.statusCode, 200);
+    assert.match(pageResponse.body, /Review Draft Render/);
+    assert.match(pageResponse.body, /DB-only/);
+    assert.match(pageResponse.body, /approved-videos/);
+
+    const apiResponse = mockResponse();
+    const apiPath = `/api/render-attempts/${fixture.attempt.id}/review`;
+    const apiHandled = await handleContentItemApiRoute(
+      { method: "GET", url: apiPath, headers: {}, on() {} } as any,
+      apiResponse,
+      apiPath,
+      new URL(`http://localhost${apiPath}`)
+    );
+    assert.equal(apiHandled, true);
+    assert.equal(apiResponse.statusCode, 200);
+    assert.equal(JSON.parse(apiResponse.body).data.attempt.id, fixture.attempt.id);
+
+    const approveResponse = mockResponse();
+    const approvePath = `/api/render-attempts/${fixture.attempt.id}/review/approve`;
+    const approveRequest = jsonRequest({ reviewed_by_name: "Owner", review_note: "route approval" });
+    const approveHandled = await handleContentItemApiRoute(
+      { ...approveRequest, url: approvePath } as any,
+      approveResponse,
+      approvePath,
+      new URL(`http://localhost${approvePath}`)
+    );
+    assert.equal(approveHandled, true);
+    assert.equal(approveResponse.statusCode, 201);
+    assert.equal(JSON.parse(approveResponse.body).data.review_status, "approved");
+  });
+});
+
+maybeTest("render attempts page shows review status and link", async () => {
+  const fixture = await createSucceededReviewFixture("page-status");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    await approveRenderAttempt(fixture.attempt.id, { reviewed_by_name: "Owner" });
+    const pageResponse = mockResponse();
+    const pagePath = `/content-items/${fixture.contentItemId}/video-draft/${fixture.job.id}/manifest/${fixture.manifest.id}/render-attempts`;
+    const pageHandled = await handleContentItemPageGet(pageResponse, pagePath, new URL(`http://localhost${pagePath}`));
+    assert.equal(pageHandled, true);
+    assert.equal(pageResponse.statusCode, 200);
+    assert.match(pageResponse.body, /Disetujui/);
+    assert.match(pageResponse.body, new RegExp(`/render-attempts/${fixture.attempt.id}/review`));
+  });
+});
+
 test("content footage, script planning, video draft, render manifest, preflight, and controlled render runtime files keep dependencies guarded", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
@@ -2250,20 +2544,28 @@ test("content footage, script planning, video draft, render manifest, preflight,
     "apps/web/src/video-draft-job-service.ts",
     "apps/web/src/render-manifest-service.ts",
     "apps/web/src/render-preflight-service.ts",
+    "apps/web/src/render-attempt-review-service.ts",
     "apps/web/src/routes/content-item-api-routes.ts",
     "apps/web/src/routes/content-item-page-routes.ts",
-    "apps/web/src/views/content-item-pages.ts",
     "apps/web/src/validation/content-item-footage-validation.ts",
     "apps/web/src/validation/content-item-script-plan-validation.ts",
     "apps/web/src/validation/video-draft-job-validation.ts",
     "apps/web/src/validation/render-manifest-validation.ts",
     "apps/web/src/validation/render-preflight-validation.ts",
-    "apps/web/src/validation/render-attempt-validation.ts"
+    "apps/web/src/validation/render-attempt-validation.ts",
+    "apps/web/src/validation/render-attempt-review-validation.ts"
   ].map((path) => readFileSync(path, "utf8")).join("\n");
 
   for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher", "fluent-ffmpeg", "child_process", "spawn", "exec", "execFile", "approved-videos", "workers/video", "writeFile", "copyFile", "createWriteStream", "appendFile", "truncate"]) {
     assert.equal(source.includes(forbidden), false);
   }
+
+  const contentItemViewSource = readFileSync("apps/web/src/views/content-item-pages.ts", "utf8");
+  for (const forbidden of ["fluent-ffmpeg", "child_process", "spawn", "exec(", "execFile", "writeFile", "copyFile", "createWriteStream", "appendFile", "truncate"]) {
+    assert.equal(contentItemViewSource.includes(forbidden), false);
+  }
+  assert.equal(contentItemViewSource.includes("approved-videos"), true);
+  assert.equal(contentItemViewSource.includes("OpenAI"), true);
 
   const renderAttemptSource = readFileSync("apps/web/src/render-attempt-service.ts", "utf8");
   for (const forbidden of ["exec(", "execFile", "shell:", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "storage/approved-videos", "workers/video", "OpenAI", "openai", "scheduler", "publisher", "upload"]) {
@@ -2272,4 +2574,11 @@ test("content footage, script planning, video draft, render manifest, preflight,
   assert.equal(renderAttemptSource.includes(`spawn("ffmpeg"`), true);
   assert.equal(renderAttemptSource.includes("storage/draft-videos"), true);
   assert.equal(renderAttemptSource.includes("storage/footage"), true);
+
+  const renderReviewSource = readFileSync("apps/web/src/render-attempt-review-service.ts", "utf8");
+  for (const forbidden of ["exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "storage/approved-videos", "workers/video", "OpenAI", "openai", "scheduler", "publisher", "upload"]) {
+    assert.equal(renderReviewSource.includes(forbidden), false);
+  }
+  assert.equal(renderReviewSource.includes("\"draft-videos\""), true);
+  assert.equal(renderReviewSource.includes("\"smoke\""), true);
 });

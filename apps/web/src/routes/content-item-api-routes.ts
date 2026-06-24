@@ -47,6 +47,11 @@ import {
   runControlledMultiShotSmokeRenderForManifest,
   runControlledSmokeRenderForManifest
 } from "../render-attempt-service.ts";
+import {
+  approveRenderAttempt,
+  getRenderAttemptReviewContext,
+  rejectRenderAttempt
+} from "../render-attempt-review-service.ts";
 
 export async function handleContentItemApiRoute(request: RequestLike, response: ResponseLike, pathname: string, url: URL): Promise<boolean> {
   if (pathname === "/api/content-items" && request.method === "GET") {
@@ -180,6 +185,24 @@ export async function handleContentItemApiRoute(request: RequestLike, response: 
   const renderManifestMultiShotSmokeAttemptMatch = pathname.match(/^\/api\/render-manifests\/([^/]+)\/render-attempts\/run-multishot-smoke$/);
   if (renderManifestMultiShotSmokeAttemptMatch && request.method === "POST") {
     sendSuccess(response, await runControlledMultiShotSmokeRenderForManifest(renderManifestMultiShotSmokeAttemptMatch[1]), 201);
+    return true;
+  }
+
+  const renderAttemptReviewMatch = pathname.match(/^\/api\/render-attempts\/([^/]+)\/review$/);
+  if (renderAttemptReviewMatch && request.method === "GET") {
+    sendSuccess(response, await getRenderAttemptReviewContext(renderAttemptReviewMatch[1]));
+    return true;
+  }
+
+  const renderAttemptApproveMatch = pathname.match(/^\/api\/render-attempts\/([^/]+)\/review\/approve$/);
+  if (renderAttemptApproveMatch && request.method === "POST") {
+    sendSuccess(response, await approveRenderAttempt(renderAttemptApproveMatch[1], await readJsonBody(request)), 201);
+    return true;
+  }
+
+  const renderAttemptRejectMatch = pathname.match(/^\/api\/render-attempts\/([^/]+)\/review\/reject$/);
+  if (renderAttemptRejectMatch && request.method === "POST") {
+    sendSuccess(response, await rejectRenderAttempt(renderAttemptRejectMatch[1], await readJsonBody(request)), 201);
     return true;
   }
 

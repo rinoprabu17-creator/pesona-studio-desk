@@ -32,6 +32,11 @@ import type { RenderPreflightCheckRow, RenderPreflightRunRow } from "../render-p
 import { getRenderPreflightContextForContentItem } from "../render-preflight-service.ts";
 import type { RenderAttemptRow } from "../render-attempt-service.ts";
 import { getControlledRenderContextForContentItem } from "../render-attempt-service.ts";
+import type { RenderAttemptReviewRow } from "../render-attempt-review-service.ts";
+import {
+  getRenderAttemptReviewContextForContentItem,
+  listRenderAttemptReviewsForManifest
+} from "../render-attempt-review-service.ts";
 import {
   renderManifestModes,
   renderManifestStatuses,
@@ -172,6 +177,13 @@ export const renderAttemptStatusLabels: Record<string, string> = {
   failed: "Failed",
   blocked: "Blocked",
   archived: "Archived"
+};
+
+export const renderAttemptReviewStatusLabels: Record<string, string> = {
+  pending_review: "Menunggu Review",
+  approved: "Disetujui",
+  rejected: "Ditolak",
+  archived: "Diarsipkan"
 };
 
 function formatDate(value: unknown): string {
@@ -1196,28 +1208,37 @@ function renderRenderAttemptEligibility(title: string, eligibility: Awaited<Retu
   </section>`;
 }
 
-function renderRenderAttemptList(attempts: RenderAttemptRow[]): string {
+function renderRenderAttemptList(item: ContentItemRow, jobId: string, manifestId: string, attempts: RenderAttemptRow[], reviews: RenderAttemptReviewRow[]): string {
+  const reviewByAttemptId = new Map(reviews.map((review) => [review.render_attempt_id, review]));
   return `<section>
     <h2>Render Attempts</h2>
     ${attempts.length === 0
       ? `<p class="hint">Belum ada controlled smoke render attempt.</p>`
       : renderReadOnlyTable(
-          ["Attempt", "Status", "Output", "Size", "Exit", "Error", "Dibuat"],
-          attempts.map((attempt) => [
-            escapeHtml(attempt.id),
-            escapeHtml(renderAttemptStatusLabels[attempt.attempt_status] || attempt.attempt_status),
-            escapeHtml(attempt.output_relative_path || "-"),
-            attempt.output_size_bytes === null ? "-" : `${escapeHtml(attempt.output_size_bytes)} bytes`,
-            attempt.ffmpeg_exit_code === null ? "-" : escapeHtml(attempt.ffmpeg_exit_code),
-            escapeHtml(attempt.error_message || "-"),
-            escapeHtml(attempt.created_at)
-          ])
+          ["Attempt", "Status", "Review", "Output", "Size", "Exit", "Error", "Aksi", "Dibuat"],
+          attempts.map((attempt) => {
+            const review = reviewByAttemptId.get(attempt.id);
+            const reviewStatus = review ? renderAttemptReviewStatusLabels[review.review_status] || review.review_status : "-";
+            const reviewUrl = `/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifestId)}/render-attempts/${escapeHtml(attempt.id)}/review`;
+            return [
+              escapeHtml(attempt.id),
+              escapeHtml(renderAttemptStatusLabels[attempt.attempt_status] || attempt.attempt_status),
+              escapeHtml(reviewStatus),
+              escapeHtml(attempt.output_relative_path || "-"),
+              attempt.output_size_bytes === null ? "-" : `${escapeHtml(attempt.output_size_bytes)} bytes`,
+              attempt.ffmpeg_exit_code === null ? "-" : escapeHtml(attempt.ffmpeg_exit_code),
+              escapeHtml(attempt.error_message || "-"),
+              attempt.attempt_status === "succeeded" ? `<a href="${reviewUrl}">Review</a>` : "-",
+              escapeHtml(attempt.created_at)
+            ];
+          })
         )}
   </section>`;
 }
 
 export async function renderContentItemRenderAttemptsPage(item: ContentItemRow, jobId: string, manifestId: string, url: URL): Promise<string> {
   const { manifest, latestPreflight, eligibility, multiShotEligibility, attempts } = await getControlledRenderContextForContentItem(item.id, jobId, manifestId);
+  const reviews = await listRenderAttemptReviewsForManifest(manifestId);
   const summary = renderReadOnlyTable(
     ["Field", "Nilai"],
     [
@@ -1249,7 +1270,7 @@ export async function renderContentItemRenderAttemptsPage(item: ContentItemRow, 
         <button type="submit">Run Multi-Shot Smoke Render</button>
       </form>
     </section>
-    ${renderRenderAttemptList(attempts)}
+    ${renderRenderAttemptList(item, jobId, manifest.id, attempts, reviews)}
     <div class="button-row" style="margin-top: 14px;">
       <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifest.id)}/preflight">Render Preflight</a>
       <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Detail Konten</a>
@@ -1261,6 +1282,73 @@ export async function renderContentItemRenderAttemptsPage(item: ContentItemRow, 
     `Controlled Smoke Render - ${item.content_code}`,
     "Controlled Smoke Render",
     "Manual local-only prototype untuk membuat satu draft smoke MP4 dari manifest yang ready.",
+    content
+  );
+}
+
+export async function renderContentItemRenderAttemptReviewPage(item: ContentItemRow, jobId: string, manifestId: string, attemptId: string, url: URL): Promise<string> {
+  const { attempt, review, eligibility } = await getRenderAttemptReviewContextForContentItem(item.id, jobId, manifestId, attemptId);
+  const terminalReview = review && ["approved", "rejected", "archived"].includes(review.review_status);
+  const summary = renderReadOnlyTable(
+    ["Field", "Nilai"],
+    [
+      ["Content Code", `<strong>${escapeHtml(attempt.content_code)}</strong>`],
+      ["Judul", escapeHtml(attempt.content_title)],
+      ["Video Draft Job", escapeHtml(attempt.video_draft_job_id)],
+      ["Job Status", escapeHtml(videoDraftJobStatusLabels[attempt.job_status] || attempt.job_status)],
+      ["Manifest", escapeHtml(attempt.render_manifest_id)],
+      ["Manifest Status", escapeHtml(renderManifestStatusLabels[attempt.manifest_status] || attempt.manifest_status)],
+      ["Render Attempt", escapeHtml(attempt.id)],
+      ["Attempt Status", escapeHtml(renderAttemptStatusLabels[attempt.attempt_status] || attempt.attempt_status)],
+      ["Output Relative Path", escapeHtml(attempt.output_relative_path || "-")],
+      ["Output Metadata Size", attempt.output_size_bytes === null ? "-" : `${escapeHtml(attempt.output_size_bytes)} bytes`],
+      ["FFmpeg Exit Code", attempt.ffmpeg_exit_code === null ? "-" : escapeHtml(attempt.ffmpeg_exit_code)],
+      ["Output Fisik", eligibility.output_exists ? `<span class="badge badge-ok">Ada</span>` : `<span class="badge">Tidak Ada</span>`],
+      ["Output Fisik Size", eligibility.output_size_bytes === null ? "-" : `${escapeHtml(eligibility.output_size_bytes)} bytes`],
+      ["Eligibility", eligibility.ok ? `<span class="badge badge-ok">Bisa Direview</span>` : `<span class="badge">Blocked</span>`],
+      ["Blocking Reasons", eligibility.blocking_reasons.length ? escapeHtml(eligibility.blocking_reasons.join(" ")) : "-"],
+      ["Review Status", review ? escapeHtml(renderAttemptReviewStatusLabels[review.review_status] || review.review_status) : "Belum ada review"],
+      ["Reviewed By", escapeHtml(review?.reviewed_by_name || "-")],
+      ["Reviewed At", escapeHtml(review?.reviewed_at || "-")],
+      ["Review Note", escapeHtml(review?.review_note || "-")]
+    ]
+  );
+  const actions = terminalReview
+    ? `<p class="hint">Review sudah terminal pada fase ini dan tidak dapat diubah tanpa route reset khusus.</p>`
+    : `<section>
+        <h2>Approval Gate</h2>
+        <form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifestId)}/render-attempts/${escapeHtml(attempt.id)}/review/approve" style="margin-top: 14px;">
+          <label>Reviewer</label>
+          <input type="text" name="reviewed_by_name" maxlength="120" placeholder="Nama reviewer" />
+          <label>Catatan Approval</label>
+          <textarea name="review_note" maxlength="2000" rows="3"></textarea>
+          <button type="submit">Approve Draft Render</button>
+        </form>
+        <form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifestId)}/render-attempts/${escapeHtml(attempt.id)}/review/reject" style="margin-top: 18px;">
+          <label>Reviewer</label>
+          <input type="text" name="reviewed_by_name" maxlength="120" placeholder="Nama reviewer" />
+          <label>Catatan Rejection</label>
+          <textarea name="review_note" maxlength="2000" rows="3"></textarea>
+          <button type="submit">Reject Draft Render</button>
+        </form>
+      </section>`;
+
+  const content = `
+    ${renderMessage(url)}
+    <div class="notice">Approval gate ini DB-only. Tidak copy ke approved-videos, tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak worker daemon, dan tidak mutasi file output atau source.</div>
+    ${summary}
+    ${actions}
+    <div class="button-row" style="margin-top: 14px;">
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifestId)}/render-attempts">Render Attempts</a>
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Detail Konten</a>
+    </div>
+  `;
+
+  return renderLayout(
+    "/content-items",
+    `Review Draft Render - ${item.content_code}`,
+    "Review Draft Render",
+    "DB-only approval gate untuk succeeded draft render attempt.",
     content
   );
 }
