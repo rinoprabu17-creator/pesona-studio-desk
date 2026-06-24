@@ -43,6 +43,8 @@ const requiredPaths = [
   "apps/web/src/render-approved-promotion-errors.ts",
   "apps/web/src/approved-video-handoff-service.ts",
   "apps/web/src/approved-video-handoff-errors.ts",
+  "apps/web/src/manual-publication-package-service.ts",
+  "apps/web/src/manual-publication-package-errors.ts",
   "apps/web/src/content-publication-service.ts",
   "apps/web/src/content-publication-errors.ts",
   "apps/web/src/footage-asset-service.ts",
@@ -63,6 +65,8 @@ const requiredPaths = [
   "apps/web/src/routes/campaign-plan-import-page-routes.ts",
   "apps/web/src/routes/approved-video-api-routes.ts",
   "apps/web/src/routes/approved-video-page-routes.ts",
+  "apps/web/src/routes/manual-publication-package-api-routes.ts",
+  "apps/web/src/routes/manual-publication-package-page-routes.ts",
   "apps/web/src/routes/content-item-api-routes.ts",
   "apps/web/src/routes/content-item-page-routes.ts",
   "apps/web/src/routes/content-publication-api-routes.ts",
@@ -76,6 +80,7 @@ const requiredPaths = [
   "apps/web/src/views/campaign-plan-review-pages.ts",
   "apps/web/src/views/campaign-plan-import-pages.ts",
   "apps/web/src/views/approved-video-pages.ts",
+  "apps/web/src/views/manual-publication-package-pages.ts",
   "apps/web/src/views/content-calendar-page.ts",
   "apps/web/src/views/content-item-pages.ts",
   "apps/web/src/views/content-publication-pages.ts",
@@ -95,6 +100,7 @@ const requiredPaths = [
   "apps/web/src/validation/render-attempt-review-validation.ts",
   "apps/web/src/validation/render-approved-promotion-validation.ts",
   "apps/web/src/validation/approved-video-handoff-validation.ts",
+  "apps/web/src/validation/manual-publication-package-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/footage-asset-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
@@ -140,6 +146,7 @@ const requiredPaths = [
   "migrations/013_phase2e_render_review_gate.sql",
   "migrations/014_phase2e_approved_render_promotions.sql",
   "migrations/015_phase2e_approved_video_handoff_board.sql",
+  "migrations/016_phase2f_manual_publication_packages.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "scripts/prepare-test-db.mjs",
@@ -739,6 +746,41 @@ for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
     fail(`Migration Phase 2E.6 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
   } else {
     pass(`Migration Phase 2E.6 tidak memuat destructive SQL: ${forbiddenText}`);
+  }
+}
+
+const manualPublicationPackageMigrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("016_"));
+if (manualPublicationPackageMigrationFiles.length === 1 && manualPublicationPackageMigrationFiles[0] === "016_phase2f_manual_publication_packages.sql") {
+  pass("Migration 016 Phase 2F manual publication packages tersedia");
+} else {
+  fail(`Migration 016 Phase 2F harus tepat satu file: ${manualPublicationPackageMigrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const manualPublicationPackageMigrationSource = existsSync("migrations/016_phase2f_manual_publication_packages.sql")
+  ? readFileSync("migrations/016_phase2f_manual_publication_packages.sql", "utf8")
+  : "";
+for (const requiredText of [
+  "CREATE TABLE manual_publication_packages",
+  "CREATE TABLE manual_publication_package_channels",
+  "handoff_id uuid NOT NULL REFERENCES video_approved_handoff_records(id)",
+  "manual_publication_packages_handoff_key UNIQUE (handoff_id)",
+  "manual_publication_package_channels_package_channel_key UNIQUE (package_id, channel)",
+  "approved_output_relative_path_snapshot ~ '^smoke/'",
+  "CREATE INDEX manual_publication_packages_handoff_id_idx",
+  "CREATE INDEX manual_publication_package_channels_package_id_idx"
+]) {
+  if (manualPublicationPackageMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 2F.1 package memuat: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 2F.1 package belum memuat: ${requiredText}`);
+  }
+}
+
+for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
+  if (manualPublicationPackageMigrationSource.includes(forbiddenText)) {
+    fail(`Migration Phase 2F.1 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
+  } else {
+    pass(`Migration Phase 2F.1 tidak memuat destructive SQL: ${forbiddenText}`);
   }
 }
 
