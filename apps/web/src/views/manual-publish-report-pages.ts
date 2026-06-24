@@ -60,7 +60,7 @@ function packageRows(packages: ManualPublishReportPackage[]): unknown[][] {
     escapeHtml(pkg.evidence_count),
     escapeHtml(pkg.channels_with_manual_url.join(", ") || "-"),
     escapeHtml(pkg.missing_manual_url_channels.join(", ") || "-"),
-    `<a href="/manual-publish-report/packages/${escapeHtml(pkg.package_id)}">Detail</a> · <a href="/publication-packages/${escapeHtml(pkg.package_id)}">Package</a> · <a href="/publication-packages/${escapeHtml(pkg.package_id)}/checklist">Checklist</a>`
+    `<a href="/manual-publish-report/packages/${escapeHtml(pkg.package_id)}">Detail</a> · <a href="/publication-packages/${escapeHtml(pkg.package_id)}">Package</a> · <a href="/publication-packages/${escapeHtml(pkg.package_id)}/checklist">Checklist</a> · <a href="/publication-packages/${escapeHtml(pkg.package_id)}/closeout">Closeout</a>`
   ]);
 }
 
@@ -131,6 +131,6 @@ export async function renderManualPublishReportDetailPage(packageId: string, url
     "Manual Publish Report Detail",
     "Manual Publish",
     "Detail read-only checklist dan evidence per channel.",
-    `${renderMessage(url)}${safetyNotice()}<div class="button-row"><a class="button secondary" href="/manual-publish-report">Back to Report</a><a class="button secondary" href="/publication-packages/${escapeHtml(pkg.package_id)}">Package Detail</a><a class="button secondary" href="/publication-packages/${escapeHtml(pkg.package_id)}/checklist">Checklist</a></div><section><h2>Package Summary</h2>${summary}</section><section><h2>Channel Report</h2>${channels}</section>`
+    `${renderMessage(url)}${safetyNotice()}<div class="button-row"><a class="button secondary" href="/manual-publish-report">Back to Report</a><a class="button secondary" href="/publication-packages/${escapeHtml(pkg.package_id)}">Package Detail</a><a class="button secondary" href="/publication-packages/${escapeHtml(pkg.package_id)}/checklist">Checklist</a><a class="button secondary" href="/publication-packages/${escapeHtml(pkg.package_id)}/closeout">Closeout</a></div><section><h2>Package Summary</h2>${summary}</section><section><h2>Channel Report</h2>${channels}</section>`
   );
 }

@@ -47,6 +47,8 @@ const requiredPaths = [
   "apps/web/src/manual-publication-package-errors.ts",
   "apps/web/src/manual-publish-checklist-service.ts",
   "apps/web/src/manual-publish-checklist-errors.ts",
+  "apps/web/src/manual-publish-closeout-service.ts",
+  "apps/web/src/manual-publish-closeout-errors.ts",
   "apps/web/src/manual-publish-report-service.ts",
   "apps/web/src/manual-publish-report-errors.ts",
   "apps/web/src/content-publication-service.ts",
@@ -73,6 +75,8 @@ const requiredPaths = [
   "apps/web/src/routes/manual-publication-package-page-routes.ts",
   "apps/web/src/routes/manual-publish-checklist-api-routes.ts",
   "apps/web/src/routes/manual-publish-checklist-page-routes.ts",
+  "apps/web/src/routes/manual-publish-closeout-api-routes.ts",
+  "apps/web/src/routes/manual-publish-closeout-page-routes.ts",
   "apps/web/src/routes/manual-publish-report-api-routes.ts",
   "apps/web/src/routes/manual-publish-report-page-routes.ts",
   "apps/web/src/routes/content-item-api-routes.ts",
@@ -90,6 +94,7 @@ const requiredPaths = [
   "apps/web/src/views/approved-video-pages.ts",
   "apps/web/src/views/manual-publication-package-pages.ts",
   "apps/web/src/views/manual-publish-checklist-pages.ts",
+  "apps/web/src/views/manual-publish-closeout-pages.ts",
   "apps/web/src/views/manual-publish-report-pages.ts",
   "apps/web/src/views/content-calendar-page.ts",
   "apps/web/src/views/content-item-pages.ts",
@@ -112,6 +117,7 @@ const requiredPaths = [
   "apps/web/src/validation/approved-video-handoff-validation.ts",
   "apps/web/src/validation/manual-publication-package-validation.ts",
   "apps/web/src/validation/manual-publish-checklist-validation.ts",
+  "apps/web/src/validation/manual-publish-closeout-validation.ts",
   "apps/web/src/validation/manual-publish-report-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/footage-asset-validation.ts",
@@ -160,6 +166,7 @@ const requiredPaths = [
   "migrations/015_phase2e_approved_video_handoff_board.sql",
   "migrations/016_phase2f_manual_publication_packages.sql",
   "migrations/017_phase2f_manual_publish_checklist_evidence.sql",
+  "migrations/018_phase2f_manual_publish_closeouts.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "scripts/prepare-test-db.mjs",
@@ -828,6 +835,41 @@ for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
     fail(`Migration Phase 2F.2 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
   } else {
     pass(`Migration Phase 2F.2 tidak memuat destructive SQL: ${forbiddenText}`);
+  }
+}
+
+const manualPublishCloseoutMigrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("018_"));
+if (manualPublishCloseoutMigrationFiles.length === 1 && manualPublishCloseoutMigrationFiles[0] === "018_phase2f_manual_publish_closeouts.sql") {
+  pass("Migration 018 Phase 2F manual publish closeouts tersedia");
+} else {
+  fail(`Migration 018 Phase 2F harus tepat satu file: ${manualPublishCloseoutMigrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const manualPublishCloseoutMigrationSource = existsSync("migrations/018_phase2f_manual_publish_closeouts.sql")
+  ? readFileSync("migrations/018_phase2f_manual_publish_closeouts.sql", "utf8")
+  : "";
+for (const requiredText of [
+  "CREATE TABLE manual_publish_closeouts",
+  "package_id uuid NOT NULL REFERENCES manual_publication_packages(id)",
+  "content_item_id uuid NOT NULL REFERENCES content_items(id)",
+  "manual_publish_closeouts_package_key UNIQUE (package_id)",
+  "report_status_snapshot = 'ready_evidence_complete'",
+  "checklist_done_snapshot = checklist_total_snapshot",
+  "manual_url_channel_count_snapshot = selected_channel_count_snapshot",
+  "manual_publish_closeouts_package_id_idx"
+]) {
+  if (manualPublishCloseoutMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 2F.4 closeout memuat: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 2F.4 closeout belum memuat: ${requiredText}`);
+  }
+}
+
+for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
+  if (manualPublishCloseoutMigrationSource.includes(forbiddenText)) {
+    fail(`Migration Phase 2F.4 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
+  } else {
+    pass(`Migration Phase 2F.4 tidak memuat destructive SQL: ${forbiddenText}`);
   }
 }
 

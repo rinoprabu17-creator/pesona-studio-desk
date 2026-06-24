@@ -197,6 +197,19 @@ import {
 import { validateManualPublishReportFilters } from "../../apps/web/src/validation/manual-publish-report-validation.ts";
 import { handleManualPublishReportApiRoute } from "../../apps/web/src/routes/manual-publish-report-api-routes.ts";
 import { handleManualPublishReportPageGet } from "../../apps/web/src/routes/manual-publish-report-page-routes.ts";
+import {
+  createManualPublishCloseout,
+  getManualPublishCloseoutByPackageId,
+  getManualPublishCloseoutDetail,
+  getManualPublishCloseoutEligibility,
+  listManualPublishCloseouts
+} from "../../apps/web/src/manual-publish-closeout-service.ts";
+import { validateManualPublishCloseoutInput } from "../../apps/web/src/validation/manual-publish-closeout-validation.ts";
+import { handleManualPublishCloseoutApiRoute } from "../../apps/web/src/routes/manual-publish-closeout-api-routes.ts";
+import {
+  handleManualPublishCloseoutPageGet,
+  handleManualPublishCloseoutPagePost
+} from "../../apps/web/src/routes/manual-publish-closeout-page-routes.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -224,6 +237,11 @@ test.after(async () => {
     ]);
     const ids = campaigns.rows.map((row) => row.id);
     if (ids.length) {
+      await pool.query(
+        `DELETE FROM manual_publish_closeouts
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
       await pool.query(
         `DELETE FROM manual_publish_evidence_logs
          WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
@@ -3950,6 +3968,204 @@ maybeTest("manual publish report detail, CSV export, and routes are read-only", 
   assert.deepEqual(afterCounts.rows[0], beforeCounts.rows[0]);
 });
 
+async function makePackageCloseoutReady(packageId: string) {
+  await markPackageChecklistComplete(packageId);
+  for (const channel of ["instagram", "facebook", "tiktok", "youtube"]) {
+    await addManualPublishEvidence(packageId, channel, {
+      evidence_type: "manual_post_url",
+      evidence_value: `https://example.com/${channel}/closeout-ready`,
+      recorded_by_name: "Owner"
+    });
+  }
+}
+
+maybeTest("manual publish closeout eligibility blocks missing, incomplete, and missing URL packages", async () => {
+  await assert.rejects(
+    () => getManualPublishCloseoutEligibility("11111111-1111-4111-8111-111111111111"),
+    /Package manual publish tidak ditemukan/i
+  );
+
+  const incomplete = await createManualPublicationPackageFixture("closeout-incomplete");
+  const incompleteInit = await initializeManualPublishChecklist(incomplete.packageContext.package.id);
+  const item = incompleteInit.checklistItems.find((row) => row.channel === "instagram" && row.checklist_key === "caption_ready");
+  assert.ok(item);
+  await setManualPublishChecklistItemStatus(item.id, { checklist_status: "done", checked_by_name: "Owner" });
+  const incompleteEligibility = await getManualPublishCloseoutEligibility(incomplete.packageContext.package.id);
+  assert.equal(incompleteEligibility.ok, false);
+  assert.equal(incompleteEligibility.report_status, "checklist_incomplete");
+  assert.match(incompleteEligibility.blocking_reasons.join(" "), /Checklist belum lengkap/i);
+  await assert.rejects(() => createManualPublishCloseout(incomplete.packageContext.package.id), /Checklist belum lengkap/i);
+
+  const missingUrl = await createManualPublicationPackageFixture("closeout-missing-url");
+  await markPackageChecklistComplete(missingUrl.packageContext.package.id);
+  const missingUrlEligibility = await getManualPublishCloseoutEligibility(missingUrl.packageContext.package.id);
+  assert.equal(missingUrlEligibility.ok, false);
+  assert.equal(missingUrlEligibility.report_status, "missing_manual_url");
+  assert.match(missingUrlEligibility.blocking_reasons.join(" "), /Manual URL belum lengkap/i);
+  await assert.rejects(() => createManualPublishCloseout(missingUrl.packageContext.package.id), /Manual URL belum lengkap/i);
+
+  const closeouts = await pool!.query<{ count: string }>(`SELECT count(*)::text AS count FROM manual_publish_closeouts WHERE package_id IN ($1, $2)`, [
+    incomplete.packageContext.package.id,
+    missingUrl.packageContext.package.id
+  ]);
+  assert.equal(closeouts.rows[0].count, "0");
+});
+
+maybeTest("manual publish closeout creates certificate only when report is complete and keeps parents and files unchanged", async () => {
+  const fixture = await createManualPublicationPackageFixture("closeout-success");
+  const packageId = fixture.packageContext.package.id;
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    await makePackageCloseoutReady(packageId);
+    const eligibility = await getManualPublishCloseoutEligibility(packageId);
+    assert.equal(eligibility.ok, true);
+    assert.equal(eligibility.report_status, "ready_evidence_complete");
+
+    const packageBefore = await getManualPublicationPackageContext(packageId);
+    const checklistBefore = await getManualPublishChecklistContext(packageId);
+    const handoffBefore = await getHandoffByPromotionId(fixture.promotion.id);
+    const promotionBefore = await getRenderApprovedPromotionByAttemptId(fixture.attempt.id);
+    const attemptBefore = await getRenderAttemptById(fixture.attempt.id);
+    const reviewBefore = await getRenderAttemptReviewByAttemptId(fixture.attempt.id);
+    const approvedBefore = await stat(fixture.approvedPath);
+    const draftBefore = await stat(fixture.outputPath);
+    const sourceBefore = await stat(fixture.sourcePath);
+    const contentPublicationsBefore = await pool!.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM content_publications WHERE content_item_id = $1`,
+      [fixture.contentItemId]
+    );
+
+    const closeout = await createManualPublishCloseout(packageId, {
+      closed_by_name: "Owner",
+      closeout_note: "Manual publish evidence complete."
+    });
+    assert.equal(closeout.package_id, packageId);
+    assert.equal(closeout.closeout_status, "closed");
+    assert.equal(closeout.report_status_snapshot, "ready_evidence_complete");
+    assert.equal(closeout.selected_channel_count_snapshot, 4);
+    assert.equal(closeout.checklist_total_snapshot, 32);
+    assert.equal(closeout.checklist_done_snapshot, 32);
+    assert.equal(closeout.manual_url_channel_count_snapshot, 4);
+    assert.equal(closeout.missing_manual_url_channels_snapshot, "");
+    assert.equal(closeout.closed_by_name, "Owner");
+    assert.ok(closeout.closed_at);
+
+    const duplicateBefore = String(closeout.updated_at);
+    await assert.rejects(() => createManualPublishCloseout(packageId, { closed_by_name: "Other" }), /Closeout sudah ada/i);
+    assert.equal(String((await getManualPublishCloseoutByPackageId(packageId))?.updated_at), duplicateBefore);
+
+    const detail = await getManualPublishCloseoutDetail(closeout.id);
+    assert.equal(detail.id, closeout.id);
+    assert.equal(detail.content_code, fixture.packageContext.content.content_code);
+    assert.equal((await listManualPublishCloseouts({ package_id: packageId })).length, 1);
+
+    const packageAfter = await getManualPublicationPackageContext(packageId);
+    const checklistAfter = await getManualPublishChecklistContext(packageId);
+    assert.deepEqual(packageAfter, packageBefore);
+    assert.deepEqual(checklistAfter.checklistItems, checklistBefore.checklistItems);
+    assert.deepEqual(checklistAfter.evidenceLogs, checklistBefore.evidenceLogs);
+    assert.deepEqual(await getHandoffByPromotionId(fixture.promotion.id), handoffBefore);
+    assert.deepEqual(await getRenderApprovedPromotionByAttemptId(fixture.attempt.id), promotionBefore);
+    assert.deepEqual(await getRenderAttemptById(fixture.attempt.id), attemptBefore);
+    assert.deepEqual(await getRenderAttemptReviewByAttemptId(fixture.attempt.id), reviewBefore);
+    const contentPublicationsAfter = await pool!.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM content_publications WHERE content_item_id = $1`,
+      [fixture.contentItemId]
+    );
+    assert.equal(contentPublicationsAfter.rows[0].count, contentPublicationsBefore.rows[0].count);
+    assert.equal((await stat(fixture.approvedPath)).size, approvedBefore.size);
+    assert.equal((await stat(fixture.approvedPath)).mtimeMs, approvedBefore.mtimeMs);
+    assert.equal((await stat(fixture.outputPath)).size, draftBefore.size);
+    assert.equal((await stat(fixture.outputPath)).mtimeMs, draftBefore.mtimeMs);
+    assert.equal((await stat(fixture.sourcePath)).size, sourceBefore.size);
+    assert.equal((await stat(fixture.sourcePath)).mtimeMs, sourceBefore.mtimeMs);
+  });
+});
+
+maybeTest("manual publish closeout routes work and are ordered before generic package detail", async () => {
+  const incomplete = await createManualPublicationPackageFixture("closeout-routes-incomplete");
+  const ready = await createManualPublicationPackageFixture("closeout-routes-ready");
+  await makePackageCloseoutReady(ready.packageContext.package.id);
+
+  const pageResponse = mockResponse();
+  const pagePath = `/publication-packages/${incomplete.packageContext.package.id}/closeout`;
+  const pageHandled = await handleManualPublishCloseoutPageGet(pageResponse, pagePath, new URL(`http://localhost${pagePath}`));
+  assert.equal(pageHandled, true);
+  assert.equal(pageResponse.statusCode, 200);
+  assert.match(pageResponse.body, /Closeout adalah sertifikat DB-only/);
+  assert.match(pageResponse.body, /tidak membuat content_publications/);
+
+  const eligibilityResponse = mockResponse();
+  const eligibilityPath = `/api/publication-packages/${incomplete.packageContext.package.id}/closeout/eligibility`;
+  const eligibilityHandled = await handleManualPublishCloseoutApiRoute(
+    { method: "GET", url: eligibilityPath, headers: {}, on() {} } as any,
+    eligibilityResponse,
+    eligibilityPath,
+    new URL(`http://localhost${eligibilityPath}`)
+  );
+  assert.equal(eligibilityHandled, true);
+  assert.equal(eligibilityResponse.statusCode, 200);
+  assert.equal(JSON.parse(eligibilityResponse.body).data.ok, false);
+
+  const createResponse = mockResponse();
+  const createPath = `/api/publication-packages/${ready.packageContext.package.id}/closeout/create`;
+  const createHandled = await handleManualPublishCloseoutApiRoute(
+    { ...jsonRequest({ closed_by_name: "Owner", closeout_note: "route closeout" }), url: createPath } as any,
+    createResponse,
+    createPath,
+    new URL(`http://localhost${createPath}`)
+  );
+  assert.equal(createHandled, true);
+  assert.equal(createResponse.statusCode, 201);
+  const closeoutId = JSON.parse(createResponse.body).data.id;
+
+  const listResponse = mockResponse();
+  const listHandled = await handleManualPublishCloseoutApiRoute(
+    { method: "GET", url: "/api/manual-publish-closeouts", headers: {}, on() {} } as any,
+    listResponse,
+    "/api/manual-publish-closeouts",
+    new URL("http://localhost/api/manual-publish-closeouts")
+  );
+  assert.equal(listHandled, true);
+  assert.equal(listResponse.statusCode, 200);
+  assert.equal(JSON.parse(listResponse.body).data.some((row: any) => row.id === closeoutId), true);
+
+  const detailResponse = mockResponse();
+  const detailPath = `/api/manual-publish-closeouts/${closeoutId}`;
+  const detailHandled = await handleManualPublishCloseoutApiRoute(
+    { method: "GET", url: detailPath, headers: {}, on() {} } as any,
+    detailResponse,
+    detailPath,
+    new URL(`http://localhost${detailPath}`)
+  );
+  assert.equal(detailHandled, true);
+  assert.equal(detailResponse.statusCode, 200);
+
+  const listPageResponse = mockResponse();
+  const listPageHandled = await handleManualPublishCloseoutPageGet(listPageResponse, "/manual-publish-closeouts", new URL("http://localhost/manual-publish-closeouts"));
+  assert.equal(listPageHandled, true);
+  assert.equal(listPageResponse.statusCode, 200);
+
+  const detailPageResponse = mockResponse();
+  const detailPagePath = `/manual-publish-closeouts/${closeoutId}`;
+  const detailPageHandled = await handleManualPublishCloseoutPageGet(detailPageResponse, detailPagePath, new URL(`http://localhost${detailPagePath}`));
+  assert.equal(detailPageHandled, true);
+  assert.equal(detailPageResponse.statusCode, 200);
+  assert.match(detailPageResponse.body, /Manual Publish Closeout Detail/);
+
+  const pagePostResponse = mockResponse();
+  const pagePostPath = `/publication-packages/${incomplete.packageContext.package.id}/closeout/create`;
+  const pagePostHandled = await handleManualPublishCloseoutPagePost(
+    { ...jsonRequest({ closed_by_name: "Owner" }), url: pagePostPath } as any,
+    pagePostResponse,
+    pagePostPath
+  );
+  assert.equal(pagePostHandled, true);
+  assert.equal(pagePostResponse.statusCode, 303);
+
+  assert.equal(validateManualPublishCloseoutInput({ closed_by_name: " Owner ", closeout_note: " Done " }).closed_by_name, "Owner");
+  assert.throws(() => validateManualPublishCloseoutInput({ closeout_note: "x".repeat(2001) }), /Catatan closeout maksimal/i);
+});
+
 test("content footage, script planning, video draft, render manifest, preflight, and controlled render runtime files keep dependencies guarded", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
@@ -4089,4 +4305,25 @@ test("content footage, script planning, video draft, render manifest, preflight,
   assert.equal(reportViewSource.includes("scheduler"), true);
   assert.equal(reportViewSource.includes("publisher"), true);
   assert.equal(reportViewSource.includes("upload"), true);
+
+  const closeoutRuntimeSource = [
+    "apps/web/src/manual-publish-closeout-service.ts",
+    "apps/web/src/routes/manual-publish-closeout-api-routes.ts",
+    "apps/web/src/routes/manual-publish-closeout-page-routes.ts",
+    "apps/web/src/validation/manual-publish-closeout-validation.ts"
+  ].map((path) => readFileSync(path, "utf8")).join("\n");
+  for (const forbidden of ["UPDATE ", "DELETE FROM", "DROP", "TRUNCATE", "ALTER TABLE", "exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "mkdir", "createReadStream", "storage/approved-videos", "storage/draft-videos", "storage/footage", "workers/video", "OpenAI", "openai", "scheduler", "publisher", "upload", "queue", "worker daemon", "graph.facebook", "facebook.com", "googleapis", "axios", "fetch("]) {
+    assert.equal(closeoutRuntimeSource.includes(forbidden), false);
+  }
+  assert.equal(closeoutRuntimeSource.includes("INSERT INTO manual_publish_closeouts"), true);
+
+  const closeoutViewSource = readFileSync("apps/web/src/views/manual-publish-closeout-pages.ts", "utf8");
+  for (const forbidden of ["INSERT INTO", "UPDATE ", "DELETE FROM", "DROP", "TRUNCATE", "ALTER TABLE", "exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "mkdir", "createReadStream", "storage/approved-videos", "storage/draft-videos", "storage/footage", "workers/video", "graph.facebook", "facebook.com", "googleapis", "axios", "fetch("]) {
+    assert.equal(closeoutViewSource.includes(forbidden), false);
+  }
+  assert.equal(closeoutViewSource.includes("OpenAI"), true);
+  assert.equal(closeoutViewSource.includes("scheduler"), true);
+  assert.equal(closeoutViewSource.includes("publisher"), true);
+  assert.equal(closeoutViewSource.includes("publish"), true);
+  assert.equal(closeoutViewSource.includes("upload"), true);
 });
