@@ -18,6 +18,8 @@ import { handleApprovedVideoApiRoute } from "./routes/approved-video-api-routes.
 import { handleApprovedVideoPageGet, handleApprovedVideoPagePost } from "./routes/approved-video-page-routes.ts";
 import { handleManualPublicationPackageApiRoute } from "./routes/manual-publication-package-api-routes.ts";
 import { handleManualPublicationPackagePageGet, handleManualPublicationPackagePagePost } from "./routes/manual-publication-package-page-routes.ts";
+import { handleManualPublishChecklistApiRoute } from "./routes/manual-publish-checklist-api-routes.ts";
+import { handleManualPublishChecklistPageGet, handleManualPublishChecklistPagePost } from "./routes/manual-publish-checklist-page-routes.ts";
 import { handleContentCalendarApiRoute } from "./routes/content-calendar-api-routes.ts";
 import { handleContentCalendarPageGet } from "./routes/content-calendar-page-routes.ts";
 import { handleContentItemApiRoute } from "./routes/content-item-api-routes.ts";
@@ -63,6 +65,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
         (await handleCampaignPlanImportApiRoute(request, response, pathname)) ||
         (await handleCampaignPlanReviewApiRoute(request, response, pathname)) ||
         (await handleCampaignPlanRunApiRoute(request, response, pathname)) ||
+        (await handleManualPublishChecklistApiRoute(request, response, pathname, url)) ||
         (await handleManualPublicationPackageApiRoute(request, response, pathname, url)) ||
         (await handleApprovedVideoApiRoute(request, response, pathname, url)) ||
         (await handleContentCalendarApiRoute(request, response, pathname, url)) ||
@@ -82,6 +85,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
         (await handleCampaignPlanImportPagePost(request, response, pathname)) ||
         (await handleCampaignPlanReviewPagePost(request, response, pathname)) ||
         (await handleCampaignPlanRunPagePost(request, response, pathname)) ||
+        (await handleManualPublishChecklistPagePost(request, response, pathname)) ||
         (await handleManualPublicationPackagePagePost(request, response, pathname)) ||
         (await handleApprovedVideoPagePost(request, response, pathname)) ||
         (await handleContentItemPagePost(request, response, pathname)) ||
@@ -99,6 +103,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
       (await handleCampaignPlanImportPageGet(response, pathname, url)) ||
       (await handleCampaignPlanReviewPageGet(response, pathname, url)) ||
       (await handleCampaignPlanRunPageGet(response, pathname, url)) ||
+      (await handleManualPublishChecklistPageGet(response, pathname, url)) ||
       (await handleManualPublicationPackagePageGet(response, pathname, url)) ||
       (await handleApprovedVideoPageGet(response, pathname, url)) ||
       (await handleContentCalendarPageGet(response, pathname, url)) ||

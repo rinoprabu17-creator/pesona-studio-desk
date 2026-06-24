@@ -168,6 +168,26 @@ import {
   handleManualPublicationPackagePageGet,
   handleManualPublicationPackagePagePost
 } from "../../apps/web/src/routes/manual-publication-package-page-routes.ts";
+import {
+  addManualPublishEvidence,
+  getManualPublicationPackageCompletionSummary,
+  getManualPublishChecklistContext,
+  getManualPublishChecklistContextForChannel,
+  initializeManualPublishChecklist,
+  listManualPublishEvidence,
+  setManualPublishChecklistItemStatus
+} from "../../apps/web/src/manual-publish-checklist-service.ts";
+import {
+  validateManualPublishChecklistItemInput,
+  validateManualPublishChecklistStatus,
+  validateManualPublishEvidenceInput,
+  validateManualPublishEvidenceType
+} from "../../apps/web/src/validation/manual-publish-checklist-validation.ts";
+import { handleManualPublishChecklistApiRoute } from "../../apps/web/src/routes/manual-publish-checklist-api-routes.ts";
+import {
+  handleManualPublishChecklistPageGet,
+  handleManualPublishChecklistPagePost
+} from "../../apps/web/src/routes/manual-publish-checklist-page-routes.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -195,6 +215,16 @@ test.after(async () => {
     ]);
     const ids = campaigns.rows.map((row) => row.id);
     if (ids.length) {
+      await pool.query(
+        `DELETE FROM manual_publish_evidence_logs
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
+      await pool.query(
+        `DELETE FROM manual_publish_checklist_items
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
       await pool.query(
         `DELETE FROM manual_publication_package_channels
          WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
@@ -3478,6 +3508,225 @@ maybeTest("manual publication package list filters and page/API routes are order
   });
 });
 
+maybeTest("manual publish checklist context rejects missing package and reads do not create rows", async () => {
+  await assert.rejects(
+    () => getManualPublishChecklistContext("11111111-1111-4111-8111-111111111111"),
+    /package tidak ditemukan/i
+  );
+
+  const fixture = await createManualPublicationPackageFixture("checklist-context");
+  const packageId = fixture.packageContext.package.id;
+  const before = await pool!.query<{ count: string }>(
+    `SELECT count(*)::text AS count FROM manual_publish_checklist_items WHERE package_id = $1`,
+    [packageId]
+  );
+  assert.equal(before.rows[0].count, "0");
+  const context = await getManualPublishChecklistContext(packageId);
+  assert.equal(context.package.id, packageId);
+  assert.equal(context.checklistItems.length, 0);
+  assert.equal(context.evidenceLogs.length, 0);
+  const after = await pool!.query<{ count: string }>(
+    `SELECT count(*)::text AS count FROM manual_publish_checklist_items WHERE package_id = $1`,
+    [packageId]
+  );
+  assert.equal(after.rows[0].count, "0");
+});
+
+maybeTest("manual publish checklist initialize is idempotent and item update only changes checklist row", async () => {
+  const fixture = await createManualPublicationPackageFixture("checklist-init");
+  const packageId = fixture.packageContext.package.id;
+  const initialized = await initializeManualPublishChecklist(packageId);
+  assert.equal(initialized.channels.length, 4);
+  assert.equal(initialized.checklistItems.length, 32);
+  const second = await initializeManualPublishChecklist(packageId);
+  assert.equal(second.checklistItems.length, 32);
+
+  const packageBefore = await getManualPublicationPackageContext(packageId);
+  const item = second.checklistItems.find((row) => row.channel === "instagram" && row.checklist_key === "caption_ready");
+  assert.ok(item);
+  const updated = await setManualPublishChecklistItemStatus(item.id, {
+    checklist_status: "done",
+    checked_by_name: "Owner",
+    checklist_note: "Caption checked manually."
+  });
+  assert.equal(updated.checklist_status, "done");
+  assert.equal(updated.is_done, true);
+  assert.equal(updated.checked_by_name, "Owner");
+  assert.ok(updated.checked_at);
+  assert.deepEqual(await getManualPublicationPackageContext(packageId), packageBefore);
+});
+
+maybeTest("manual publish checklist and evidence validation rejects unsafe values", () => {
+  assert.equal(validateManualPublishChecklistStatus("done"), "done");
+  assert.throws(() => validateManualPublishChecklistStatus("posted"), /Status checklist/i);
+  assert.equal(validateManualPublishEvidenceType("manual_post_url"), "manual_post_url");
+  assert.throws(() => validateManualPublishEvidenceType("file_upload"), /Tipe evidence/i);
+  assert.equal(validateManualPublishChecklistItemInput({ checklist_status: "done", checked_by_name: " Owner " }).checked_by_name, "Owner");
+  assert.throws(() => validateManualPublishChecklistItemInput({ checklist_note: "x".repeat(2001) }), /Catatan checklist maksimal/i);
+  assert.equal(validateManualPublishEvidenceInput({ evidence_type: "manual_post_url", evidence_value: "https://example.com/post" }).evidence_value, "https://example.com/post");
+  assert.throws(() => validateManualPublishEvidenceInput({ evidence_type: "manual_post_url", evidence_value: "ftp://example.com/post" }), /http/i);
+  assert.equal(validateManualPublishEvidenceInput({ evidence_type: "screenshot_reference", evidence_value: "../screenshots/manual.png" }).evidence_value, "../screenshots/manual.png");
+});
+
+maybeTest("manual publish evidence and completion summary do not mutate package, channels, parents, files, or content publications", async () => {
+  const fixture = await createManualPublicationPackageFixture("evidence-safety");
+  const packageId = fixture.packageContext.package.id;
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    const packageBefore = await getManualPublicationPackageContext(packageId);
+    const handoffBefore = await getHandoffByPromotionId(fixture.promotion.id);
+    const promotionBefore = await getRenderApprovedPromotionByAttemptId(fixture.attempt.id);
+    const attemptBefore = await getRenderAttemptById(fixture.attempt.id);
+    const reviewBefore = await getRenderAttemptReviewByAttemptId(fixture.attempt.id);
+    const approvedBefore = await stat(fixture.approvedPath);
+    const draftBefore = await stat(fixture.outputPath);
+    const sourceBefore = await stat(fixture.sourcePath);
+    const contentPublicationsBefore = await pool!.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM content_publications WHERE content_item_id = $1`,
+      [fixture.contentItemId]
+    );
+
+    const initialized = await initializeManualPublishChecklist(packageId);
+    for (const key of ["caption_ready", "manual_url_recorded", "final_visual_check"]) {
+      const item = initialized.checklistItems.find((row) => row.channel === "instagram" && row.checklist_key === key);
+      assert.ok(item);
+      await setManualPublishChecklistItemStatus(item.id, {
+        checklist_status: "done",
+        checked_by_name: "Owner",
+        checklist_note: `${key} done.`
+      });
+    }
+    await addManualPublishEvidence(packageId, "instagram", {
+      evidence_type: "manual_post_url",
+      evidence_value: "https://instagram.com/p/manual-phase-2f2-smoke",
+      evidence_note: "Manual URL recorded as text.",
+      recorded_by_name: "Owner"
+    });
+    await addManualPublishEvidence(packageId, "instagram", {
+      evidence_type: "screenshot_reference",
+      evidence_value: "owner-note/screenshot-reference-only",
+      evidence_note: "Reference text only; no file read.",
+      recorded_by_name: "Owner"
+    });
+    await addManualPublishEvidence(packageId, "instagram", {
+      evidence_type: "admin_note",
+      evidence_value: "Manual publish checked.",
+      evidence_note: "DB-only note.",
+      recorded_by_name: "Owner"
+    });
+
+    const evidence = await listManualPublishEvidence(packageId, { channel: "instagram" });
+    assert.equal(evidence.length, 3);
+    const summary = await getManualPublicationPackageCompletionSummary(packageId);
+    assert.equal(summary.checklist_total, 32);
+    assert.equal(summary.checklist_done, 3);
+    assert.equal(summary.evidence_count, 3);
+    assert.equal(summary.manual_url_channel_count, 1);
+    assert.deepEqual(summary.channels_with_manual_url, ["instagram"]);
+    const channelContext = await getManualPublishChecklistContextForChannel(packageId, "instagram");
+    assert.equal(channelContext.channels.length, 1);
+    assert.equal(channelContext.checklistItems.length, 8);
+
+    const packageAfter = await getManualPublicationPackageContext(packageId);
+    assert.deepEqual(packageAfter.package, packageBefore.package);
+    assert.deepEqual(packageAfter.channels, packageBefore.channels);
+    assert.deepEqual(await getHandoffByPromotionId(fixture.promotion.id), handoffBefore);
+    assert.deepEqual(await getRenderApprovedPromotionByAttemptId(fixture.attempt.id), promotionBefore);
+    assert.deepEqual(await getRenderAttemptById(fixture.attempt.id), attemptBefore);
+    assert.deepEqual(await getRenderAttemptReviewByAttemptId(fixture.attempt.id), reviewBefore);
+    const contentPublicationsAfter = await pool!.query<{ count: string }>(
+      `SELECT count(*)::text AS count FROM content_publications WHERE content_item_id = $1`,
+      [fixture.contentItemId]
+    );
+    assert.equal(contentPublicationsAfter.rows[0].count, contentPublicationsBefore.rows[0].count);
+    assert.equal((await stat(fixture.approvedPath)).size, approvedBefore.size);
+    assert.equal((await stat(fixture.approvedPath)).mtimeMs, approvedBefore.mtimeMs);
+    assert.equal((await stat(fixture.outputPath)).size, draftBefore.size);
+    assert.equal((await stat(fixture.outputPath)).mtimeMs, draftBefore.mtimeMs);
+    assert.equal((await stat(fixture.sourcePath)).size, sourceBefore.size);
+    assert.equal((await stat(fixture.sourcePath)).mtimeMs, sourceBefore.mtimeMs);
+  });
+});
+
+maybeTest("manual publish checklist page and API routes are ordered before generic package detail", async () => {
+  const fixture = await createManualPublicationPackageFixture("checklist-routes");
+  const packageId = fixture.packageContext.package.id;
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    const packageDetailResponse = mockResponse();
+    const packageDetailPath = `/publication-packages/${packageId}`;
+    const packageDetailHandled = await handleManualPublicationPackagePageGet(packageDetailResponse, packageDetailPath, new URL(`http://localhost${packageDetailPath}`));
+    assert.equal(packageDetailHandled, true);
+    assert.equal(packageDetailResponse.statusCode, 200);
+    assert.match(packageDetailResponse.body, /Open Checklist & Evidence/);
+
+    const checklistPageResponse = mockResponse();
+    const checklistPath = `/publication-packages/${packageId}/checklist`;
+    const checklistHandled = await handleManualPublishChecklistPageGet(checklistPageResponse, checklistPath, new URL(`http://localhost${checklistPath}`));
+    assert.equal(checklistHandled, true);
+    assert.equal(checklistPageResponse.statusCode, 200);
+    assert.match(checklistPageResponse.body, /Manual Publish Checklist/);
+    assert.match(checklistPageResponse.body, /Evidence reference adalah teks saja/);
+
+    const initializeResponse = mockResponse();
+    const initializePath = `/api/publication-packages/${packageId}/checklist/initialize`;
+    const initializeHandled = await handleManualPublishChecklistApiRoute(
+      { ...jsonRequest({}), url: initializePath } as any,
+      initializeResponse,
+      initializePath,
+      new URL(`http://localhost${initializePath}`)
+    );
+    assert.equal(initializeHandled, true);
+    assert.equal(initializeResponse.statusCode, 201);
+    const initialized = JSON.parse(initializeResponse.body).data;
+    assert.equal(initialized.checklistItems.length, 32);
+
+    const item = initialized.checklistItems.find((row: any) => row.channel === "instagram" && row.checklist_key === "caption_ready");
+    const updateResponse = mockResponse();
+    const updatePath = `/api/publication-packages/${packageId}/checklist/${item.id}/update`;
+    const updateHandled = await handleManualPublishChecklistApiRoute(
+      { ...jsonRequest({ checklist_status: "done", checked_by_name: "Owner" }), url: updatePath } as any,
+      updateResponse,
+      updatePath,
+      new URL(`http://localhost${updatePath}`)
+    );
+    assert.equal(updateHandled, true);
+    assert.equal(updateResponse.statusCode, 200);
+    assert.equal(JSON.parse(updateResponse.body).data.checklist_status, "done");
+
+    const evidenceResponse = mockResponse();
+    const evidencePath = `/api/publication-packages/${packageId}/evidence/instagram/add`;
+    const evidenceHandled = await handleManualPublishChecklistApiRoute(
+      { ...jsonRequest({ evidence_type: "admin_note", evidence_value: "route evidence", recorded_by_name: "Owner" }), url: evidencePath } as any,
+      evidenceResponse,
+      evidencePath,
+      new URL(`http://localhost${evidencePath}`)
+    );
+    assert.equal(evidenceHandled, true);
+    assert.equal(evidenceResponse.statusCode, 201);
+
+    const summaryResponse = mockResponse();
+    const summaryPath = `/api/publication-packages/${packageId}/completion-summary`;
+    const summaryHandled = await handleManualPublishChecklistApiRoute(
+      { method: "GET", url: summaryPath, headers: {}, on() {} } as any,
+      summaryResponse,
+      summaryPath,
+      new URL(`http://localhost${summaryPath}`)
+    );
+    assert.equal(summaryHandled, true);
+    assert.equal(summaryResponse.statusCode, 200);
+    assert.equal(JSON.parse(summaryResponse.body).data.evidence_count, 1);
+
+    const pagePostResponse = mockResponse();
+    const pagePostPath = `/publication-packages/${packageId}/evidence/instagram/add`;
+    const pagePostHandled = await handleManualPublishChecklistPagePost(
+      { ...jsonRequest({ evidence_type: "admin_note", evidence_value: "page evidence" }), url: pagePostPath } as any,
+      pagePostResponse,
+      pagePostPath
+    );
+    assert.equal(pagePostHandled, true);
+    assert.equal(pagePostResponse.statusCode, 303);
+  });
+});
+
 test("content footage, script planning, video draft, render manifest, preflight, and controlled render runtime files keep dependencies guarded", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
@@ -3497,7 +3746,8 @@ test("content footage, script planning, video draft, render manifest, preflight,
     "apps/web/src/validation/render-attempt-review-validation.ts",
     "apps/web/src/validation/render-approved-promotion-validation.ts",
     "apps/web/src/validation/approved-video-handoff-validation.ts",
-    "apps/web/src/validation/manual-publication-package-validation.ts"
+    "apps/web/src/validation/manual-publication-package-validation.ts",
+    "apps/web/src/validation/manual-publish-checklist-validation.ts"
   ].map((path) => readFileSync(path, "utf8")).join("\n");
 
   for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher", "fluent-ffmpeg", "child_process", "spawn", "exec", "execFile", "approved-videos", "workers/video", "writeFile", "copyFile", "createWriteStream", "appendFile", "truncate"]) {
@@ -3578,4 +3828,22 @@ test("content footage, script planning, video draft, render manifest, preflight,
   assert.equal(packageViewSource.includes("upload"), true);
   assert.equal(packageViewSource.includes("TikTok"), true);
   assert.equal(packageViewSource.includes("YouTube"), true);
+
+  const checklistRuntimeSource = [
+    "apps/web/src/manual-publish-checklist-service.ts",
+    "apps/web/src/routes/manual-publish-checklist-api-routes.ts",
+    "apps/web/src/routes/manual-publish-checklist-page-routes.ts"
+  ].map((path) => readFileSync(path, "utf8")).join("\n");
+  for (const forbidden of ["exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "mkdir", "createReadStream", "storage/approved-videos", "storage/draft-videos", "storage/footage", "workers/video", "OpenAI", "openai", "scheduler", "publisher", "upload", "graph.facebook", "facebook.com", "googleapis", "axios", "fetch("]) {
+    assert.equal(checklistRuntimeSource.includes(forbidden), false);
+  }
+
+  const checklistViewSource = readFileSync("apps/web/src/views/manual-publish-checklist-pages.ts", "utf8");
+  for (const forbidden of ["exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "mkdir", "createReadStream", "storage/approved-videos", "storage/draft-videos", "storage/footage", "workers/video", "graph.facebook", "facebook.com", "googleapis", "axios", "fetch("]) {
+    assert.equal(checklistViewSource.includes(forbidden), false);
+  }
+  assert.equal(checklistViewSource.includes("OpenAI"), true);
+  assert.equal(checklistViewSource.includes("scheduler"), true);
+  assert.equal(checklistViewSource.includes("publisher"), true);
+  assert.equal(checklistViewSource.includes("upload"), true);
 });
