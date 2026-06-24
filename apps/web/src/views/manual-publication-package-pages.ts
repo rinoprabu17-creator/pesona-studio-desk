@@ -247,7 +247,10 @@ export async function renderManualPublicationPackageDetailPage(packageId: string
     <section>
       <h2>Manual Publish Checklist</h2>
       <p class="hint">Checklist ${escapeHtml(completion.checklist_done)} / ${escapeHtml(completion.checklist_total)} done. Evidence ${escapeHtml(completion.evidence_count)}. Manual URL channels: ${completion.channels_with_manual_url.length ? escapeHtml(completion.channels_with_manual_url.join(", ")) : "-"}.</p>
-      <a class="button" href="/publication-packages/${escapeHtml(pkg.id)}/checklist">Open Checklist & Evidence</a>
+      <div class="button-row">
+        <a class="button" href="/publication-packages/${escapeHtml(pkg.id)}/checklist">Open Checklist & Evidence</a>
+        <a class="button secondary" href="/manual-publish-report/packages/${escapeHtml(pkg.id)}">Open Report Detail</a>
+      </div>
     </section>
     <section><h2>Status Package</h2><div class="button-row">${statusForms(pkg.id)}</div></section>
     <section><h2>Manual Copy</h2>${updateForm}</section>
