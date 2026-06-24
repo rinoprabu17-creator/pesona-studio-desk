@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { mkdtemp, mkdir, rm, stat, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import pg from "pg";
@@ -109,6 +109,18 @@ import {
   validateRenderAttemptReviewInput,
   validateRenderAttemptReviewStatus
 } from "../../apps/web/src/validation/render-attempt-review-validation.ts";
+import {
+  getRenderApprovedPromotionByAttemptId,
+  getRenderApprovedPromotionContext,
+  getRenderApprovedPromotionContextForContentItem,
+  listRenderApprovedPromotionsForManifest,
+  promoteApprovedRenderAttempt,
+  validateRenderApprovedPromotionEligibility
+} from "../../apps/web/src/render-approved-promotion-service.ts";
+import {
+  validateRenderApprovedPromotionInput,
+  validateRenderApprovedPromotionStatus
+} from "../../apps/web/src/validation/render-approved-promotion-validation.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -136,6 +148,11 @@ test.after(async () => {
     ]);
     const ids = campaigns.rows.map((row) => row.id);
     if (ids.length) {
+      await pool.query(
+        `DELETE FROM video_render_approved_promotions
+         WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
+        [ids]
+      );
       await pool.query(
         `DELETE FROM video_render_attempt_reviews
          WHERE content_item_id IN (SELECT id FROM content_items WHERE campaign_id = ANY($1::uuid[]))`,
@@ -407,6 +424,46 @@ async function insertRenderAttemptWithStatus(
     ]
   );
   return result.rows[0].id;
+}
+
+async function insertRenderAttemptReviewWithStatus(
+  fixture: Awaited<ReturnType<typeof createReadyRenderAttemptFixture>>,
+  attemptId: string,
+  reviewStatus: string
+): Promise<string> {
+  const result = await pool!.query<{ id: string }>(
+    `INSERT INTO video_render_attempt_reviews (
+       render_attempt_id,
+       render_manifest_id,
+       video_draft_job_id,
+       content_item_id,
+       review_status,
+       review_note,
+       reviewed_by_name,
+       reviewed_at
+     )
+     VALUES ($1, $2, $3, $4, $5, 'test review', 'Owner', CASE WHEN $5 IN ('approved', 'rejected') THEN now() ELSE NULL END)
+     RETURNING id`,
+    [
+      attemptId,
+      fixture.manifest.id,
+      fixture.job.id,
+      fixture.contentItemId,
+      reviewStatus
+    ]
+  );
+  return result.rows[0].id;
+}
+
+async function createApprovedPromotionFixture(codeSuffix: string) {
+  const fixture = await createSucceededReviewFixture(`promotion-${codeSuffix}`);
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    await approveRenderAttempt(fixture.attempt.id, {
+      reviewed_by_name: "Owner",
+      review_note: "Ready for promotion."
+    });
+  });
+  return fixture;
 }
 
 function jsonRequest(body: Record<string, unknown> = {}) {
@@ -2537,6 +2594,186 @@ maybeTest("render attempts page shows review status and link", async () => {
   });
 });
 
+maybeTest("approved promotion context rejects missing attempts and requires approved review", async () => {
+  await assert.rejects(
+    () => getRenderApprovedPromotionContext("11111111-1111-4111-8111-111111111111"),
+    /tidak ditemukan/i
+  );
+
+  const noReview = await createSucceededReviewFixture("promotion-no-review");
+  await withAppStorageRoot(noReview.storageRoot, async () => {
+    const context = await getRenderApprovedPromotionContext(noReview.attempt.id);
+    assert.equal(context.review, null);
+    assert.equal(context.eligibility.ok, false);
+    assert.match(context.eligibility.blocking_reasons.join(" "), /Review render belum ada/i);
+    await assert.rejects(
+      () => promoteApprovedRenderAttempt(noReview.attempt.id, { promoted_by_name: "Owner" }),
+      /Review render belum ada/i
+    );
+  });
+
+  for (const statusValue of ["pending_review", "rejected", "archived"]) {
+    const fixture = await createSucceededReviewFixture(`promotion-${statusValue}`);
+    await insertRenderAttemptReviewWithStatus(fixture, fixture.attempt.id, statusValue);
+    await withAppStorageRoot(fixture.storageRoot, async () => {
+      const context = await getRenderApprovedPromotionContext(fixture.attempt.id);
+      assert.equal(context.review?.review_status, statusValue);
+      assert.equal(context.eligibility.ok, false);
+      assert.match(context.eligibility.blocking_reasons.join(" "), /approved/i);
+    });
+  }
+});
+
+maybeTest("approved promotion validation normalizes safe inputs", async () => {
+  assert.equal(validateRenderApprovedPromotionStatus("succeeded"), "succeeded");
+  assert.equal(validateRenderApprovedPromotionStatus(""), "requested");
+  assert.throws(() => validateRenderApprovedPromotionStatus("published"), /Status promosi render tidak valid/i);
+  assert.deepEqual(validateRenderApprovedPromotionInput({ promotion_note: "  siap  ", promoted_by_name: " Owner " }), {
+    promotion_note: "siap",
+    promoted_by_name: "Owner"
+  });
+  assert.throws(() => validateRenderApprovedPromotionInput({ promotion_note: "x".repeat(2001) }), /Catatan promosi maksimal/i);
+});
+
+maybeTest("approved promotion requires succeeded attempt and physical non-empty draft source", async () => {
+  const fixture = await createReadyRenderAttemptFixture("promotion-eligibility", {
+    createSourceFile: true,
+    manifestStatus: "approved"
+  });
+  for (const statusValue of ["requested", "running", "failed", "blocked"]) {
+    const attemptId = await insertRenderAttemptWithStatus(fixture, statusValue, null, null);
+    await insertRenderAttemptReviewWithStatus(fixture, attemptId, "approved");
+    await withAppStorageRoot(fixture.storageRoot, async () => {
+      const context = await getRenderApprovedPromotionContext(attemptId);
+      assert.equal(context.eligibility.ok, false);
+      assert.match(context.eligibility.blocking_reasons.join(" "), /succeeded|Output draft render belum tersedia/i);
+    });
+  }
+
+  const missingAttemptId = await insertRenderAttemptWithStatus(fixture, "succeeded", "smoke/missing-promotion-source.mp4", 128);
+  await insertRenderAttemptReviewWithStatus(fixture, missingAttemptId, "approved");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    await assert.rejects(
+      () => promoteApprovedRenderAttempt(missingAttemptId, { promoted_by_name: "Owner" }),
+      /fisik tidak ditemukan/i
+    );
+  });
+
+  const zeroRelativePath = `smoke/zero-promotion-${fixture.manifest.id.slice(0, 8)}.mp4`;
+  await mkdir(dirname(join(fixture.storageRoot, "draft-videos", zeroRelativePath)), { recursive: true });
+  await writeFile(join(fixture.storageRoot, "draft-videos", zeroRelativePath), "");
+  const zeroAttemptId = await insertRenderAttemptWithStatus(fixture, "succeeded", zeroRelativePath, 0);
+  await insertRenderAttemptReviewWithStatus(fixture, zeroAttemptId, "approved");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    await assert.rejects(
+      () => promoteApprovedRenderAttempt(zeroAttemptId, { promoted_by_name: "Owner" }),
+      /non-empty|kosong/i
+    );
+  });
+});
+
+maybeTest("approved promotion copies one file, records row, and keeps source, attempt, and review unchanged", async () => {
+  const fixture = await createApprovedPromotionFixture("success");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    const attemptBefore = await getRenderAttemptById(fixture.attempt.id);
+    const reviewBefore = await getRenderAttemptReviewByAttemptId(fixture.attempt.id);
+    const draftBefore = await stat(fixture.outputPath);
+    const sourceBefore = await stat(fixture.sourcePath);
+    const approvedSmokeRoot = join(fixture.storageRoot, "approved-videos", "smoke");
+    const beforeApprovedFiles = await readdir(approvedSmokeRoot).catch(() => []);
+
+    const promotion = await promoteApprovedRenderAttempt(fixture.attempt.id, {
+      promoted_by_name: "Owner",
+      promotion_note: "Manual copy approval."
+    });
+
+    const approvedPath = join(fixture.storageRoot, "approved-videos", promotion.approved_output_relative_path!);
+    const approvedStat = await stat(approvedPath);
+    const draftAfter = await stat(fixture.outputPath);
+    const sourceAfter = await stat(fixture.sourcePath);
+    const attemptAfter = await getRenderAttemptById(fixture.attempt.id);
+    const reviewAfter = await getRenderAttemptReviewByAttemptId(fixture.attempt.id);
+    const storedPromotion = await getRenderApprovedPromotionByAttemptId(fixture.attempt.id);
+    const promotions = await listRenderApprovedPromotionsForManifest(fixture.manifest.id);
+    const afterApprovedFiles = await readdir(approvedSmokeRoot);
+    const eligibility = await validateRenderApprovedPromotionEligibility(fixture.attempt.id);
+
+    assert.equal(promotion.promotion_status, "succeeded");
+    assert.equal(promotion.promotion_mode, "manual_copy");
+    assert.match(promotion.approved_output_relative_path || "", /^smoke\/.+[.]mp4$/);
+    assert.equal(promotion.source_output_relative_path, fixture.outputRelativePath);
+    assert.equal(promotion.source_size_bytes, draftBefore.size);
+    assert.equal(promotion.approved_size_bytes, draftBefore.size);
+    assert.equal(promotion.source_sha256, promotion.approved_sha256);
+    assert.equal(readFileSync(approvedPath, "utf8"), readFileSync(fixture.outputPath, "utf8"));
+    assert.equal(approvedStat.size, draftBefore.size);
+    assert.equal(afterApprovedFiles.length, beforeApprovedFiles.length + 1);
+    assert.deepEqual(attemptAfter, attemptBefore);
+    assert.deepEqual(reviewAfter, reviewBefore);
+    assert.equal(storedPromotion?.id, promotion.id);
+    assert.equal(promotions.some((row) => row.id === promotion.id), true);
+    assert.equal(draftAfter.size, draftBefore.size);
+    assert.equal(draftAfter.mtimeMs, draftBefore.mtimeMs);
+    assert.equal(sourceAfter.size, sourceBefore.size);
+    assert.equal(sourceAfter.mtimeMs, sourceBefore.mtimeMs);
+    assert.equal(eligibility.ok, false);
+    assert.match(eligibility.blocking_reasons.join(" "), /promotion row/i);
+
+    const approvedBeforeDuplicate = await stat(approvedPath);
+    await assert.rejects(
+      () => promoteApprovedRenderAttempt(fixture.attempt.id, { promoted_by_name: "Owner" }),
+      /promotion row/i
+    );
+    const approvedAfterDuplicate = await stat(approvedPath);
+    assert.equal(approvedAfterDuplicate.size, approvedBeforeDuplicate.size);
+    assert.equal(approvedAfterDuplicate.mtimeMs, approvedBeforeDuplicate.mtimeMs);
+  });
+});
+
+maybeTest("approved promotion page and API routes match before generic attempt route", async () => {
+  const fixture = await createApprovedPromotionFixture("routes");
+  await withAppStorageRoot(fixture.storageRoot, async () => {
+    const pageResponse = mockResponse();
+    const pagePath = `/content-items/${fixture.contentItemId}/video-draft/${fixture.job.id}/manifest/${fixture.manifest.id}/render-attempts/${fixture.attempt.id}/promotion`;
+    const pageHandled = await handleContentItemPageGet(pageResponse, pagePath, new URL(`http://localhost${pagePath}`));
+    assert.equal(pageHandled, true);
+    assert.equal(pageResponse.statusCode, 200);
+    assert.match(pageResponse.body, /Promote Draft Render/);
+    assert.match(pageResponse.body, /approved-videos\/smoke/);
+
+    const reviewPageResponse = mockResponse();
+    const reviewPagePath = `/content-items/${fixture.contentItemId}/video-draft/${fixture.job.id}/manifest/${fixture.manifest.id}/render-attempts/${fixture.attempt.id}/review`;
+    const reviewPageHandled = await handleContentItemPageGet(reviewPageResponse, reviewPagePath, new URL(`http://localhost${reviewPagePath}`));
+    assert.equal(reviewPageHandled, true);
+    assert.match(reviewPageResponse.body, /Promote to Approved Smoke/);
+
+    const apiResponse = mockResponse();
+    const apiPath = `/api/render-attempts/${fixture.attempt.id}/promotion`;
+    const apiHandled = await handleContentItemApiRoute(
+      { method: "GET", url: apiPath, headers: {}, on() {} } as any,
+      apiResponse,
+      apiPath,
+      new URL(`http://localhost${apiPath}`)
+    );
+    assert.equal(apiHandled, true);
+    assert.equal(apiResponse.statusCode, 200);
+    assert.equal(JSON.parse(apiResponse.body).data.attempt.id, fixture.attempt.id);
+
+    const promoteResponse = mockResponse();
+    const promotePath = `/api/render-attempts/${fixture.attempt.id}/promotion/promote`;
+    const promoteRequest = jsonRequest({ promoted_by_name: "Owner", promotion_note: "route promotion" });
+    const promoteHandled = await handleContentItemApiRoute(
+      { ...promoteRequest, url: promotePath } as any,
+      promoteResponse,
+      promotePath,
+      new URL(`http://localhost${promotePath}`)
+    );
+    assert.equal(promoteHandled, true);
+    assert.equal(promoteResponse.statusCode, 201);
+    assert.equal(JSON.parse(promoteResponse.body).data.promotion_status, "succeeded");
+  });
+});
+
 test("content footage, script planning, video draft, render manifest, preflight, and controlled render runtime files keep dependencies guarded", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
@@ -2553,7 +2790,8 @@ test("content footage, script planning, video draft, render manifest, preflight,
     "apps/web/src/validation/render-manifest-validation.ts",
     "apps/web/src/validation/render-preflight-validation.ts",
     "apps/web/src/validation/render-attempt-validation.ts",
-    "apps/web/src/validation/render-attempt-review-validation.ts"
+    "apps/web/src/validation/render-attempt-review-validation.ts",
+    "apps/web/src/validation/render-approved-promotion-validation.ts"
   ].map((path) => readFileSync(path, "utf8")).join("\n");
 
   for (const forbidden of ["OpenAI", "openai", "scheduler", "publisher", "fluent-ffmpeg", "child_process", "spawn", "exec", "execFile", "approved-videos", "workers/video", "writeFile", "copyFile", "createWriteStream", "appendFile", "truncate"]) {
@@ -2581,4 +2819,13 @@ test("content footage, script planning, video draft, render manifest, preflight,
   }
   assert.equal(renderReviewSource.includes("\"draft-videos\""), true);
   assert.equal(renderReviewSource.includes("\"smoke\""), true);
+
+  const renderPromotionSource = readFileSync("apps/web/src/render-approved-promotion-service.ts", "utf8");
+  for (const forbidden of ["exec(", "execFile", "shell:", "rm(", "unlink", "rename", "writeFile", "appendFile", "createWriteStream", "workers/video", "OpenAI", "openai", "scheduler", "publisher", "upload"]) {
+    assert.equal(renderPromotionSource.includes(forbidden), false);
+  }
+  assert.equal(renderPromotionSource.includes("copyFile"), true);
+  assert.equal(renderPromotionSource.includes("\"approved-videos\""), true);
+  assert.equal(renderPromotionSource.includes("\"draft-videos\""), true);
+  assert.equal(renderPromotionSource.includes("\"smoke\""), true);
 });

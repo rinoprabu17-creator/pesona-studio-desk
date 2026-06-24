@@ -52,6 +52,10 @@ import {
   getRenderAttemptReviewContext,
   rejectRenderAttempt
 } from "../render-attempt-review-service.ts";
+import {
+  getRenderApprovedPromotionContext,
+  promoteApprovedRenderAttempt
+} from "../render-approved-promotion-service.ts";
 
 export async function handleContentItemApiRoute(request: RequestLike, response: ResponseLike, pathname: string, url: URL): Promise<boolean> {
   if (pathname === "/api/content-items" && request.method === "GET") {
@@ -203,6 +207,18 @@ export async function handleContentItemApiRoute(request: RequestLike, response: 
   const renderAttemptRejectMatch = pathname.match(/^\/api\/render-attempts\/([^/]+)\/review\/reject$/);
   if (renderAttemptRejectMatch && request.method === "POST") {
     sendSuccess(response, await rejectRenderAttempt(renderAttemptRejectMatch[1], await readJsonBody(request)), 201);
+    return true;
+  }
+
+  const renderAttemptPromotionMatch = pathname.match(/^\/api\/render-attempts\/([^/]+)\/promotion$/);
+  if (renderAttemptPromotionMatch && request.method === "GET") {
+    sendSuccess(response, await getRenderApprovedPromotionContext(renderAttemptPromotionMatch[1]));
+    return true;
+  }
+
+  const renderAttemptPromoteMatch = pathname.match(/^\/api\/render-attempts\/([^/]+)\/promotion\/promote$/);
+  if (renderAttemptPromoteMatch && request.method === "POST") {
+    sendSuccess(response, await promoteApprovedRenderAttempt(renderAttemptPromoteMatch[1], await readJsonBody(request)), 201);
     return true;
   }
 

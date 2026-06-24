@@ -45,6 +45,11 @@ import {
   getRenderAttemptReviewContextForContentItem,
   rejectRenderAttempt
 } from "../render-attempt-review-service.ts";
+import { RenderApprovedPromotionError } from "../render-approved-promotion-errors.ts";
+import {
+  getRenderApprovedPromotionContextForContentItem,
+  promoteApprovedRenderAttempt
+} from "../render-approved-promotion-service.ts";
 import { VideoDraftJobError } from "../video-draft-job-errors.ts";
 import {
   cancelVideoDraftJobForContentItem,
@@ -60,6 +65,7 @@ import {
   renderContentItemRenderPreflightPage,
   renderContentItemRenderAttemptsPage,
   renderContentItemRenderAttemptReviewPage,
+  renderContentItemRenderAttemptPromotionPage,
   renderContentItemRenderManifestPage,
   renderContentItemScriptPlanPage,
   renderContentItemVideoDraftPage,
@@ -76,6 +82,7 @@ function statusCodeFor(error: unknown): number {
     error instanceof RenderPreflightError ||
     error instanceof RenderAttemptError ||
     error instanceof RenderAttemptReviewError ||
+    error instanceof RenderApprovedPromotionError ||
     error instanceof VideoDraftJobError
   ) {
     return error.statusCode;
@@ -92,6 +99,7 @@ function isNotFoundLike(error: unknown): boolean {
     error instanceof RenderPreflightError ||
     error instanceof RenderAttemptError ||
     error instanceof RenderAttemptReviewError ||
+    error instanceof RenderApprovedPromotionError ||
     error instanceof VideoDraftJobError
   ) {
     return error.statusCode === 400 || error.statusCode === 404;
@@ -405,6 +413,25 @@ export async function handleContentItemPagePost(request: RequestLike, response: 
     return true;
   }
 
+  const promoteRenderAttemptMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/([^/]+)\/render-attempts\/([^/]+)\/promotion\/promote$/);
+  if (promoteRenderAttemptMatch && request.method === "POST") {
+    const body = await readFormBody(request);
+    try {
+      await getRenderApprovedPromotionContextForContentItem(
+        promoteRenderAttemptMatch[1],
+        promoteRenderAttemptMatch[2],
+        promoteRenderAttemptMatch[3],
+        promoteRenderAttemptMatch[4]
+      );
+      await promoteApprovedRenderAttempt(promoteRenderAttemptMatch[4], body);
+      redirect(response, `/content-items/${encodeURIComponent(promoteRenderAttemptMatch[1])}/video-draft/${encodeURIComponent(promoteRenderAttemptMatch[2])}/manifest/${encodeURIComponent(promoteRenderAttemptMatch[3])}/render-attempts/${encodeURIComponent(promoteRenderAttemptMatch[4])}/promotion?success=Draft render berhasil dipromosikan ke approved smoke.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Promosi draft render gagal.";
+      redirect(response, `/content-items/${encodeURIComponent(promoteRenderAttemptMatch[1])}/video-draft/${encodeURIComponent(promoteRenderAttemptMatch[2])}/manifest/${encodeURIComponent(promoteRenderAttemptMatch[3])}/render-attempts/${encodeURIComponent(promoteRenderAttemptMatch[4])}/promotion?error=${encodeURIComponent(message)}`);
+    }
+    return true;
+  }
+
   return false;
 }
 
@@ -525,6 +552,18 @@ export async function handleContentItemPageGet(response: ResponseLike, pathname:
       sendHtml(response, await renderContentItemRenderAttemptReviewPage(item, renderAttemptReviewMatch[2], renderAttemptReviewMatch[3], renderAttemptReviewMatch[4], url));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Review render attempt tidak ditemukan.";
+      sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
+    }
+    return true;
+  }
+
+  const renderAttemptPromotionMatch = pathname.match(/^\/content-items\/([^/]+)\/video-draft\/([^/]+)\/manifest\/([^/]+)\/render-attempts\/([^/]+)\/promotion$/);
+  if (renderAttemptPromotionMatch) {
+    try {
+      const item = await getContentItem(renderAttemptPromotionMatch[1]);
+      sendHtml(response, await renderContentItemRenderAttemptPromotionPage(item, renderAttemptPromotionMatch[2], renderAttemptPromotionMatch[3], renderAttemptPromotionMatch[4], url));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Promosi render attempt tidak ditemukan.";
       sendHtml(response, renderContentItemNotFoundPage(message), isNotFoundLike(error) ? 404 : 500);
     }
     return true;
