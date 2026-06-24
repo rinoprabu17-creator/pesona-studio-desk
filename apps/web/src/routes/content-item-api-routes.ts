@@ -44,6 +44,7 @@ import {
 import {
   getControlledRenderContextForManifest,
   getRenderAttemptById,
+  runControlledMultiShotSmokeRenderForManifest,
   runControlledSmokeRenderForManifest
 } from "../render-attempt-service.ts";
 
@@ -173,6 +174,12 @@ export async function handleContentItemApiRoute(request: RequestLike, response: 
   const renderManifestSmokeAttemptMatch = pathname.match(/^\/api\/render-manifests\/([^/]+)\/render-attempts\/run-smoke$/);
   if (renderManifestSmokeAttemptMatch && request.method === "POST") {
     sendSuccess(response, await runControlledSmokeRenderForManifest(renderManifestSmokeAttemptMatch[1]), 201);
+    return true;
+  }
+
+  const renderManifestMultiShotSmokeAttemptMatch = pathname.match(/^\/api\/render-manifests\/([^/]+)\/render-attempts\/run-multishot-smoke$/);
+  if (renderManifestMultiShotSmokeAttemptMatch && request.method === "POST") {
+    sendSuccess(response, await runControlledMultiShotSmokeRenderForManifest(renderManifestMultiShotSmokeAttemptMatch[1]), 201);
     return true;
   }
 

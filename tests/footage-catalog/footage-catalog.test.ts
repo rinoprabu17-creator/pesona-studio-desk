@@ -79,13 +79,16 @@ import {
   validateRenderPreflightRunStatus
 } from "../../apps/web/src/validation/render-preflight-validation.ts";
 import {
+  buildSafeFfmpegMultiShotArgs,
   buildSafeFfmpegArgs,
   getControlledRenderContextForContentItem,
   getControlledRenderContextForManifest,
   getRenderAttemptById,
   isSafeRenderSourceRelativePath,
   listRenderAttemptsForManifest,
+  runControlledMultiShotSmokeRenderForManifest,
   runControlledSmokeRenderForManifest,
+  validateControlledMultiShotRenderEligibility,
   validateControlledRenderEligibility
 } from "../../apps/web/src/render-attempt-service.ts";
 import {
@@ -246,25 +249,36 @@ async function createFootage(relativeName: string, status: string) {
 
 async function createReadyRenderAttemptFixture(
   codeSuffix: string,
-  options: { createSourceFile?: boolean; manifestStatus?: "reviewed" | "approved"; runPreflight?: boolean } = {}
+  options: { createSourceFile?: boolean; manifestStatus?: "reviewed" | "approved"; runPreflight?: boolean; sourceCount?: number } = {}
 ) {
   const createSourceFile = options.createSourceFile ?? true;
   const manifestStatus = options.manifestStatus || "approved";
+  const sourceCount = options.sourceCount || 1;
   const { storageRoot, footageRoot } = await createTempFootageRoot();
   const contentItemId = await createContent(`render-attempt-${codeSuffix}`);
   const plan = await getOrCreateContentItemScriptPlan(contentItemId);
-  const reviewed = await createFootage(`render-attempt-${codeSuffix}.mp4`, "reviewed");
-  const selection = await addContentItemFootageSelection(contentItemId, {
-    footage_asset_id: reviewed.id,
-    sequence_number: 1,
-    role: "product"
-  });
-  const step = await addShotPlanStep(plan.id, {
-    content_item_footage_selection_id: selection.id,
-    sequence_number: 1,
-    step_type: "product",
-    duration_seconds: 6
-  });
+  const reviewedItems = [];
+  const selections = [];
+  const steps = [];
+  const sourcePaths = [];
+  for (let index = 1; index <= sourceCount; index += 1) {
+    const reviewed = await createFootage(`render-attempt-${codeSuffix}-${index}.mp4`, "reviewed");
+    const selection = await addContentItemFootageSelection(contentItemId, {
+      footage_asset_id: reviewed.id,
+      sequence_number: index,
+      role: index === 1 ? "opening" : "product"
+    });
+    const step = await addShotPlanStep(plan.id, {
+      content_item_footage_selection_id: selection.id,
+      sequence_number: index,
+      step_type: index === 1 ? "hook" : "product",
+      duration_seconds: 5
+    });
+    reviewedItems.push(reviewed);
+    selections.push(selection);
+    steps.push(step);
+    sourcePaths.push(join(footageRoot, reviewed.relative_path));
+  }
   const job = await createVideoDraftJobForContentItem(contentItemId, {
     script_plan_id: plan.id,
     job_status: "planning_ready",
@@ -277,14 +291,31 @@ async function createReadyRenderAttemptFixture(
     target_format: "vertical_9_16"
   });
 
-  const sourcePath = join(footageRoot, reviewed.relative_path);
   if (createSourceFile) {
-    await mkdir(dirname(sourcePath), { recursive: true });
-    await writeFile(sourcePath, `mock source for ${codeSuffix}`);
+    for (const sourcePath of sourcePaths) {
+      await mkdir(dirname(sourcePath), { recursive: true });
+      await writeFile(sourcePath, `mock source for ${codeSuffix}`);
+    }
   }
   const preflight = options.runPreflight === false ? null : await runRenderPreflightForManifest(manifest.id);
 
-  return { storageRoot, footageRoot, contentItemId, plan, reviewed, selection, step, job, manifest, preflight, sourcePath };
+  return {
+    storageRoot,
+    footageRoot,
+    contentItemId,
+    plan,
+    reviewed: reviewedItems[0],
+    reviewedItems,
+    selection: selections[0],
+    selections,
+    step: steps[0],
+    steps,
+    job,
+    manifest,
+    preflight,
+    sourcePath: sourcePaths[0],
+    sourcePaths
+  };
 }
 
 function mockResponse() {
@@ -1898,6 +1929,152 @@ test("controlled render builds FFmpeg argument array without shell command strin
   assert.equal(args.join(" ").includes("scale=720:720"), true);
 });
 
+test("controlled multi-shot render builds FFmpeg argument array without shell command string", () => {
+  const args = buildSafeFfmpegMultiShotArgs(["/tmp/source-a.mp4", "/tmp/source-b.mp4"], "/tmp/output.mp4", {
+    target_format: "vertical_9_16"
+  });
+  assert.equal(Array.isArray(args), true);
+  assert.equal(args.filter((arg) => arg === "-i").length, 2);
+  assert.equal(args.includes("-filter_complex"), true);
+  assert.equal(args.includes("shell"), false);
+  assert.equal(args.join(" ").includes("concat=n=2:v=1:a=0"), true);
+  assert.equal(args.join(" ").includes("scale=720:1280"), true);
+  assert.equal(args.includes("-n"), true);
+  assert.equal(args.at(-1), "/tmp/output.mp4");
+  assert.throws(() => buildSafeFfmpegMultiShotArgs(["/tmp/one.mp4"], "/tmp/output.mp4"), /2 sampai 3/i);
+});
+
+maybeTest("controlled multi-shot eligibility requires at least two safe source-backed items", async () => {
+  const single = await createReadyRenderAttemptFixture("multishot-single", {
+    createSourceFile: true,
+    sourceCount: 1
+  });
+  const singleEligibility = await validateControlledMultiShotRenderEligibility(single.manifest.id, {
+    storageRoot: single.storageRoot
+  });
+  const singleAttempt = await runControlledMultiShotSmokeRenderForManifest(single.manifest.id, {
+    storageRoot: single.storageRoot
+  });
+
+  assert.equal(singleEligibility.ok, false);
+  assert.match(singleEligibility.blocking_reasons.join(" "), /minimal 2/i);
+  assert.equal(singleAttempt.attempt_status, "blocked");
+  assert.match(singleAttempt.error_message || "", /minimal 2/i);
+
+  const multi = await createReadyRenderAttemptFixture("multishot-ready", {
+    createSourceFile: true,
+    sourceCount: 3
+  });
+  const multiEligibility = await validateControlledMultiShotRenderEligibility(multi.manifest.id, {
+    storageRoot: multi.storageRoot
+  });
+  assert.equal(multiEligibility.ok, true);
+  assert.match(multiEligibility.source_relative_path || "", /-1\.mp4/);
+  assert.match(multiEligibility.source_relative_path || "", /-2\.mp4/);
+  assert.match(multiEligibility.source_relative_path || "", /-3\.mp4/);
+});
+
+maybeTest("controlled multi-shot rejects missing or blocked latest preflight", async () => {
+  const missingPreflight = await createReadyRenderAttemptFixture("multishot-no-preflight", {
+    createSourceFile: true,
+    runPreflight: false,
+    sourceCount: 2
+  });
+  await assert.rejects(
+    () => runControlledMultiShotSmokeRenderForManifest(missingPreflight.manifest.id, { storageRoot: missingPreflight.storageRoot }),
+    /preflight ready wajib/i
+  );
+
+  const blockedPreflight = await createReadyRenderAttemptFixture("multishot-blocked-preflight", {
+    createSourceFile: true,
+    sourceCount: 2
+  });
+  await cancelVideoDraftJob(blockedPreflight.job.id);
+  const blockedRun = await runRenderPreflightForManifest(blockedPreflight.manifest.id);
+  const attempt = await runControlledMultiShotSmokeRenderForManifest(blockedPreflight.manifest.id, {
+    storageRoot: blockedPreflight.storageRoot
+  });
+
+  assert.equal(blockedRun.preflight_result, "blocked");
+  assert.equal(attempt.attempt_status, "blocked");
+  assert.match(attempt.error_message || "", /Preflight terakhir belum ready/i);
+});
+
+maybeTest("controlled multi-shot blocks unsafe and missing physical source", async () => {
+  const unsafe = await createReadyRenderAttemptFixture("multishot-unsafe-source", {
+    createSourceFile: true,
+    sourceCount: 2
+  });
+  await pool!.query(
+    `UPDATE video_render_manifest_items
+     SET source_relative_path_snapshot = '../unsafe.mp4'
+     WHERE manifest_id = $1
+       AND sequence_number = 1`,
+    [unsafe.manifest.id]
+  );
+  const unsafeEligibility = await validateControlledMultiShotRenderEligibility(unsafe.manifest.id, {
+    storageRoot: unsafe.storageRoot
+  });
+  const unsafeAttempt = await runControlledMultiShotSmokeRenderForManifest(unsafe.manifest.id, {
+    storageRoot: unsafe.storageRoot
+  });
+
+  assert.equal(unsafeEligibility.ok, false);
+  assert.match(unsafeEligibility.blocking_reasons.join(" "), /minimal 2/i);
+  assert.equal(unsafeAttempt.attempt_status, "blocked");
+
+  const missing = await createReadyRenderAttemptFixture("multishot-missing-source", {
+    createSourceFile: false,
+    sourceCount: 2
+  });
+  const missingEligibility = await validateControlledMultiShotRenderEligibility(missing.manifest.id, {
+    storageRoot: missing.storageRoot
+  });
+  const missingAttempt = await runControlledMultiShotSmokeRenderForManifest(missing.manifest.id, {
+    storageRoot: missing.storageRoot
+  });
+
+  assert.equal(missingEligibility.ok, false);
+  assert.match(missingEligibility.blocking_reasons.join(" "), /fisik tidak ditemukan/i);
+  assert.equal(missingAttempt.attempt_status, "blocked");
+  assert.match(missingAttempt.error_message || "", /fisik tidak ditemukan/i);
+});
+
+maybeTest("controlled multi-shot output path cannot escape smoke and does not overwrite existing output", async () => {
+  const fixture = await createReadyRenderAttemptFixture("multishot-output-guards", {
+    createSourceFile: true,
+    sourceCount: 2
+  });
+
+  await assert.rejects(
+    () =>
+      validateControlledMultiShotRenderEligibility(fixture.manifest.id, {
+        storageRoot: fixture.storageRoot,
+        output_relative_path: "../outside.mp4"
+      }),
+    /smoke|traversal/i
+  );
+
+  const outputRelativePath = `smoke/multishot-existing-${fixture.manifest.id.slice(0, 8)}.mp4`;
+  const outputPath = join(fixture.storageRoot, "draft-videos", outputRelativePath);
+  await mkdir(dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, "existing output");
+
+  const eligibility = await validateControlledMultiShotRenderEligibility(fixture.manifest.id, {
+    storageRoot: fixture.storageRoot,
+    output_relative_path: outputRelativePath
+  });
+  const attempt = await runControlledMultiShotSmokeRenderForManifest(fixture.manifest.id, {
+    storageRoot: fixture.storageRoot,
+    output_relative_path: outputRelativePath
+  });
+
+  assert.equal(eligibility.ok, false);
+  assert.match(eligibility.blocking_reasons.join(" "), /tidak boleh overwrite/i);
+  assert.equal(attempt.attempt_status, "blocked");
+  assert.match(attempt.error_message || "", /tidak boleh overwrite/i);
+});
+
 maybeTest("controlled render mocked success records smoke output and keeps source plus planning rows intact", async () => {
   const fixture = await createReadyRenderAttemptFixture("mock-success", {
     createSourceFile: true
@@ -1950,6 +2127,63 @@ maybeTest("controlled render mocked success records smoke output and keeps sourc
   assert.equal(footageAfter.size_bytes, fixture.reviewed.size_bytes);
 });
 
+maybeTest("controlled multi-shot mocked success records smoke output and keeps source plus planning rows intact", async () => {
+  const fixture = await createReadyRenderAttemptFixture("multishot-mock-success", {
+    createSourceFile: true,
+    sourceCount: 3
+  });
+  const beforeSources = await Promise.all(fixture.sourcePaths.map((sourcePath) => stat(sourcePath)));
+  const outputRelativePath = `smoke/multishot-success-${fixture.manifest.id.slice(0, 8)}.mp4`;
+  let capturedArgs: string[] = [];
+
+  const attempt = await runControlledMultiShotSmokeRenderForManifest(fixture.manifest.id, {
+    storageRoot: fixture.storageRoot,
+    output_relative_path: outputRelativePath,
+    ffmpegRunner: async (args) => {
+      capturedArgs = args;
+      const outputPath = args.at(-1);
+      assert.ok(outputPath);
+      await mkdir(dirname(outputPath), { recursive: true });
+      await writeFile(outputPath, "mock multishot mp4 output");
+      return { exitCode: 0, errorMessage: null };
+    }
+  });
+
+  const outputPath = join(fixture.storageRoot, "draft-videos", outputRelativePath);
+  const outputStat = await stat(outputPath);
+  const afterSources = await Promise.all(fixture.sourcePaths.map((sourcePath) => stat(sourcePath)));
+  const loadedAttempt = await getRenderAttemptById(attempt.id);
+  const jobAfter = await getVideoDraftJobById(fixture.job.id);
+  const manifestAfter = await getRenderManifestById(fixture.manifest.id);
+  const planAfter = await getContentItemScriptPlan(fixture.contentItemId);
+  const stepsAfter = await listShotPlanSteps(fixture.plan.id);
+  const selectionAfter = await getContentItemFootageSelection(fixture.selection.id);
+  const footageAfter = await getFootageAsset(fixture.reviewed.id);
+
+  assert.equal(attempt.attempt_status, "succeeded");
+  assert.equal(loadedAttempt.output_relative_path, outputRelativePath);
+  assert.equal(loadedAttempt.output_size_bytes, outputStat.size);
+  assert.equal(loadedAttempt.ffmpeg_exit_code, 0);
+  assert.equal(capturedArgs.filter((arg) => arg === "-i").length, 3);
+  assert.equal(capturedArgs.includes("-filter_complex"), true);
+  assert.equal(capturedArgs.join(" ").includes("concat=n=3:v=1:a=0"), true);
+  assert.equal(capturedArgs.some((arg) => arg.includes("storage/approved-videos")), false);
+  assert.equal(outputStat.size > 0, true);
+  for (let index = 0; index < fixture.sourcePaths.length; index += 1) {
+    assert.equal(afterSources[index].size, beforeSources[index].size);
+    assert.equal(afterSources[index].mtimeMs, beforeSources[index].mtimeMs);
+  }
+  assert.equal(jobAfter.id, fixture.job.id);
+  assert.equal(manifestAfter.id, fixture.manifest.id);
+  assert.equal(planAfter?.id, fixture.plan.id);
+  assert.deepEqual(stepsAfter.map((row) => row.id).sort(), fixture.steps.map((row) => row.id).sort());
+  assert.equal(selectionAfter.id, fixture.selection.id);
+  assert.equal(footageAfter.relative_path, fixture.reviewed.relative_path);
+  assert.equal(footageAfter.filename, fixture.reviewed.filename);
+  assert.equal(footageAfter.file_extension, fixture.reviewed.file_extension);
+  assert.equal(footageAfter.size_bytes, fixture.reviewed.size_bytes);
+});
+
 maybeTest("controlled render validation rejects invalid generated attempt fields", async () => {
   assert.throws(() => validateRenderAttemptStatus("queued"), /Status render attempt tidak valid/i);
   assert.throws(() => validateRenderAttemptMode("auto"), /manual_smoke/i);
@@ -1970,6 +2204,7 @@ maybeTest("controlled render page and API route before generic render manifest r
   assert.equal(pageHandled, true);
   assert.equal(pageResponse.statusCode, 200);
   assert.match(pageResponse.body, /Controlled Smoke Render/);
+  assert.match(pageResponse.body, /Run Multi-Shot Smoke Render/);
   assert.match(pageResponse.body, /manual-only/);
 
   const apiResponse = mockResponse();
@@ -1984,6 +2219,21 @@ maybeTest("controlled render page and API route before generic render manifest r
   const body = JSON.parse(apiResponse.body);
   assert.equal(body.ok, true);
   assert.equal(body.data.manifest.id, fixture.manifest.id);
+  assert.equal(Boolean(body.data.multiShotEligibility), true);
+
+  const apiPostResponse = mockResponse();
+  const apiPostHandled = await handleContentItemApiRoute(
+    { method: "POST", url: `/api/render-manifests/${fixture.manifest.id}/render-attempts/run-multishot-smoke`, headers: {}, on() {} } as any,
+    apiPostResponse,
+    `/api/render-manifests/${fixture.manifest.id}/render-attempts/run-multishot-smoke`,
+    new URL(`http://localhost/api/render-manifests/${fixture.manifest.id}/render-attempts/run-multishot-smoke`)
+  );
+  assert.equal(apiPostHandled, true);
+  assert.equal(apiPostResponse.statusCode, 201);
+  const apiPostBody = JSON.parse(apiPostResponse.body);
+  assert.equal(apiPostBody.ok, true);
+  assert.equal(apiPostBody.data.attempt_status, "blocked");
+  assert.match(apiPostBody.data.error_message || "", /minimal 2|fisik tidak ditemukan/i);
 
   const context = await getControlledRenderContextForContentItem(fixture.contentItemId, fixture.job.id, fixture.manifest.id, {
     storageRoot: fixture.storageRoot
