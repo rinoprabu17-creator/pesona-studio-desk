@@ -38,6 +38,9 @@ import {
   listRenderAttemptReviewsForManifest
 } from "../render-attempt-review-service.ts";
 import {
+  getRenderApprovedPromotionContextForContentItem
+} from "../render-approved-promotion-service.ts";
+import {
   renderManifestModes,
   renderManifestStatuses,
   renderManifestTargetFormats
@@ -184,6 +187,15 @@ export const renderAttemptReviewStatusLabels: Record<string, string> = {
   approved: "Disetujui",
   rejected: "Ditolak",
   archived: "Diarsipkan"
+};
+
+export const renderApprovedPromotionStatusLabels: Record<string, string> = {
+  requested: "Requested",
+  running: "Running",
+  succeeded: "Succeeded",
+  failed: "Failed",
+  blocked: "Blocked",
+  archived: "Archived"
 };
 
 function formatDate(value: unknown): string {
@@ -1288,7 +1300,11 @@ export async function renderContentItemRenderAttemptsPage(item: ContentItemRow, 
 
 export async function renderContentItemRenderAttemptReviewPage(item: ContentItemRow, jobId: string, manifestId: string, attemptId: string, url: URL): Promise<string> {
   const { attempt, review, eligibility } = await getRenderAttemptReviewContextForContentItem(item.id, jobId, manifestId, attemptId);
+  const promotionContext = await getRenderApprovedPromotionContextForContentItem(item.id, jobId, manifestId, attemptId);
   const terminalReview = review && ["approved", "rejected", "archived"].includes(review.review_status);
+  const promotionStatus = promotionContext.promotion
+    ? renderApprovedPromotionStatusLabels[promotionContext.promotion.promotion_status] || promotionContext.promotion.promotion_status
+    : "Belum dipromosikan";
   const summary = renderReadOnlyTable(
     ["Field", "Nilai"],
     [
@@ -1310,9 +1326,26 @@ export async function renderContentItemRenderAttemptReviewPage(item: ContentItem
       ["Review Status", review ? escapeHtml(renderAttemptReviewStatusLabels[review.review_status] || review.review_status) : "Belum ada review"],
       ["Reviewed By", escapeHtml(review?.reviewed_by_name || "-")],
       ["Reviewed At", escapeHtml(review?.reviewed_at || "-")],
-      ["Review Note", escapeHtml(review?.review_note || "-")]
+      ["Review Note", escapeHtml(review?.review_note || "-")],
+      ["Promotion Status", escapeHtml(promotionStatus)],
+      ["Approved Output", escapeHtml(promotionContext.promotion?.approved_output_relative_path || promotionContext.eligibility.approved_output_relative_path_preview || "-")]
     ]
   );
+  const promotionAction = review?.review_status === "approved" && !promotionContext.promotion
+    ? `<section>
+        <h2>Promotion</h2>
+        ${promotionContext.eligibility.ok
+          ? `<form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifestId)}/render-attempts/${escapeHtml(attempt.id)}/promotion/promote" style="margin-top: 14px;">
+              <label>Promoter</label>
+              <input type="text" name="promoted_by_name" maxlength="120" placeholder="Nama promoter" />
+              <label>Catatan Promotion</label>
+              <textarea name="promotion_note" maxlength="2000" rows="3"></textarea>
+              <button type="submit">Promote to Approved Smoke</button>
+            </form>`
+          : `<p class="hint">Promotion belum eligible: ${escapeHtml(promotionContext.eligibility.blocking_reasons.join(" "))}</p>`}
+        <p class="hint"><a href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifestId)}/render-attempts/${escapeHtml(attempt.id)}/promotion">Buka detail promotion</a></p>
+      </section>`
+    : `<p class="hint"><a href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifestId)}/render-attempts/${escapeHtml(attempt.id)}/promotion">Lihat detail promotion</a></p>`;
   const actions = terminalReview
     ? `<p class="hint">Review sudah terminal pada fase ini dan tidak dapat diubah tanpa route reset khusus.</p>`
     : `<section>
@@ -1338,6 +1371,7 @@ export async function renderContentItemRenderAttemptReviewPage(item: ContentItem
     <div class="notice">Approval gate ini DB-only. Tidak copy ke approved-videos, tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak worker daemon, dan tidak mutasi file output atau source.</div>
     ${summary}
     ${actions}
+    ${promotionAction}
     <div class="button-row" style="margin-top: 14px;">
       <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifestId)}/render-attempts">Render Attempts</a>
       <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Detail Konten</a>
@@ -1349,6 +1383,70 @@ export async function renderContentItemRenderAttemptReviewPage(item: ContentItem
     `Review Draft Render - ${item.content_code}`,
     "Review Draft Render",
     "DB-only approval gate untuk succeeded draft render attempt.",
+    content
+  );
+}
+
+export async function renderContentItemRenderAttemptPromotionPage(item: ContentItemRow, jobId: string, manifestId: string, attemptId: string, url: URL): Promise<string> {
+  const { attempt, review, promotion, eligibility } = await getRenderApprovedPromotionContextForContentItem(item.id, jobId, manifestId, attemptId);
+  const promotionStatus = promotion ? renderApprovedPromotionStatusLabels[promotion.promotion_status] || promotion.promotion_status : "Belum dipromosikan";
+  const summary = renderReadOnlyTable(
+    ["Field", "Nilai"],
+    [
+      ["Content Code", `<strong>${escapeHtml(attempt.content_code)}</strong>`],
+      ["Judul", escapeHtml(attempt.content_title)],
+      ["Video Draft Job", escapeHtml(attempt.video_draft_job_id)],
+      ["Job Status", escapeHtml(videoDraftJobStatusLabels[attempt.job_status] || attempt.job_status)],
+      ["Manifest", escapeHtml(attempt.render_manifest_id)],
+      ["Manifest Status", escapeHtml(renderManifestStatusLabels[attempt.manifest_status] || attempt.manifest_status)],
+      ["Render Attempt", escapeHtml(attempt.id)],
+      ["Attempt Status", escapeHtml(renderAttemptStatusLabels[attempt.attempt_status] || attempt.attempt_status)],
+      ["Review", review ? `${escapeHtml(renderAttemptReviewStatusLabels[review.review_status] || review.review_status)} (${escapeHtml(review.id)})` : "-"],
+      ["Reviewed At", escapeHtml(review?.reviewed_at || "-")],
+      ["Source Draft Output", escapeHtml(eligibility.source_output_relative_path || attempt.output_relative_path || "-")],
+      ["Source Draft Exists", eligibility.source_exists ? `<span class="badge badge-ok">Ada</span>` : `<span class="badge">Tidak Ada</span>`],
+      ["Source Draft Size", eligibility.source_size_bytes === null ? "-" : `${escapeHtml(eligibility.source_size_bytes)} bytes`],
+      ["Approved Destination Preview", escapeHtml(promotion?.approved_output_relative_path || eligibility.approved_output_relative_path_preview || "-")],
+      ["Promotion Status", escapeHtml(promotionStatus)],
+      ["Promotion Row", escapeHtml(promotion?.id || "-")],
+      ["Approved Size", promotion?.approved_size_bytes === null || promotion?.approved_size_bytes === undefined ? "-" : `${escapeHtml(promotion.approved_size_bytes)} bytes`],
+      ["Source SHA256", escapeHtml(promotion?.source_sha256 || "-")],
+      ["Approved SHA256", escapeHtml(promotion?.approved_sha256 || "-")],
+      ["Eligibility", eligibility.ok ? `<span class="badge badge-ok">Bisa Dipromosikan</span>` : `<span class="badge">Blocked</span>`],
+      ["Blocking Reasons", eligibility.blocking_reasons.length ? escapeHtml(eligibility.blocking_reasons.join(" ")) : "-"]
+    ]
+  );
+  const actions = promotion
+    ? `<p class="hint">Promotion row sudah ada. Duplicate promotion diblokir pada fase ini.</p>`
+    : `<section>
+        <h2>Manual Promotion</h2>
+        ${eligibility.ok
+          ? `<form method="post" action="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifestId)}/render-attempts/${escapeHtml(attempt.id)}/promotion/promote" style="margin-top: 14px;">
+              <label>Promoter</label>
+              <input type="text" name="promoted_by_name" maxlength="120" placeholder="Nama promoter" />
+              <label>Catatan Promotion</label>
+              <textarea name="promotion_note" maxlength="2000" rows="3"></textarea>
+              <button type="submit">Promote to Approved Smoke</button>
+            </form>`
+          : `<p class="hint">Promotion belum eligible: ${escapeHtml(eligibility.blocking_reasons.join(" "))}</p>`}
+      </section>`;
+  const content = `
+    ${renderMessage(url)}
+    <div class="notice">Promotion ini manual local copy only. Source draft tetap unchanged, write hanya ke approved-videos/smoke, tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, dan tidak worker daemon.</div>
+    ${summary}
+    ${actions}
+    <div class="button-row" style="margin-top: 14px;">
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifestId)}/render-attempts/${escapeHtml(attempt.id)}/review">Review Draft Render</a>
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}/video-draft/${escapeHtml(jobId)}/manifest/${escapeHtml(manifestId)}/render-attempts">Render Attempts</a>
+      <a class="button button-secondary" href="/content-items/${escapeHtml(item.id)}">Detail Konten</a>
+    </div>
+  `;
+
+  return renderLayout(
+    "/content-items",
+    `Promote Draft Render - ${item.content_code}`,
+    "Promote Draft Render",
+    "Manual local copy approved draft render ke approved smoke storage.",
     content
   );
 }

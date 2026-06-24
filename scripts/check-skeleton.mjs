@@ -39,6 +39,8 @@ const requiredPaths = [
   "apps/web/src/render-attempt-errors.ts",
   "apps/web/src/render-attempt-review-service.ts",
   "apps/web/src/render-attempt-review-errors.ts",
+  "apps/web/src/render-approved-promotion-service.ts",
+  "apps/web/src/render-approved-promotion-errors.ts",
   "apps/web/src/content-publication-service.ts",
   "apps/web/src/content-publication-errors.ts",
   "apps/web/src/footage-asset-service.ts",
@@ -86,6 +88,7 @@ const requiredPaths = [
   "apps/web/src/validation/render-preflight-validation.ts",
   "apps/web/src/validation/render-attempt-validation.ts",
   "apps/web/src/validation/render-attempt-review-validation.ts",
+  "apps/web/src/validation/render-approved-promotion-validation.ts",
   "apps/web/src/validation/content-publication-validation.ts",
   "apps/web/src/validation/footage-asset-validation.ts",
   "apps/web/src/validation/content-calendar-validation.ts",
@@ -129,6 +132,7 @@ const requiredPaths = [
   "migrations/011_phase2d_render_preflight_runs.sql",
   "migrations/012_phase2e_controlled_render_attempts.sql",
   "migrations/013_phase2e_render_review_gate.sql",
+  "migrations/014_phase2e_approved_render_promotions.sql",
   "scripts/migrate.mjs",
   "scripts/seed.mjs",
   "scripts/prepare-test-db.mjs",
@@ -661,6 +665,40 @@ for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
     fail(`Migration Phase 2E.4 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
   } else {
     pass(`Migration Phase 2E.4 tidak memuat destructive SQL: ${forbiddenText}`);
+  }
+}
+
+const renderPromotionMigrationFiles = readdirSync("migrations").filter((fileName) => fileName.startsWith("014_"));
+if (renderPromotionMigrationFiles.length === 1 && renderPromotionMigrationFiles[0] === "014_phase2e_approved_render_promotions.sql") {
+  pass("Migration 014 Phase 2E approved render promotions tersedia");
+} else {
+  fail(`Migration 014 Phase 2E harus tepat satu file: ${renderPromotionMigrationFiles.join(", ") || "tidak ada"}`);
+}
+
+const renderPromotionMigrationSource = existsSync("migrations/014_phase2e_approved_render_promotions.sql")
+  ? readFileSync("migrations/014_phase2e_approved_render_promotions.sql", "utf8")
+  : "";
+for (const requiredText of [
+  "CREATE TABLE video_render_approved_promotions",
+  "render_attempt_review_id uuid NOT NULL REFERENCES video_render_attempt_reviews(id)",
+  "promotion_mode text NOT NULL DEFAULT 'manual_copy'",
+  "video_render_approved_promotions_review_key UNIQUE (render_attempt_review_id)",
+  "video_render_approved_promotions_attempt_key UNIQUE (render_attempt_id)",
+  "source_output_relative_path ~ '^smoke/'",
+  "CREATE INDEX video_render_approved_promotions_attempt_id_idx"
+]) {
+  if (renderPromotionMigrationSource.includes(requiredText)) {
+    pass(`Migration Phase 2E.5 approved promotion memuat: ${requiredText}`);
+  } else {
+    fail(`Migration Phase 2E.5 approved promotion belum memuat: ${requiredText}`);
+  }
+}
+
+for (const forbiddenText of ["DROP ", "TRUNCATE", "DELETE ", "ALTER TABLE"]) {
+  if (renderPromotionMigrationSource.includes(forbiddenText)) {
+    fail(`Migration Phase 2E.5 harus additive-only, tidak boleh memuat: ${forbiddenText}`);
+  } else {
+    pass(`Migration Phase 2E.5 tidak memuat destructive SQL: ${forbiddenText}`);
   }
 }
 
