@@ -64,3 +64,8 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/OFFICE_SERVER_NETWORK_STORAGE_CHECKLIST.md`
 - `docs/ops/CUTOVER_GO_NO_GO.md`
 - `docs/ops/POST_CUTOVER_VERIFICATION.md`
+- `docs/ops/HANDOFF_PACK_INDEX.md`
+- `docs/ops/TECHNICIAN_EVIDENCE_INTAKE.md`
+- `docs/ops/OFFICE_SERVER_PREFLIGHT_PRINTABLE.md`
+- `docs/ops/OWNER_SIGNOFF_TEMPLATES.md`
+- `docs/ops/DRY_RUN_EVIDENCE_TEMPLATE.md`
