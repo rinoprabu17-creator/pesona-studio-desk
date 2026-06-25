@@ -6,7 +6,7 @@ import {
   listApprovedVideoLibrary
 } from "../approved-video-handoff-service.ts";
 import type { ApprovedVideoLibraryRow } from "../approved-video-handoff-service.ts";
-import { escapeHtml, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
+import { escapeHtml, renderEmptyState, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
 
 export const approvedVideoHandoffStatusLabels: Record<string, string> = {
   pending_handoff: "Menunggu Handoff",
@@ -69,11 +69,18 @@ export async function renderApprovedVideoLibraryPage(url: URL): Promise<string> 
   </section>`;
   const content = `
     ${renderMessage(url)}
-    <div class="notice">Approved Video Library ini DB-only handoff board. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak worker daemon, dan tidak mutasi file video.</div>
+    <div class="notice">Approved Video Library ini DB-only handoff board. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>
     ${filterForm}
     <section>
       <h2>Approved Videos</h2>
-      ${items.length ? renderApprovedVideoList(items) : `<p class="hint">Belum ada succeeded approved promotion untuk filter ini.</p>`}
+      ${items.length ? renderApprovedVideoList(items) : renderEmptyState(
+        "Belum ada approved video",
+        "Approved video akan muncul setelah render attempt lulus review dan dipromosikan ke approved video.",
+        [
+          { href: "/content-items", label: "Content Items" },
+          { href: "/operational-readiness", label: "Operational Readiness", secondary: true }
+        ]
+      )}
     </section>
   `;
 
@@ -134,7 +141,7 @@ export async function renderApprovedVideoDetailPage(promotionId: string, url: UR
     : "";
   const content = `
     ${renderMessage(url)}
-    <div class="notice">Handoff ini DB-only. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak worker daemon, dan tidak mutasi file video.</div>
+    <div class="notice">Handoff ini DB-only. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>
     ${summary}
     ${actions}
     <div class="button-row" style="margin-top: 14px;">

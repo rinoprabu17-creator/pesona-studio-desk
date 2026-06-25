@@ -14,7 +14,7 @@ import type {
   ManualPublicationPackageChannelRow,
   ManualPublicationPackageListRow
 } from "../manual-publication-package-service.ts";
-import { escapeHtml, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
+import { escapeHtml, renderEmptyState, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
 
 const packageStatusLabels: Record<string, string> = {
   draft_package: "Draft Package",
@@ -75,7 +75,7 @@ export async function renderManualPublicationPackageListPage(url: URL): Promise<
   const items = await listManualPublicationPackages(filters);
   const content = `
     ${renderMessage(url)}
-    <div class="notice">Manual publication package ini DB-only. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak worker daemon, dan tidak mutasi file video.</div>
+    <div class="notice">Manual publication package ini DB-only. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>
     <section>
       <form method="get" action="/publication-packages">
         <div class="form-grid">
@@ -97,7 +97,14 @@ export async function renderManualPublicationPackageListPage(url: URL): Promise<
     </section>
     <section>
       <h2>Publication Packages</h2>
-      ${items.length ? renderPackageList(items) : `<p class="hint">Belum ada manual publication package untuk filter ini.</p>`}
+      ${items.length ? renderPackageList(items) : renderEmptyState(
+        "Belum ada publication package",
+        "Package akan tersedia setelah approved video ditandai ready for manual publish.",
+        [
+          { href: "/approved-videos", label: "Approved Videos" },
+          { href: "/manual-publish-report", label: "Manual Publish Report", secondary: true }
+        ]
+      )}
     </section>
   `;
 
@@ -155,7 +162,7 @@ export async function renderManualPublicationPackageCreatePage(promotionId: stri
   </form>` : `<p class="hint">Package belum bisa dibuat: ${escapeHtml(context.eligibility.blocking_reasons.join(" "))}</p>`;
   const content = `
     ${renderMessage(url)}
-    <div class="notice">DB-only package. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak worker daemon, dan tidak mutasi file video.</div>
+    <div class="notice">DB-only package. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>
     ${summary}
     ${form}
   `;
@@ -242,15 +249,15 @@ export async function renderManualPublicationPackageDetailPage(packageId: string
   );
   const content = `
     ${renderMessage(url)}
-    <div class="notice">published_manually hanya catatan manual. Tidak ada API call, tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, dan tidak mutasi file video.</div>
+    <div class="notice">published_manually hanya catatan manual. Tidak ada API call. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>
     ${summary}
     <section>
       <h2>Manual Publish Checklist</h2>
       <p class="hint">Checklist ${escapeHtml(completion.checklist_done)} / ${escapeHtml(completion.checklist_total)} done. Evidence ${escapeHtml(completion.evidence_count)}. Manual URL channels: ${completion.channels_with_manual_url.length ? escapeHtml(completion.channels_with_manual_url.join(", ")) : "-"}.</p>
       <div class="button-row">
         <a class="button" href="/publication-packages/${escapeHtml(pkg.id)}/checklist">Open Checklist & Evidence</a>
-        <a class="button secondary" href="/manual-publish-report/packages/${escapeHtml(pkg.id)}">Open Report Detail</a>
-        <a class="button secondary" href="/publication-packages/${escapeHtml(pkg.id)}/closeout">Open Closeout</a>
+        <a class="button button-secondary" href="/manual-publish-report/packages/${escapeHtml(pkg.id)}">Open Report Detail</a>
+        <a class="button button-secondary" href="/publication-packages/${escapeHtml(pkg.id)}/closeout">Open Closeout</a>
       </div>
     </section>
     <section><h2>Status Package</h2><div class="button-row">${statusForms(pkg.id)}</div></section>

@@ -3,24 +3,56 @@ export type NavItem = {
   label: string;
 };
 
+export type NavSection = {
+  label: string;
+  items: NavItem[];
+};
+
 const appName = process.env.APP_NAME || "Pesona Studio Desk";
 
-export const navItems: NavItem[] = [
-  { href: "/operational-readiness", label: "Operational Readiness" },
-  { href: "/campaigns", label: "Campaign" },
-  { href: "/content-calendar", label: "Kalender Konten" },
-  { href: "/content-items", label: "Konten" },
-  { href: "/approved-videos", label: "Approved Videos" },
-  { href: "/publication-packages", label: "Publication Packages" },
-  { href: "/manual-publish-report", label: "Manual Publish Report" },
-  { href: "/manual-publish-closeouts", label: "Manual Closeouts" },
-  { href: "/footage-assets", label: "Footage" },
-  { href: "/products", label: "Product Library" },
-  { href: "/colors", label: "Color Library" },
-  { href: "/school-level-color-defaults", label: "Rekomendasi Warna" },
-  { href: "/offers", label: "Offer Library" },
-  { href: "/pain-points", label: "Pain Point Library" }
+export const navSections: NavSection[] = [
+  {
+    label: "Overview",
+    items: [
+      { href: "/operational-readiness", label: "Operational Readiness" }
+    ]
+  },
+  {
+    label: "Campaign & Content",
+    items: [
+      { href: "/campaigns", label: "Campaign" },
+      { href: "/content-calendar", label: "Kalender Konten" },
+      { href: "/content-items", label: "Konten" },
+      { href: "/footage-assets", label: "Footage" }
+    ]
+  },
+  {
+    label: "Video Pipeline",
+    items: [
+      { href: "/approved-videos", label: "Approved Videos" }
+    ]
+  },
+  {
+    label: "Manual Publish",
+    items: [
+      { href: "/publication-packages", label: "Publication Packages" },
+      { href: "/manual-publish-report", label: "Manual Publish Report" },
+      { href: "/manual-publish-closeouts", label: "Manual Closeouts" }
+    ]
+  },
+  {
+    label: "Libraries / Setup",
+    items: [
+      { href: "/products", label: "Product Library" },
+      { href: "/colors", label: "Color Library" },
+      { href: "/school-level-color-defaults", label: "Rekomendasi Warna" },
+      { href: "/offers", label: "Offer Library" },
+      { href: "/pain-points", label: "Pain Point Library" }
+    ]
+  }
 ];
+
+export const navItems: NavItem[] = navSections.flatMap((section) => section.items);
 
 export const schoolLevelLabels: Record<string, string> = {
   sd: "SD",
@@ -43,10 +75,15 @@ export function escapeHtml(value: unknown): string {
 }
 
 function renderNav(activePath: string): string {
-  return navItems
-    .map((item) => {
-      const activeClass = activePath === item.href ? "nav-link active" : "nav-link";
-      return `<a class="${activeClass}" href="${item.href}">${escapeHtml(item.label)}</a>`;
+  return navSections
+    .map((section) => {
+      const links = section.items
+        .map((item) => {
+          const activeClass = activePath === item.href || activePath.startsWith(`${item.href}/`) ? "nav-link active" : "nav-link";
+          return `<a class="${activeClass}" href="${item.href}">${escapeHtml(item.label)}</a>`;
+        })
+        .join("");
+      return `<div class="nav-section"><div class="nav-heading">${escapeHtml(section.label)}</div>${links}</div>`;
     })
     .join("");
 }
@@ -84,6 +121,19 @@ export function renderReadOnlyTable(headers: string[], rows: unknown[][]): strin
     : `<tr><td colspan="${headers.length}" class="muted">Data belum tersedia. Jalankan migration dan seed.</td></tr>`;
 
   return `<div class="table-wrap"><table><thead><tr>${headerHtml}</tr></thead><tbody>${rowHtml}</tbody></table></div>`;
+}
+
+export function renderEmptyState(
+  title: string,
+  message: string,
+  actions: Array<{ href: string; label: string; secondary?: boolean }> = []
+): string {
+  const actionHtml = actions.length
+    ? `<div class="button-row">${actions
+        .map((action) => `<a class="button${action.secondary ? " button-secondary" : ""}" href="${escapeHtml(action.href)}">${escapeHtml(action.label)}</a>`)
+        .join("")}</div>`
+    : "";
+  return `<div class="empty-state"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(message)}</p>${actionHtml}</div>`;
 }
 
 export function renderLayout(activePath: string, title: string, eyebrow: string, description: string, content: string): string {
@@ -154,14 +204,25 @@ export function renderLayout(activePath: string, title: string, eyebrow: string,
       .brand strong { display: block; font-size: 16px; line-height: 1.2; }
       .brand span { display: block; color: #b7c7c1; font-size: 12px; margin-top: 4px; }
 
-      .nav { display: grid; gap: 6px; }
+      .nav { display: grid; gap: 16px; }
+
+      .nav-section { display: grid; gap: 5px; }
+
+      .nav-heading {
+        color: #91aaa1;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0;
+        padding: 0 12px 2px;
+        text-transform: uppercase;
+      }
 
       .nav-link {
         border-radius: 8px;
         color: #d9e5e1;
         display: block;
-        font-size: 14px;
-        padding: 10px 12px;
+        font-size: 13px;
+        padding: 8px 12px;
       }
 
       .nav-link:hover,
@@ -328,10 +389,33 @@ export function renderLayout(activePath: string, title: string, eyebrow: string,
       .notice p { margin: 0 0 6px; }
       .notice p:last-child { margin-bottom: 0; }
       .hint { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0; }
+      .empty-state {
+        background: var(--surface-soft);
+        border: 1px dashed #b9c8c2;
+        border-radius: 8px;
+        display: grid;
+        gap: 10px;
+        padding: 18px;
+      }
+
+      .empty-state h3 {
+        font-size: 16px;
+        line-height: 1.3;
+        margin: 0;
+      }
+
+      .empty-state p {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.55;
+        margin: 0;
+        max-width: 760px;
+      }
 
       @media (max-width: 900px) {
         .shell { grid-template-columns: 1fr; }
         .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .nav-section { align-content: start; }
         .form-grid, .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
 

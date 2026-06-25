@@ -1,6 +1,6 @@
 import { getOperationalReadinessDashboard } from "../operational-readiness-service.ts";
 import type { OperationalReadinessDashboard } from "../operational-readiness-service.ts";
-import { escapeHtml, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
+import { escapeHtml, renderEmptyState, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
 
 function labelFromKey(key: string): string {
   return key
@@ -67,10 +67,8 @@ function renderManualPublish(dashboard: OperationalReadinessDashboard): string {
 }
 
 function renderWarnings(dashboard: OperationalReadinessDashboard): string {
-  return `
-    <section>
-      <h2>Health Warnings</h2>
-      ${renderReadOnlyTable(
+  const warningsContent = dashboard.warnings.length
+    ? renderReadOnlyTable(
         ["Content", "Status Package", "Warning", "Detail"],
         dashboard.warnings.map((warning) => [
           `<a href="/content-items/${encodeURIComponent(warning.content_item_id)}">${escapeHtml(warning.content_code)}</a><br><span class="muted">${escapeHtml(warning.content_title)}</span>`,
@@ -78,7 +76,19 @@ function renderWarnings(dashboard: OperationalReadinessDashboard): string {
           escapeHtml(warning.warning_label),
           escapeHtml(warning.detail)
         ])
-      )}
+      )
+    : renderEmptyState(
+        "Tidak ada warning operasional",
+        "Pipeline tidak memiliki warning manual publish pada filter dashboard saat ini.",
+        [
+          { href: "/manual-publish-report", label: "Manual Publish Report" },
+          { href: "/publication-packages", label: "Publication Packages", secondary: true }
+        ]
+      );
+  return `
+    <section>
+      <h2>Health Warnings</h2>
+      ${warningsContent}
       <p class="muted">Closeouts total: ${escapeHtml(dashboard.summary.closeouts)}. Content publications existing rows: ${escapeHtml(dashboard.summary.content_publications)} untuk visibility saja.</p>
     </section>
   `;
@@ -87,7 +97,7 @@ function renderWarnings(dashboard: OperationalReadinessDashboard): string {
 function renderLinks(dashboard: OperationalReadinessDashboard): string {
   return `
     <section>
-      <h2>Links</h2>
+      <h2>Next Action Links</h2>
       <div class="button-row">
         ${dashboard.links.map((link) => `<a class="button button-secondary" href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a>`).join("")}
       </div>
