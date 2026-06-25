@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3, Phase 2G.4, and Phase 2G.5.
+This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, and Phase 2H.1.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -19,6 +19,10 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 11. `docs/ops/OWNER_SIGNOFF_TEMPLATES.md`
 12. `docs/ops/FINAL_LOCAL_OPS_RELEASE_AUDIT.md`
 13. `docs/ops/PENDING_FEATURES_REGISTER.md`
+14. `docs/ops/OFFICE_SERVER_READINESS_EVIDENCE.md`
+15. `docs/ops/OFFICE_SERVER_REPO_BOOTSTRAP_VERIFICATION.md`
+16. `docs/ops/ENV_HANDLING_VERIFICATION.md`
+17. `docs/ops/CUTOVER_HOLD_GATE.md`
 
 ## Full Ops Document Index
 
@@ -55,6 +59,13 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/PENDING_FEATURES_REGISTER.md`
 - `docs/ops/OWNER_REVIEW_CHECKLIST.md`
 
+### Phase 2H.1
+
+- `docs/ops/OFFICE_SERVER_READINESS_EVIDENCE.md`
+- `docs/ops/OFFICE_SERVER_REPO_BOOTSTRAP_VERIFICATION.md`
+- `docs/ops/ENV_HANDLING_VERIFICATION.md`
+- `docs/ops/CUTOVER_HOLD_GATE.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -86,14 +97,17 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Route/storage evidence snapshot.
 - Pending features register.
 - Owner review checklist.
+- Office server readiness evidence.
+- Repo bootstrap verification checklist.
+- Env handling verification checklist.
+- Cutover hold gate.
 
 ## Still Intentionally Pending
 
-- Actual office server deployment.
+- Actual office server deployment or cutover.
 - Actual backup execution.
 - Actual restore dry-run execution.
 - Actual storage copy.
-- Actual cutover.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.
