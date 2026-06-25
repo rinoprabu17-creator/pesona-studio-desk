@@ -52,6 +52,19 @@ Phase 2H.3 adds collection templates only:
 
 This does not execute backup and does not remove the pending status of backup execution, restore dry-run planning/execution, storage copy, deployment, cutover, public exposure, autostart/systemd/cron setup, automated backup, scheduler/publisher/social API activation, OpenAI runtime automation, queue expansion, or worker daemon changes.
 
+## Phase 2H.4 Office Server Bootstrap Verification Status
+
+Phase 2H.4 adds a controlled bootstrap verification checklist only:
+
+- OS, kernel, Docker, and Docker Compose evidence fields.
+- Repo branch/tag/status evidence fields.
+- SSD mount path and free disk space evidence fields.
+- LAN-only and redacted IP evidence fields.
+- `.env.local` existence and git tracking yes/no checks only.
+- Docker Compose config pass/fail evidence.
+
+This does not execute backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, autostart/systemd/cron setup, automated backup, scheduler/publisher/social API activation, OpenAI runtime automation, upload automation, queue expansion, or worker daemon changes.
+
 ## Current Safe Work
 
 - Docs-only audit.

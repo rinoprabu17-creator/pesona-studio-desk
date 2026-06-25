@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, and Phase 2H.3.
+This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, and Phase 2H.4.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -27,6 +27,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 19. `docs/ops/BACKUP_RESTORE_SEQUENCE_GATE.md`
 20. `docs/ops/BACKUP_EVIDENCE_COLLECTION.md`
 21. `docs/ops/BACKUP_EVIDENCE_TEMPLATE.md`
+22. `docs/ops/OFFICE_SERVER_BOOTSTRAP_VERIFICATION.md`
 
 ## Full Ops Document Index
 
@@ -80,6 +81,10 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/BACKUP_EVIDENCE_COLLECTION.md`
 - `docs/ops/BACKUP_EVIDENCE_TEMPLATE.md`
 
+### Phase 2H.4
+
+- `docs/ops/OFFICE_SERVER_BOOTSTRAP_VERIFICATION.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -119,6 +124,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Backup/restore sequence gate.
 - Backup evidence collection guide.
 - Backup evidence fillable template.
+- Office server bootstrap verification checklist.
 
 ## Still Intentionally Pending
 
@@ -126,6 +132,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Actual backup execution.
 - Actual restore dry-run execution.
 - Actual storage copy.
+- Actual office server bootstrap execution beyond read-only verification.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.
