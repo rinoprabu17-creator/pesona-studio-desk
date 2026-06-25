@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { mkdtemp, mkdir, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
@@ -210,6 +210,14 @@ import {
   handleManualPublishCloseoutPageGet,
   handleManualPublishCloseoutPagePost
 } from "../../apps/web/src/routes/manual-publish-closeout-page-routes.ts";
+import {
+  getOperationalReadinessDashboard,
+  getOperationalReadinessPipeline,
+  getOperationalReadinessSummary
+} from "../../apps/web/src/operational-readiness-service.ts";
+import { validateOperationalReadinessFilters } from "../../apps/web/src/validation/operational-readiness-validation.ts";
+import { handleOperationalReadinessApiRoute } from "../../apps/web/src/routes/operational-readiness-api-routes.ts";
+import { handleOperationalReadinessPageGet } from "../../apps/web/src/routes/operational-readiness-page-routes.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -4166,6 +4174,220 @@ maybeTest("manual publish closeout routes work and are ordered before generic pa
   assert.throws(() => validateManualPublishCloseoutInput({ closeout_note: "x".repeat(2001) }), /Catatan closeout maksimal/i);
 });
 
+async function operationalReadinessCounts() {
+  const result = await pool!.query<{
+    campaigns: string;
+    content_items: string;
+    footage_assets: string;
+    content_publications: string;
+    manual_publication_packages: string;
+    manual_publication_package_channels: string;
+    manual_publish_checklist_items: string;
+    manual_publish_evidence_logs: string;
+    manual_publish_closeouts: string;
+    video_render_attempts: string;
+    video_render_approved_promotions: string;
+    video_approved_handoff_records: string;
+  }>(`
+    SELECT
+      (SELECT count(*)::text FROM campaigns) AS campaigns,
+      (SELECT count(*)::text FROM content_items) AS content_items,
+      (SELECT count(*)::text FROM footage_assets) AS footage_assets,
+      (SELECT count(*)::text FROM content_publications) AS content_publications,
+      (SELECT count(*)::text FROM manual_publication_packages) AS manual_publication_packages,
+      (SELECT count(*)::text FROM manual_publication_package_channels) AS manual_publication_package_channels,
+      (SELECT count(*)::text FROM manual_publish_checklist_items) AS manual_publish_checklist_items,
+      (SELECT count(*)::text FROM manual_publish_evidence_logs) AS manual_publish_evidence_logs,
+      (SELECT count(*)::text FROM manual_publish_closeouts) AS manual_publish_closeouts,
+      (SELECT count(*)::text FROM video_render_attempts) AS video_render_attempts,
+      (SELECT count(*)::text FROM video_render_approved_promotions) AS video_render_approved_promotions,
+      (SELECT count(*)::text FROM video_approved_handoff_records) AS video_approved_handoff_records
+  `);
+  return result.rows[0];
+}
+
+maybeTest("operational readiness API returns counts from existing fixtures", async () => {
+  const fixture = await createManualPublicationPackageFixture("readiness-api-counts");
+  await makePackageCloseoutReady(fixture.packageContext.package.id);
+  await createManualPublishCloseout(fixture.packageContext.package.id, {
+    closed_by_name: "Owner",
+    closeout_note: "readiness count closeout"
+  });
+
+  const summary = await getOperationalReadinessSummary();
+  assert.equal(summary.total_campaigns >= 1, true);
+  assert.equal(summary.total_content_items >= 1, true);
+  assert.equal(summary.total_footage_assets >= 1, true);
+  assert.equal(summary.video_draft_jobs >= 1, true);
+  assert.equal(summary.render_manifests >= 1, true);
+  assert.equal(summary.render_preflight_runs >= 1, true);
+  assert.equal(summary.render_attempts >= 1, true);
+  assert.equal(summary.approved_promotions >= 1, true);
+  assert.equal(summary.handoff_records >= 1, true);
+  assert.equal(summary.manual_publication_packages >= 1, true);
+  assert.equal(summary.manual_publication_package_channels >= 4, true);
+  assert.equal(summary.checklist_items >= 32, true);
+  assert.equal(summary.evidence_logs >= 4, true);
+  assert.equal(summary.closeouts >= 1, true);
+  assert.equal(summary.content_publications >= 0, true);
+
+  const response = mockResponse();
+  const handled = await handleOperationalReadinessApiRoute(
+    { method: "GET", url: "/api/operational-readiness", headers: {}, on() {} } as any,
+    response,
+    "/api/operational-readiness",
+    new URL("http://localhost/api/operational-readiness")
+  );
+  assert.equal(handled, true);
+  assert.equal(response.statusCode, 200);
+  const body = JSON.parse(response.body);
+  assert.equal(body.ok, true);
+  assert.equal(body.data.summary.manual_publication_packages >= 1, true);
+  assert.equal(body.data.safety_notice.some((row: string) => row.includes("read-only")), true);
+});
+
+maybeTest("operational readiness summary and API are DB-read-only", async () => {
+  const fixture = await createManualPublicationPackageFixture("readiness-read-only");
+  await initializeManualPublishChecklist(fixture.packageContext.package.id);
+  const before = await operationalReadinessCounts();
+
+  await getOperationalReadinessDashboard({ limit: "200" });
+  await getOperationalReadinessSummary();
+  await getOperationalReadinessPipeline();
+
+  for (const [path, url] of [
+    ["/api/operational-readiness", "http://localhost/api/operational-readiness"],
+    ["/api/operational-readiness/summary", "http://localhost/api/operational-readiness/summary"],
+    ["/api/operational-readiness/pipeline", "http://localhost/api/operational-readiness/pipeline"]
+  ]) {
+    const response = mockResponse();
+    const handled = await handleOperationalReadinessApiRoute(
+      { method: "GET", url: path, headers: {}, on() {} } as any,
+      response,
+      path,
+      new URL(url)
+    );
+    assert.equal(handled, true);
+    assert.equal(response.statusCode, 200);
+  }
+
+  const after = await operationalReadinessCounts();
+  assert.deepEqual(after, before);
+});
+
+maybeTest("operational readiness pipeline funnel counts progress after isolated fixture", async () => {
+  const before = await getOperationalReadinessPipeline();
+  const fixture = await createManualPublicationPackageFixture("readiness-pipeline");
+  await makePackageCloseoutReady(fixture.packageContext.package.id);
+  await createManualPublishCloseout(fixture.packageContext.package.id, {
+    closed_by_name: "Owner",
+    closeout_note: "readiness pipeline closeout"
+  });
+  const after = await getOperationalReadinessPipeline();
+
+  assert.equal(after.content_items_total, before.content_items_total + 1);
+  assert.equal(after.with_footage_selection, before.with_footage_selection + 1);
+  assert.equal(after.with_script_plan, before.with_script_plan + 1);
+  assert.equal(after.with_video_draft_job, before.with_video_draft_job + 1);
+  assert.equal(after.with_render_manifest, before.with_render_manifest + 1);
+  assert.equal(after.with_succeeded_render_attempt, before.with_succeeded_render_attempt + 1);
+  assert.equal(after.with_approved_promotion, before.with_approved_promotion + 1);
+  assert.equal(after.with_ready_handoff, before.with_ready_handoff + 1);
+  assert.equal(after.with_publication_package, before.with_publication_package + 1);
+  assert.equal(after.with_checklist_initialized, before.with_checklist_initialized + 1);
+  assert.equal(after.with_manual_url_evidence, before.with_manual_url_evidence + 1);
+  assert.equal(after.with_ready_evidence_complete_report, before.with_ready_evidence_complete_report + 1);
+  assert.equal(after.with_closeout, before.with_closeout + 1);
+});
+
+maybeTest("operational readiness manual publish readiness reflects checklist, URL, ready report, and closeout states", async () => {
+  const noChecklist = await createManualPublicationPackageFixture("readiness-no-checklist");
+  const incomplete = await createManualPublicationPackageFixture("readiness-incomplete");
+  const missingUrl = await createManualPublicationPackageFixture("readiness-missing-url");
+  const ready = await createManualPublicationPackageFixture("readiness-ready");
+  const closed = await createManualPublicationPackageFixture("readiness-closed");
+
+  const incompleteInit = await initializeManualPublishChecklist(incomplete.packageContext.package.id);
+  await setManualPublishChecklistItemStatus(incompleteInit.checklistItems[0].id, {
+    checklist_status: "done",
+    checked_by_name: "Owner"
+  });
+  await markPackageChecklistComplete(missingUrl.packageContext.package.id);
+  await makePackageCloseoutReady(ready.packageContext.package.id);
+  await makePackageCloseoutReady(closed.packageContext.package.id);
+  await createManualPublishCloseout(closed.packageContext.package.id, {
+    closed_by_name: "Owner",
+    closeout_note: "readiness manual closeout"
+  });
+
+  const dashboard = await getOperationalReadinessDashboard({ limit: "200" });
+  assert.equal(dashboard.manual_publish.packages_total >= 5, true);
+  assert.equal(dashboard.manual_publish.packages_no_checklist >= 1, true);
+  assert.equal(dashboard.manual_publish.packages_checklist_incomplete >= 1, true);
+  assert.equal(dashboard.manual_publish.packages_missing_manual_url >= 1, true);
+  assert.equal(dashboard.manual_publish.packages_ready_evidence_complete >= 2, true);
+  assert.equal(dashboard.manual_publish.closeouts_total >= 1, true);
+  assert.equal(dashboard.manual_publish.blocked_closeout_candidates >= 1, true);
+  assert.equal(dashboard.warnings.some((row) => row.package_id === noChecklist.packageContext.package.id && row.warning_type === "no_checklist"), true);
+  assert.equal(dashboard.warnings.some((row) => row.package_id === incomplete.packageContext.package.id && row.warning_type === "checklist_incomplete"), true);
+  assert.equal(dashboard.warnings.some((row) => row.package_id === missingUrl.packageContext.package.id && row.warning_type === "missing_manual_url"), true);
+  assert.equal(dashboard.warnings.some((row) => row.package_id === ready.packageContext.package.id && row.warning_type === "ready_evidence_complete"), true);
+  assert.equal(dashboard.warnings.some((row) => row.package_id === closed.packageContext.package.id), false);
+});
+
+maybeTest("operational readiness page route returns safety notice and API route order does not collide", async () => {
+  await createManualPublicationPackageFixture("readiness-routes");
+
+  const pageResponse = mockResponse();
+  const pageHandled = await handleOperationalReadinessPageGet(
+    pageResponse,
+    "/operational-readiness",
+    new URL("http://localhost/operational-readiness")
+  );
+  assert.equal(pageHandled, true);
+  assert.equal(pageResponse.statusCode, 200);
+  assert.match(pageResponse.body, /Dashboard ini read-only/);
+  assert.match(pageResponse.body, /Tidak ada upload/);
+  assert.match(pageResponse.body, /Tidak membuat atau mengubah content_publications/);
+  assert.match(pageResponse.body, /System Readiness Summary/);
+  assert.match(pageResponse.body, /Pipeline Readiness Funnel/);
+  assert.match(pageResponse.body, /Manual Publish Readiness/);
+
+  const summaryResponse = mockResponse();
+  const summaryHandled = await handleOperationalReadinessApiRoute(
+    { method: "GET", url: "/api/operational-readiness/summary", headers: {}, on() {} } as any,
+    summaryResponse,
+    "/api/operational-readiness/summary",
+    new URL("http://localhost/api/operational-readiness/summary")
+  );
+  assert.equal(summaryHandled, true);
+  assert.equal(summaryResponse.statusCode, 200);
+  assert.equal(JSON.parse(summaryResponse.body).data.total_content_items >= 1, true);
+
+  const pipelineResponse = mockResponse();
+  const pipelineHandled = await handleOperationalReadinessApiRoute(
+    { method: "GET", url: "/api/operational-readiness/pipeline", headers: {}, on() {} } as any,
+    pipelineResponse,
+    "/api/operational-readiness/pipeline",
+    new URL("http://localhost/api/operational-readiness/pipeline")
+  );
+  assert.equal(pipelineHandled, true);
+  assert.equal(pipelineResponse.statusCode, 200);
+  assert.equal(JSON.parse(pipelineResponse.body).data.content_items_total >= 1, true);
+
+  const serverSource = readFileSync("apps/web/src/server.ts", "utf8");
+  assert.equal(serverSource.indexOf("handleOperationalReadinessApiRoute") < serverSource.indexOf("handleContentItemApiRoute"), true);
+  assert.equal(serverSource.indexOf("handleOperationalReadinessPageGet") < serverSource.indexOf("handleContentCalendarPageGet"), true);
+});
+
+test("operational readiness validation rejects write input, no migration added, and prepare-test-db unchanged for phase", () => {
+  assert.deepEqual(validateOperationalReadinessFilters({}), { limit: 50 });
+  assert.deepEqual(validateOperationalReadinessFilters({ limit: "200" }), { limit: 200 });
+  assert.throws(() => validateOperationalReadinessFilters({ limit: "201" }), /Limit operational readiness/i);
+  assert.equal(readdirSync("migrations").some((fileName) => fileName.includes("phase2g") || fileName.includes("operational_readiness")), false);
+  assert.equal(readFileSync("scripts/prepare-test-db.mjs", "utf8").includes("operational_readiness"), false);
+});
+
 test("content footage, script planning, video draft, render manifest, preflight, and controlled render runtime files keep dependencies guarded", () => {
   const source = [
     "apps/web/src/content-item-footage-service.ts",
@@ -4326,4 +4548,25 @@ test("content footage, script planning, video draft, render manifest, preflight,
   assert.equal(closeoutViewSource.includes("publisher"), true);
   assert.equal(closeoutViewSource.includes("publish"), true);
   assert.equal(closeoutViewSource.includes("upload"), true);
+
+  const operationalRuntimeSource = [
+    "apps/web/src/operational-readiness-service.ts",
+    "apps/web/src/routes/operational-readiness-api-routes.ts",
+    "apps/web/src/routes/operational-readiness-page-routes.ts",
+    "apps/web/src/validation/operational-readiness-validation.ts",
+    "apps/web/src/operational-readiness-errors.ts"
+  ].map((path) => readFileSync(path, "utf8")).join("\n");
+  for (const forbidden of ["INSERT INTO", "UPDATE ", "DELETE FROM", "DROP", "TRUNCATE", "ALTER TABLE", "exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "createReadStream", "mkdir", "storage/approved-videos", "storage/draft-videos", "storage/footage", "workers/video", "queue", "worker daemon", "graph.facebook", "facebook.com", "googleapis", "axios", "fetch("]) {
+    assert.equal(operationalRuntimeSource.includes(forbidden), false);
+  }
+  assert.equal(operationalRuntimeSource.includes("SELECT"), true);
+  assert.equal(operationalRuntimeSource.includes("OpenAI"), true);
+  assert.equal(operationalRuntimeSource.includes("upload"), true);
+
+  const operationalViewSource = readFileSync("apps/web/src/views/operational-readiness-pages.ts", "utf8");
+  for (const forbidden of ["INSERT INTO", "UPDATE ", "DELETE FROM", "DROP", "TRUNCATE", "ALTER TABLE", "exec(", "execFile", "shell:", "rm(", "unlink", "rename", "copyFile", "writeFile", "appendFile", "createWriteStream", "createReadStream", "mkdir", "storage/approved-videos", "storage/draft-videos", "storage/footage", "workers/video", "graph.facebook", "facebook.com", "googleapis", "axios", "fetch("]) {
+    assert.equal(operationalViewSource.includes(forbidden), false);
+  }
+  assert.equal(operationalViewSource.includes("OpenAI"), false);
+  assert.equal(operationalViewSource.includes("upload"), false);
 });
