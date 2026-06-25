@@ -28,6 +28,18 @@ Owner reported these office server prerequisites as checked and OK:
 
 This status supports the next gated evidence step only. It does not remove the pending status of backup execution, restore dry-run, storage copy, deployment, cutover, public exposure, autostart/systemd/cron setup, automated backup, scheduler/publisher/social API activation, OpenAI runtime automation, queue expansion, or worker daemon changes.
 
+## Phase 2H.2 Backup Evidence Planning Status
+
+Phase 2H.2 adds backup evidence planning only:
+
+- Backup sources to verify later.
+- Backup destination options.
+- Redacted evidence fields.
+- Backup acceptance checklist.
+- Sequence gate from accepted backup evidence through cutover.
+
+This does not remove the pending status of backup execution, restore dry-run execution, storage copy, deployment, cutover, public exposure, autostart/systemd/cron setup, automated backup, scheduler/publisher/social API activation, OpenAI runtime automation, queue expansion, or worker daemon changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
