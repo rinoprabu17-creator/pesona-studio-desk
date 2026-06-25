@@ -49,3 +49,13 @@ Pesona Growth OS Lite tetap digunakan untuk:
 Skeleton laptop Phase 0 tersedia di `docker-compose.dev.yml`.
 
 Baca `README.local.md` untuk menjalankan PostgreSQL, Redis, n8n, web dashboard placeholder, video worker placeholder, dan mockup worker placeholder dari laptop.
+
+## Local Operations
+
+Dokumen operasional server lokal tersedia di `docs/ops/`:
+
+- `docs/ops/LOCAL_SERVER_RUNBOOK.md`
+- `docs/ops/DAILY_WEEKLY_SOP.md`
+- `docs/ops/BACKUP_RESTORE_DRY_RUN.md`
+- `docs/ops/TROUBLESHOOTING_INCIDENTS.md`
+- `docs/ops/RELEASE_READINESS_CHECKLIST.md`
