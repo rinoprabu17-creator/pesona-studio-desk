@@ -1,6 +1,6 @@
 # Phase 2G.1 Operational Readiness Dashboard
 
-Branch: `phase-2g1-operational-readiness-dashboard`  
+Branch: `phase-2g1-operational-readiness-dashboard`
 Baseline tag: `phase-2f4-complete`
 
 ## Summary
