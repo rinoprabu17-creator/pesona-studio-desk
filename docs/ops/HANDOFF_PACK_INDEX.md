@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, and Phase 2H.1.
+This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, and Phase 2H.2.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -23,6 +23,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 15. `docs/ops/OFFICE_SERVER_REPO_BOOTSTRAP_VERIFICATION.md`
 16. `docs/ops/ENV_HANDLING_VERIFICATION.md`
 17. `docs/ops/CUTOVER_HOLD_GATE.md`
+18. `docs/ops/BACKUP_EVIDENCE_PLAN.md`
+19. `docs/ops/BACKUP_RESTORE_SEQUENCE_GATE.md`
 
 ## Full Ops Document Index
 
@@ -66,6 +68,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/ENV_HANDLING_VERIFICATION.md`
 - `docs/ops/CUTOVER_HOLD_GATE.md`
 
+### Phase 2H.2
+
+- `docs/ops/BACKUP_EVIDENCE_PLAN.md`
+- `docs/ops/BACKUP_RESTORE_SEQUENCE_GATE.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -101,6 +108,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Repo bootstrap verification checklist.
 - Env handling verification checklist.
 - Cutover hold gate.
+- Backup evidence planning checklist.
+- Backup/restore sequence gate.
 
 ## Still Intentionally Pending
 

@@ -79,3 +79,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/OFFICE_SERVER_REPO_BOOTSTRAP_VERIFICATION.md`
 - `docs/ops/ENV_HANDLING_VERIFICATION.md`
 - `docs/ops/CUTOVER_HOLD_GATE.md`
+- `docs/ops/BACKUP_EVIDENCE_PLAN.md`
+- `docs/ops/BACKUP_RESTORE_SEQUENCE_GATE.md`
