@@ -25,6 +25,11 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/BACKUP_RESTORE_DRY_RUN.md`
 - `docs/ops/TROUBLESHOOTING_INCIDENTS.md`
 - `docs/ops/RELEASE_READINESS_CHECKLIST.md`
+- `docs/ops/LOCAL_SERVER_DEPLOYMENT_REHEARSAL.md`
+- `docs/ops/TECHNICIAN_HANDOFF.md`
+- `docs/ops/OFFICE_SERVER_NETWORK_STORAGE_CHECKLIST.md`
+- `docs/ops/CUTOVER_GO_NO_GO.md`
+- `docs/ops/POST_CUTOVER_VERIFICATION.md`
 
 ## Checklist local-first Phase 2A.6B
 
