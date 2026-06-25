@@ -41,6 +41,10 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/ROUTE_STORAGE_EVIDENCE_SNAPSHOT.md`
 - `docs/ops/PENDING_FEATURES_REGISTER.md`
 - `docs/ops/OWNER_REVIEW_CHECKLIST.md`
+- `docs/ops/OFFICE_SERVER_READINESS_EVIDENCE.md`
+- `docs/ops/OFFICE_SERVER_REPO_BOOTSTRAP_VERIFICATION.md`
+- `docs/ops/ENV_HANDLING_VERIFICATION.md`
+- `docs/ops/CUTOVER_HOLD_GATE.md`
 
 ## Checklist local-first Phase 2A.6B
 

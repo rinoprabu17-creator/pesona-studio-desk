@@ -16,6 +16,18 @@ This register separates safe docs/read-only work from execution work. Every item
 | Queue/worker daemon expansion | Current docs pack does not add runtime behavior | Medium | Operational need, monitoring plan | Yes | Worker hardening phase |
 | Monitoring/alerts | Useful later, but not needed for docs freeze | Medium | Deployment target, owner alert preference | Yes | Local ops monitoring phase |
 
+## Phase 2H.1 Readiness Status
+
+Owner reported these office server prerequisites as checked and OK:
+
+- Ubuntu Server.
+- Docker Engine + Compose plugin.
+- Storage path to SSD 2TB.
+- LAN access.
+- UPS/power.
+
+This status supports the next gated evidence step only. It does not remove the pending status of backup execution, restore dry-run, storage copy, deployment, cutover, public exposure, autostart/systemd/cron setup, automated backup, scheduler/publisher/social API activation, OpenAI runtime automation, queue expansion, or worker daemon changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
