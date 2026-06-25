@@ -3,7 +3,7 @@ import {
   getManualPublishReportPackageDetail
 } from "../manual-publish-report-service.ts";
 import type { ManualPublishReportPackage, ManualPublishReportPackageChannel } from "../manual-publish-report-service.ts";
-import { escapeHtml, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
+import { escapeHtml, renderEmptyState, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
 
 function statusBadge(status: string): string {
   const className = status === "ready_evidence_complete" ? "badge badge-ok" : status === "no_checklist" ? "badge" : "badge badge-warning";
@@ -34,8 +34,8 @@ function renderFilters(url: URL): string {
     </div>
     <div class="button-row">
       <button type="submit">Filter</button>
-      <a class="button secondary" href="/manual-publish-report">Reset</a>
-      <a class="button secondary" href="/api/manual-publish-report/export.csv?${escapeHtml(url.searchParams.toString())}">Export CSV</a>
+      <a class="button button-secondary" href="/manual-publish-report">Reset</a>
+      <a class="button button-secondary" href="/api/manual-publish-report/export.csv?${escapeHtml(url.searchParams.toString())}">Export CSV</a>
     </div>
   </form>`;
 }
@@ -82,7 +82,7 @@ function channelRows(channels: ManualPublishReportPackageChannel[]): unknown[][]
 }
 
 function safetyNotice(): string {
-  return `<div class="notice">Report ini read-only. CSV dibuat sebagai response saja. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, dan tidak mutasi file video.</div>`;
+  return `<div class="notice">Report ini read-only. CSV dibuat sebagai response saja. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>`;
 }
 
 export async function renderManualPublishReportListPage(url: URL): Promise<string> {
@@ -93,10 +93,19 @@ export async function renderManualPublishReportListPage(url: URL): Promise<strin
     report_status: url.searchParams.get("report_status"),
     limit: url.searchParams.get("limit")
   });
-  const table = renderReadOnlyTable(
-    ["Konten", "Package", "Report", "Checklist", "Evidence", "Manual URL", "Missing URL", "Aksi"],
-    packageRows(board.packages)
-  );
+  const table = board.packages.length
+    ? renderReadOnlyTable(
+        ["Konten", "Package", "Report", "Checklist", "Evidence", "Manual URL", "Missing URL", "Aksi"],
+        packageRows(board.packages)
+      )
+    : renderEmptyState(
+        "Belum ada package pada report ini",
+        "Manual Publish Report akan terisi setelah ada publication package dari Approved Videos.",
+        [
+          { href: "/approved-videos", label: "Approved Videos" },
+          { href: "/publication-packages", label: "Publication Packages", secondary: true }
+        ]
+      );
   return renderLayout(
     "/manual-publish-report",
     "Manual Publish Report",
@@ -131,6 +140,6 @@ export async function renderManualPublishReportDetailPage(packageId: string, url
     "Manual Publish Report Detail",
     "Manual Publish",
     "Detail read-only checklist dan evidence per channel.",
-    `${renderMessage(url)}${safetyNotice()}<div class="button-row"><a class="button secondary" href="/manual-publish-report">Back to Report</a><a class="button secondary" href="/publication-packages/${escapeHtml(pkg.package_id)}">Package Detail</a><a class="button secondary" href="/publication-packages/${escapeHtml(pkg.package_id)}/checklist">Checklist</a><a class="button secondary" href="/publication-packages/${escapeHtml(pkg.package_id)}/closeout">Closeout</a></div><section><h2>Package Summary</h2>${summary}</section><section><h2>Channel Report</h2>${channels}</section>`
+    `${renderMessage(url)}${safetyNotice()}<div class="button-row"><a class="button button-secondary" href="/manual-publish-report">Back to Report</a><a class="button button-secondary" href="/publication-packages/${escapeHtml(pkg.package_id)}">Package Detail</a><a class="button button-secondary" href="/publication-packages/${escapeHtml(pkg.package_id)}/checklist">Checklist</a><a class="button button-secondary" href="/publication-packages/${escapeHtml(pkg.package_id)}/closeout">Closeout</a></div><section><h2>Package Summary</h2>${summary}</section><section><h2>Channel Report</h2>${channels}</section>`
   );
 }

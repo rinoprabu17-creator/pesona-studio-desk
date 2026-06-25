@@ -218,6 +218,7 @@ import {
 import { validateOperationalReadinessFilters } from "../../apps/web/src/validation/operational-readiness-validation.ts";
 import { handleOperationalReadinessApiRoute } from "../../apps/web/src/routes/operational-readiness-api-routes.ts";
 import { handleOperationalReadinessPageGet } from "../../apps/web/src/routes/operational-readiness-page-routes.ts";
+import { renderEmptyState, renderLayout } from "../../apps/web/src/views/layout.ts";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const shouldRun = Boolean(databaseUrl);
@@ -4378,6 +4379,152 @@ maybeTest("operational readiness page route returns safety notice and API route 
   const serverSource = readFileSync("apps/web/src/server.ts", "utf8");
   assert.equal(serverSource.indexOf("handleOperationalReadinessApiRoute") < serverSource.indexOf("handleContentItemApiRoute"), true);
   assert.equal(serverSource.indexOf("handleOperationalReadinessPageGet") < serverSource.indexOf("handleContentCalendarPageGet"), true);
+});
+
+test("admin UX grouped navigation, active route, empty state escaping, and responsive CSS are present", () => {
+  const html = renderLayout(
+    "/publication-packages/example-id",
+    "UX Test",
+    "Test",
+    "Layout test.",
+    renderEmptyState("<Belum Ada>", "Pesan <script>alert(1)</script>", [
+      { href: "/manual-publish-report?q=<x>", label: "Report <x>" },
+      { href: "/approved-videos", label: "Approved", secondary: true }
+    ])
+  );
+
+  for (const heading of ["Overview", "Campaign &amp; Content", "Video Pipeline", "Manual Publish", "Libraries / Setup"]) {
+    assert.match(html, new RegExp(heading));
+  }
+  assert.match(html, /class="nav-section"/);
+  assert.match(html, /class="nav-heading"/);
+  assert.match(html, /href="\/publication-packages"[^>]*>Publication Packages<\/a>/);
+  assert.match(html, /nav-link active" href="\/publication-packages"/);
+  assert.match(html, /class="empty-state"/);
+  assert.match(html, /&lt;Belum Ada&gt;/);
+  assert.match(html, /Pesan &lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.match(html, /Report &lt;x&gt;/);
+  assert.equal(html.includes("<script>alert(1)</script>"), false);
+
+  const layoutSource = readFileSync("apps/web/src/views/layout.ts", "utf8");
+  assert.equal(layoutSource.includes(".nav-section"), true);
+  assert.equal(layoutSource.includes(".nav-heading"), true);
+  assert.equal(layoutSource.includes(".empty-state"), true);
+  assert.equal(layoutSource.includes("@media (max-width: 900px)"), true);
+});
+
+maybeTest("admin UX empty states render on selected list/report pages without mutating data", async () => {
+  const before = await operationalReadinessCounts();
+
+  const reportResponse = mockResponse();
+  const reportHandled = await handleManualPublishReportPageGet(
+    reportResponse,
+    "/manual-publish-report",
+    new URL("http://localhost/manual-publish-report?q=phase-2g2-no-packages")
+  );
+  assert.equal(reportHandled, true);
+  assert.equal(reportResponse.statusCode, 200);
+  assert.match(reportResponse.body, /Belum ada package pada report ini/);
+
+  const closeoutResponse = mockResponse();
+  const closeoutHandled = await handleManualPublishCloseoutPageGet(
+    closeoutResponse,
+    "/manual-publish-closeouts",
+    new URL("http://localhost/manual-publish-closeouts?package_id=11111111-1111-4111-8111-111111111111")
+  );
+  assert.equal(closeoutHandled, true);
+  assert.equal(closeoutResponse.statusCode, 200);
+  assert.match(closeoutResponse.body, /Belum ada closeout/);
+
+  const packageResponse = mockResponse();
+  const packageHandled = await handleManualPublicationPackagePageGet(
+    packageResponse,
+    "/publication-packages",
+    new URL("http://localhost/publication-packages?q=phase-2g2-no-packages")
+  );
+  assert.equal(packageHandled, true);
+  assert.equal(packageResponse.statusCode, 200);
+  assert.match(packageResponse.body, /Belum ada publication package/);
+
+  const approvedResponse = mockResponse();
+  const approvedHandled = await handleApprovedVideoPageGet(
+    approvedResponse,
+    "/approved-videos",
+    new URL("http://localhost/approved-videos?q=phase-2g2-no-approved-videos")
+  );
+  assert.equal(approvedHandled, true);
+  assert.equal(approvedResponse.statusCode, 200);
+  assert.match(approvedResponse.body, /Belum ada approved video/);
+
+  const after = await operationalReadinessCounts();
+  assert.deepEqual(after, before);
+});
+
+test("admin UX safety wording has no old typo and phase adds no migration or prepare-test-db change", () => {
+  const sources = [
+    "apps/web/src/views/layout.ts",
+    "apps/web/src/views/operational-readiness-pages.ts",
+    "apps/web/src/views/manual-publish-closeout-pages.ts",
+    "apps/web/src/views/manual-publish-report-pages.ts",
+    "apps/web/src/views/manual-publication-package-pages.ts",
+    "apps/web/src/views/approved-video-pages.ts",
+    "apps/web/src/operational-readiness-service.ts"
+  ].map((path) => readFileSync(path, "utf8")).join("\n");
+
+  assert.equal(/tidak uploa/i.test(sources), false);
+  for (const text of ["Tidak upload", "tidak scheduler", "tidak publisher", "tidak social API", "tidak mutasi file video", "content_publications"]) {
+    assert.equal(sources.includes(text), true);
+  }
+  assert.equal(readdirSync("migrations").some((fileName) => fileName.includes("phase2g2") || fileName.includes("admin_ux")), false);
+  assert.equal(readFileSync("scripts/prepare-test-db.mjs", "utf8").includes("phase2g2"), false);
+  assert.equal(readFileSync("scripts/prepare-test-db.mjs", "utf8").includes("admin_ux"), false);
+});
+
+test("admin UX changed runtime files stay UI-only with no write or integration behavior", () => {
+  const sources = [
+    "apps/web/src/views/layout.ts",
+    "apps/web/src/views/operational-readiness-pages.ts",
+    "apps/web/src/views/manual-publish-closeout-pages.ts",
+    "apps/web/src/views/manual-publish-report-pages.ts",
+    "apps/web/src/views/manual-publication-package-pages.ts",
+    "apps/web/src/views/approved-video-pages.ts"
+  ].map((path) => readFileSync(path, "utf8")).join("\n");
+
+  for (const forbidden of [
+    "INSERT INTO",
+    "UPDATE ",
+    "DELETE FROM",
+    "DROP",
+    "TRUNCATE",
+    "ALTER TABLE",
+    "exec(",
+    "execFile",
+    "shell:",
+    "unlink",
+    "rename",
+    "copyFile",
+    "writeFile",
+    "appendFile",
+    "createWriteStream",
+    "createReadStream",
+    "mkdir",
+    "workers/video",
+    "queue",
+    "worker daemon",
+    "graph.facebook",
+    "facebook.com",
+    "googleapis",
+    "axios",
+    "fetch(",
+    "storage/approved-videos",
+    "storage/draft-videos",
+    "storage/footage",
+    "tidak uploa"
+  ]) {
+    assert.equal(sources.includes(forbidden), false, forbidden);
+  }
+  assert.equal(/from\s+["'][^"']*openai/i.test(sources), false);
+  assert.equal(/new\s+OpenAI\b/.test(sources), false);
 });
 
 test("operational readiness validation rejects write input, no migration added, and prepare-test-db unchanged for phase", () => {

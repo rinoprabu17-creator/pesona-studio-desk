@@ -5,10 +5,10 @@ import {
 } from "../manual-publish-closeout-service.ts";
 import type { ManualPublishCloseoutDetail, ManualPublishCloseoutEligibility } from "../manual-publish-closeout-service.ts";
 import { getManualPublishReportPackageDetail } from "../manual-publish-report-service.ts";
-import { escapeHtml, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
+import { escapeHtml, renderEmptyState, renderLayout, renderMessage, renderReadOnlyTable } from "./layout.ts";
 
 function safetyNotice(): string {
-  return `<div class="notice">Closeout adalah sertifikat DB-only. Tidak publish, tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak membuat content_publications, dan tidak mutasi file video.</div>`;
+  return `<div class="notice">Closeout adalah sertifikat DB-only. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>`;
 }
 
 function eligibilityTable(eligibility: ManualPublishCloseoutEligibility): string {
@@ -48,10 +48,19 @@ export async function renderManualPublishCloseoutListPage(url: URL): Promise<str
     closeout_status: url.searchParams.get("closeout_status"),
     limit: Number(url.searchParams.get("limit") || 50)
   });
-  const table = renderReadOnlyTable(
-    ["Closeout", "Content", "Status", "Report", "Checklist", "Manual URL", "Closed By", "Closed At"],
-    closeoutRows(rows)
-  );
+  const table = rows.length
+    ? renderReadOnlyTable(
+        ["Closeout", "Content", "Status", "Report", "Checklist", "Manual URL", "Closed By", "Closed At"],
+        closeoutRows(rows)
+      )
+    : renderEmptyState(
+        "Belum ada closeout",
+        "Closeout akan muncul setelah package manual publish sudah ready evidence complete dan owner/admin membuat sertifikat closeout.",
+        [
+          { href: "/manual-publish-report", label: "Manual Publish Report" },
+          { href: "/publication-packages", label: "Publication Packages", secondary: true }
+        ]
+      );
   return renderLayout(
     "/manual-publish-closeouts",
     "Manual Publish Closeouts",
@@ -88,7 +97,7 @@ export async function renderManualPublishCloseoutDetailPage(closeoutId: string, 
     "Manual Publish Closeout Detail",
     "Manual Publish",
     "Detail sertifikat closeout manual publish DB-only.",
-    `${renderMessage(url)}${safetyNotice()}<div class="button-row"><a class="button secondary" href="/manual-publish-closeouts">Back to Closeouts</a><a class="button secondary" href="/publication-packages/${escapeHtml(row.package_id)}">Package Detail</a></div>${table}`
+    `${renderMessage(url)}${safetyNotice()}<div class="button-row"><a class="button button-secondary" href="/manual-publish-closeouts">Back to Closeouts</a><a class="button button-secondary" href="/publication-packages/${escapeHtml(row.package_id)}">Package Detail</a></div>${table}`
   );
 }
 
@@ -123,6 +132,6 @@ export async function renderManualPublishCloseoutPackagePage(packageId: string, 
     "Manual Publish Closeout",
     "Manual Publish",
     "Closeout hanya bisa dibuat saat semua checklist selesai dan semua channel punya manual URL evidence.",
-    `${renderMessage(url)}${safetyNotice()}<div class="button-row"><a class="button secondary" href="/manual-publish-report/packages/${escapeHtml(packageId)}">Report Detail</a><a class="button secondary" href="/publication-packages/${escapeHtml(packageId)}/checklist">Checklist</a></div><section><h2>Package Summary</h2>${summary}</section><section><h2>Eligibility</h2>${eligibilityTable(eligibility)}</section><section><h2>Create Closeout</h2>${form}</section>`
+    `${renderMessage(url)}${safetyNotice()}<div class="button-row"><a class="button button-secondary" href="/manual-publish-report/packages/${escapeHtml(packageId)}">Report Detail</a><a class="button button-secondary" href="/publication-packages/${escapeHtml(packageId)}/checklist">Checklist</a></div><section><h2>Package Summary</h2>${summary}</section><section><h2>Eligibility</h2>${eligibilityTable(eligibility)}</section><section><h2>Create Closeout</h2>${form}</section>`
   );
 }
