@@ -18,6 +18,14 @@ Google Drive dipakai untuk backup/sharing file penting, bukan sebagai storage ke
 
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
+Untuk operasi harian server lokal, baca:
+
+- `docs/ops/LOCAL_SERVER_RUNBOOK.md`
+- `docs/ops/DAILY_WEEKLY_SOP.md`
+- `docs/ops/BACKUP_RESTORE_DRY_RUN.md`
+- `docs/ops/TROUBLESHOOTING_INCIDENTS.md`
+- `docs/ops/RELEASE_READINESS_CHECKLIST.md`
+
 ## Checklist local-first Phase 2A.6B
 
 Sebelum menjalankan stack di server kantor:
