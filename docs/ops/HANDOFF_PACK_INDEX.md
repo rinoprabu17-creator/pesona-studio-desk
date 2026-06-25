@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, and Phase 2H.2.
+This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, and Phase 2H.3.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -25,6 +25,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 17. `docs/ops/CUTOVER_HOLD_GATE.md`
 18. `docs/ops/BACKUP_EVIDENCE_PLAN.md`
 19. `docs/ops/BACKUP_RESTORE_SEQUENCE_GATE.md`
+20. `docs/ops/BACKUP_EVIDENCE_COLLECTION.md`
+21. `docs/ops/BACKUP_EVIDENCE_TEMPLATE.md`
 
 ## Full Ops Document Index
 
@@ -73,6 +75,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/BACKUP_EVIDENCE_PLAN.md`
 - `docs/ops/BACKUP_RESTORE_SEQUENCE_GATE.md`
 
+### Phase 2H.3
+
+- `docs/ops/BACKUP_EVIDENCE_COLLECTION.md`
+- `docs/ops/BACKUP_EVIDENCE_TEMPLATE.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -110,6 +117,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Cutover hold gate.
 - Backup evidence planning checklist.
 - Backup/restore sequence gate.
+- Backup evidence collection guide.
+- Backup evidence fillable template.
 
 ## Still Intentionally Pending
 

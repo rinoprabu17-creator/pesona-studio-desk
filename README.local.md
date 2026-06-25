@@ -47,6 +47,8 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/CUTOVER_HOLD_GATE.md`
 - `docs/ops/BACKUP_EVIDENCE_PLAN.md`
 - `docs/ops/BACKUP_RESTORE_SEQUENCE_GATE.md`
+- `docs/ops/BACKUP_EVIDENCE_COLLECTION.md`
+- `docs/ops/BACKUP_EVIDENCE_TEMPLATE.md`
 
 ## Checklist local-first Phase 2A.6B
 

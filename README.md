@@ -81,3 +81,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/CUTOVER_HOLD_GATE.md`
 - `docs/ops/BACKUP_EVIDENCE_PLAN.md`
 - `docs/ops/BACKUP_RESTORE_SEQUENCE_GATE.md`
+- `docs/ops/BACKUP_EVIDENCE_COLLECTION.md`
+- `docs/ops/BACKUP_EVIDENCE_TEMPLATE.md`

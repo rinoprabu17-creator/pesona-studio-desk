@@ -40,6 +40,18 @@ Phase 2H.2 adds backup evidence planning only:
 
 This does not remove the pending status of backup execution, restore dry-run execution, storage copy, deployment, cutover, public exposure, autostart/systemd/cron setup, automated backup, scheduler/publisher/social API activation, OpenAI runtime automation, queue expansion, or worker daemon changes.
 
+## Phase 2H.3 Backup Evidence Collection Pack Status
+
+Phase 2H.3 adds collection templates only:
+
+- Backup evidence collection rules.
+- Safe paste and redaction guidance.
+- PostgreSQL, Redis, storage, repo/tag, and destination evidence fields.
+- Checksum/hash placeholder.
+- Acceptance and owner review checklists.
+
+This does not execute backup and does not remove the pending status of backup execution, restore dry-run planning/execution, storage copy, deployment, cutover, public exposure, autostart/systemd/cron setup, automated backup, scheduler/publisher/social API activation, OpenAI runtime automation, queue expansion, or worker daemon changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
