@@ -24,6 +24,8 @@ import { handleManualPublishCloseoutApiRoute } from "./routes/manual-publish-clo
 import { handleManualPublishCloseoutPageGet, handleManualPublishCloseoutPagePost } from "./routes/manual-publish-closeout-page-routes.ts";
 import { handleManualPublishReportApiRoute } from "./routes/manual-publish-report-api-routes.ts";
 import { handleManualPublishReportPageGet } from "./routes/manual-publish-report-page-routes.ts";
+import { handleOperationalReadinessApiRoute } from "./routes/operational-readiness-api-routes.ts";
+import { handleOperationalReadinessPageGet } from "./routes/operational-readiness-page-routes.ts";
 import { handleContentCalendarApiRoute } from "./routes/content-calendar-api-routes.ts";
 import { handleContentCalendarPageGet } from "./routes/content-calendar-page-routes.ts";
 import { handleContentItemApiRoute } from "./routes/content-item-api-routes.ts";
@@ -69,6 +71,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
         (await handleCampaignPlanImportApiRoute(request, response, pathname)) ||
         (await handleCampaignPlanReviewApiRoute(request, response, pathname)) ||
         (await handleCampaignPlanRunApiRoute(request, response, pathname)) ||
+        (await handleOperationalReadinessApiRoute(request, response, pathname, url)) ||
         (await handleManualPublishCloseoutApiRoute(request, response, pathname, url)) ||
         (await handleManualPublishReportApiRoute(request, response, pathname, url)) ||
         (await handleManualPublishChecklistApiRoute(request, response, pathname, url)) ||
@@ -110,6 +113,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
       (await handleCampaignPlanImportPageGet(response, pathname, url)) ||
       (await handleCampaignPlanReviewPageGet(response, pathname, url)) ||
       (await handleCampaignPlanRunPageGet(response, pathname, url)) ||
+      (await handleOperationalReadinessPageGet(response, pathname, url)) ||
       (await handleManualPublishCloseoutPageGet(response, pathname, url)) ||
       (await handleManualPublishReportPageGet(response, pathname, url)) ||
       (await handleManualPublishChecklistPageGet(response, pathname, url)) ||

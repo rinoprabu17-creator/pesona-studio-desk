@@ -6,6 +6,7 @@ export type NavItem = {
 const appName = process.env.APP_NAME || "Pesona Studio Desk";
 
 export const navItems: NavItem[] = [
+  { href: "/operational-readiness", label: "Operational Readiness" },
   { href: "/campaigns", label: "Campaign" },
   { href: "/content-calendar", label: "Kalender Konten" },
   { href: "/content-items", label: "Konten" },
@@ -211,6 +212,34 @@ export function renderLayout(activePath: string, title: string, eyebrow: string,
       }
 
       .content { padding: 20px 26px 28px; display: grid; gap: 22px; }
+      .stat-grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .stat {
+        background: var(--surface-soft);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        min-height: 88px;
+        padding: 14px;
+      }
+
+      .stat span {
+        color: var(--muted);
+        display: block;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.35;
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 28px;
+        line-height: 1;
+        margin-top: 12px;
+      }
       .table-wrap { overflow-x: auto; }
       table { border-collapse: collapse; min-width: 760px; width: 100%; }
 
@@ -295,18 +324,21 @@ export function renderLayout(activePath: string, title: string, eyebrow: string,
 
       .notice.success { background: #ecfdf5; border: 1px solid #bbf7d0; color: var(--ok); }
       .notice.error { background: #fef2f2; border: 1px solid #fecaca; color: var(--danger); }
+      .notice.warning { background: #fff7ed; border: 1px solid #fed7aa; color: var(--warning); }
+      .notice p { margin: 0 0 6px; }
+      .notice p:last-child { margin-bottom: 0; }
       .hint { color: var(--muted); font-size: 13px; line-height: 1.5; margin: 0; }
 
       @media (max-width: 900px) {
         .shell { grid-template-columns: 1fr; }
         .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .form-grid, .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       }
 
       @media (max-width: 560px) {
         .main { padding: 18px; }
         .topbar { align-items: flex-start; flex-direction: column; }
-        .nav, .form-grid { grid-template-columns: 1fr; }
+        .nav, .form-grid, .stat-grid { grid-template-columns: 1fr; }
         h1 { font-size: 25px; }
       }
     </style>
