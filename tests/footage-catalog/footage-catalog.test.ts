@@ -4471,7 +4471,7 @@ test("admin UX safety wording has no old typo and phase adds no migration or pre
     "apps/web/src/operational-readiness-service.ts"
   ].map((path) => readFileSync(path, "utf8")).join("\n");
 
-  assert.equal(/tidak uploa/i.test(sources), false);
+  assert.equal(/\btidak uploa\b/i.test(sources), false);
   for (const text of ["Tidak upload", "tidak scheduler", "tidak publisher", "tidak social API", "tidak mutasi file video", "content_publications"]) {
     assert.equal(sources.includes(text), true);
   }

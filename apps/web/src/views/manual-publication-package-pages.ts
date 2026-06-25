@@ -75,7 +75,7 @@ export async function renderManualPublicationPackageListPage(url: URL): Promise<
   const items = await listManualPublicationPackages(filters);
   const content = `
     ${renderMessage(url)}
-    <div class="notice">Manual publication package ini DB-only. Tidak uploadd, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>
+    <div class="notice">Manual publication package ini DB-only. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>
     <section>
       <form method="get" action="/publication-packages">
         <div class="form-grid">
@@ -162,7 +162,7 @@ export async function renderManualPublicationPackageCreatePage(promotionId: stri
   </form>` : `<p class="hint">Package belum bisa dibuat: ${escapeHtml(context.eligibility.blocking_reasons.join(" "))}</p>`;
   const content = `
     ${renderMessage(url)}
-    <div class="notice">DB-only package. Tidak uploadd, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>
+    <div class="notice">DB-only package. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>
     ${summary}
     ${form}
   `;
@@ -249,7 +249,7 @@ export async function renderManualPublicationPackageDetailPage(packageId: string
   );
   const content = `
     ${renderMessage(url)}
-    <div class="notice">published_manually hanya catatan manual. Tidak ada API call. Tidak uploadd, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>
+    <div class="notice">published_manually hanya catatan manual. Tidak ada API call. Tidak upload, tidak scheduler, tidak publisher, tidak OpenAI, tidak social API, tidak mutasi file video, tidak membuat content_publications, dan tidak memutasi content_publications.</div>
     ${summary}
     <section>
       <h2>Manual Publish Checklist</h2>
