@@ -17,6 +17,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 9. `docs/ops/CUTOVER_GO_NO_GO.md`
 10. `docs/ops/POST_CUTOVER_VERIFICATION.md`
 11. `docs/ops/OWNER_SIGNOFF_TEMPLATES.md`
+12. `docs/ops/FINAL_LOCAL_OPS_RELEASE_AUDIT.md`
+13. `docs/ops/PENDING_FEATURES_REGISTER.md`
 
 ## Full Ops Document Index
 
@@ -44,6 +46,15 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/DRY_RUN_EVIDENCE_TEMPLATE.md`
 - `docs/ops/HANDOFF_PACK_INDEX.md`
 
+### Phase 2G.6
+
+- `docs/ops/FINAL_LOCAL_OPS_RELEASE_AUDIT.md`
+- `docs/ops/LOCAL_OPS_FREEZE_CANDIDATE_CHECKLIST.md`
+- `docs/ops/OPS_DOCS_CONSISTENCY_AUDIT.md`
+- `docs/ops/ROUTE_STORAGE_EVIDENCE_SNAPSHOT.md`
+- `docs/ops/PENDING_FEATURES_REGISTER.md`
+- `docs/ops/OWNER_REVIEW_CHECKLIST.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -69,6 +80,12 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Printable office server preflight checklist.
 - Owner sign-off templates.
 - Dry-run evidence template.
+- Final local ops release audit.
+- Freeze candidate checklist.
+- Ops docs consistency audit.
+- Route/storage evidence snapshot.
+- Pending features register.
+- Owner review checklist.
 
 ## Still Intentionally Pending
 

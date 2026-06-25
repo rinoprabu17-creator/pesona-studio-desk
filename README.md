@@ -69,3 +69,9 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/OFFICE_SERVER_PREFLIGHT_PRINTABLE.md`
 - `docs/ops/OWNER_SIGNOFF_TEMPLATES.md`
 - `docs/ops/DRY_RUN_EVIDENCE_TEMPLATE.md`
+- `docs/ops/FINAL_LOCAL_OPS_RELEASE_AUDIT.md`
+- `docs/ops/LOCAL_OPS_FREEZE_CANDIDATE_CHECKLIST.md`
+- `docs/ops/OPS_DOCS_CONSISTENCY_AUDIT.md`
+- `docs/ops/ROUTE_STORAGE_EVIDENCE_SNAPSHOT.md`
+- `docs/ops/PENDING_FEATURES_REGISTER.md`
+- `docs/ops/OWNER_REVIEW_CHECKLIST.md`
