@@ -65,6 +65,21 @@ Phase 2H.4 adds a controlled bootstrap verification checklist only:
 
 This does not execute backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, autostart/systemd/cron setup, automated backup, scheduler/publisher/social API activation, OpenAI runtime automation, upload automation, queue expansion, or worker daemon changes.
 
+## Phase 2H.5 Office Server Bootstrap Evidence Intake Status
+
+Phase 2H.5 records owner-provided Lenovo bootstrap evidence only:
+
+- Actual Lenovo server identity evidence.
+- RAM evidence with 32GB target HOLD.
+- Disk/storage evidence with 2TB SSD target HOLD.
+- Docker Engine, Docker Compose, and non-sudo Docker access evidence.
+- Existing container `0.0.0.0` bind caution without modification.
+- Repo baseline at tag `phase-2h4-complete`, HEAD `2796057`, clean status.
+- `.env.local` placeholder/template handling evidence without values.
+- Docker Compose config pass evidence with storage warning.
+
+Lenovo bootstrap is partial PASS with hardware/storage HOLD. This does not execute backup, restore, restore over active DB, restore dry-run execution, MP4/media read/copy/move/edit/rename/delete, storage copy, deployment, cutover, runtime smoke, `docker compose up`, public exposure, autostart/systemd/cron setup, automated backup, scheduler/publisher/social API activation, OpenAI runtime automation, upload automation, queue expansion, worker daemon changes, or existing Lenovo container changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
