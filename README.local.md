@@ -50,6 +50,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/BACKUP_EVIDENCE_COLLECTION.md`
 - `docs/ops/BACKUP_EVIDENCE_TEMPLATE.md`
 - `docs/ops/OFFICE_SERVER_BOOTSTRAP_VERIFICATION.md`
+- `docs/ops/OFFICE_SERVER_BOOTSTRAP_EVIDENCE_INTAKE.md`
 
 ## Checklist local-first Phase 2A.6B
 
