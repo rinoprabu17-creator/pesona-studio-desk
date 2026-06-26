@@ -80,6 +80,22 @@ Phase 2H.5 records owner-provided Lenovo bootstrap evidence only:
 
 Lenovo bootstrap is partial PASS with hardware/storage HOLD. This does not execute backup, restore, restore over active DB, restore dry-run execution, MP4/media read/copy/move/edit/rename/delete, storage copy, deployment, cutover, runtime smoke, `docker compose up`, public exposure, autostart/systemd/cron setup, automated backup, scheduler/publisher/social API activation, OpenAI runtime automation, upload automation, queue expansion, worker daemon changes, or existing Lenovo container changes.
 
+## Phase 2H.6 Local Visual Demo Evidence Intake Status
+
+Phase 2H.6 records laptop-only visual demo evidence:
+
+- Docker Compose project `psd_visual_demo`.
+- Host app URL `http://localhost:3300`.
+- Synthetic demo content flow from calendar to controlled smoke draft render.
+- Preflight result `ready`.
+- Render attempt status `succeeded`.
+- Approved/publish flow remained manual and inactive.
+- `/approved-videos` showed no approved video.
+- Host-port curl inconsistency warning with internal route checks returning HTTP 200.
+- Demo env and generated demo media ignored and not committed.
+
+This is not Lenovo readiness evidence, not production migration evidence, and not cutover evidence. It does not execute backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, social API activation, scheduler/publisher activation, upload automation, OpenAI live runtime, queue expansion, worker daemon expansion, or production/customer data/media use.
+
 ## Current Safe Work
 
 - Docs-only audit.
