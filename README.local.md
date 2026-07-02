@@ -22,6 +22,8 @@ Phase 2H.8 mencatat owner-provided isolated server runtime smoke untuk `pesona` 
 
 Phase 2H.9 mencatat owner-provided controlled smoke stop untuk `psd_server_smoke`: 7/7 container smoke berhenti dengan `docker compose stop`, tidak ada container smoke yang masih running, port `3000/5432/5678/6379` tidak listening, dan volume smoke tetap preserved. Tidak ada `down -v`, `docker volume rm`, atau storage deletion. Runtime smoke Phase 2H.8 tetap valid; cutover tetap blocked.
 
+Phase 2H.10 mencatat owner-provided controlled smoke backup evidence untuk `psd_server_smoke` saja: checksum verification PASS, `storage-smoke.tgz` readable, dan `postgres-smoke.dump` readable via `pg_restore -l`. Ini bukan production backup, bukan restore, bukan restore dry-run, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -61,6 +63,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/NEW_SERVER_BOOTSTRAP_EVIDENCE.md`
 - `docs/ops/ISOLATED_SERVER_RUNTIME_SMOKE_EVIDENCE.md`
 - `docs/ops/CONTROLLED_SMOKE_STOP_EVIDENCE.md`
+- `docs/ops/CONTROLLED_SMOKE_BACKUP_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 

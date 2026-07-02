@@ -149,6 +149,25 @@ Phase 2H.9 records owner-provided controlled stop evidence for the isolated serv
 
 Controlled smoke stop is PASS. Phase 2H.8 runtime smoke evidence remains valid. This is not backup, restore, restore dry-run, storage copy, deployment, production operation, or cutover. This phase does not execute new server commands by Codex, backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.10 Controlled Smoke Backup Evidence Intake Status
+
+Phase 2H.10 records owner-provided controlled smoke backup evidence for the isolated smoke project `psd_server_smoke` on `pesona`:
+
+- Scope was isolated smoke stack only; this is not production backup, not restore, not restore dry-run, and not cutover.
+- Repo path `/srv/pesona-studio/repos/pesona-studio-desk`, git head `76a9b0ca8ce9bb81c9043f8bda3b0881491c9146`, tag `phase-2h9-complete`, and git status short count `0`.
+- Backup directory `/srv/pesona-studio/backups/psd-smoke-backup-20260702T075815Z`.
+- Pre-backup and post-backup evidence showed no running smoke containers.
+- Only `psd_server_smoke-postgres-1` was started for logical dump; Postgres readiness passed; Postgres was stopped again.
+- `postgres-smoke.dump`, `postgres-table-list.txt`, `storage-smoke.tgz`, evidence text files, and `SHA256SUMS.txt` were created on the server backup path and must not be committed to Git.
+- `/srv/pesona-studio` was mounted from `/dev/sdb1` with `469G` size and `445G` available; backup directory size was `196K`.
+- `sha256sum -c SHA256SUMS.txt` passed for all listed files.
+- `storage-smoke.tgz` was readable and listed expected placeholder storage paths.
+- `postgres-smoke.dump` was readable via `pg_restore -l`; it was custom dump format for database `pesona_studio`, dumped from PostgreSQL `16.14`, with `306` TOC entries and expected schema/data entries.
+- No restore was performed.
+- No `docker compose down -v`, no `docker volume rm`, and no storage deletion was run.
+
+Controlled smoke backup evidence is PASS. Checksum verification, backup archive readability, and PostgreSQL dump listing readability are PASS. This is not production backup, restore, restore dry-run, storage copy, deployment, production operation, or cutover. This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -159,6 +178,7 @@ Controlled smoke stop is PASS. Phase 2H.8 runtime smoke evidence remains valid. 
 - New server Docker non-sudo verification and isolated runtime smoke planning, only after explicit owner approval.
 - Server smoke review and controlled stop procedure planning, only after explicit owner approval.
 - Backup evidence acceptance or controlled backup dry-run planning, only after explicit owner approval.
+- Restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
