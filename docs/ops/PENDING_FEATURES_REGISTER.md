@@ -190,6 +190,24 @@ Phase 2H.11 records owner-provided controlled smoke restore dry-run evidence on 
 
 Controlled smoke restore dry-run is PASS. Backup checksum validation, database restore validation, storage archive extraction validation, and restore target stopped safely are PASS. This is not production restore, restore to active DB, storage copy, deployment, production operation, or cutover. This phase does not execute new server commands by Codex, production backup, production restore, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.12 Pilot Readiness Gate + Operating Policy Status
+
+Phase 2H.12 adds a pilot readiness gate and server operating policy for the new native Ubuntu server candidate `pesona`:
+
+- Baseline tag `phase-2h11-complete`.
+- Runtime smoke PASS from Phase 2H.8 remains valid.
+- Controlled smoke stop PASS from Phase 2H.9 remains valid.
+- Controlled smoke backup PASS from Phase 2H.10 remains valid.
+- Controlled smoke restore dry-run PASS from Phase 2H.11 remains valid.
+- New server bootstrap and storage evidence remain strong PASS for pilot readiness discussion.
+- RAM `16GB` is accepted with limit for initial pilot; upgrade to `32GB` remains deferred until lead/order value is proven.
+- Pilot entry criteria require owner-confirmed scope, LAN/Tailscale-only access, no public tunnel, no irreversible automation, manual publish default, accepted backup plan, and identified responsible operator.
+- Pilot non-goals include no cutover, no public exposure, no social API/publisher, no OpenAI live runtime, and no production restore.
+
+GPU driver, production backup policy, autostart/systemd, public exposure, scheduler/publisher/social API, OpenAI live runtime, and final cutover remain HOLD.
+
+This phase does not execute server commands by Codex, backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down, container mutation, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -202,6 +220,7 @@ Controlled smoke restore dry-run is PASS. Backup checksum validation, database r
 - Backup evidence acceptance or controlled backup dry-run planning, only after explicit owner approval.
 - Restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Owner Go/No-Go planning for cutover readiness review or production backup policy review, only after explicit owner approval.
+- Controlled pilot start procedure planning or production backup policy review, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -212,3 +231,5 @@ Controlled smoke restore dry-run is PASS. Backup checksum validation, database r
 - Cutover.
 - Public exposure.
 - Runtime automation.
+- Controlled pilot runtime execution.
+- Production backup policy acceptance.

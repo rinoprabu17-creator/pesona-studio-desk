@@ -91,3 +91,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/CONTROLLED_SMOKE_STOP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_SMOKE_RESTORE_DRYRUN_EVIDENCE.md`
+- `docs/ops/PILOT_READINESS_GATE.md`
+- `docs/ops/SERVER_OPERATING_POLICY.md`

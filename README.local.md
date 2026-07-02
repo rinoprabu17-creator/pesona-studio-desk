@@ -26,6 +26,8 @@ Phase 2H.10 mencatat owner-provided controlled smoke backup evidence untuk `psd_
 
 Phase 2H.11 mencatat owner-provided controlled smoke restore dry-run evidence untuk project isolated `psd_restore_dryrun`: backup checksum PASS, database restore ke Postgres isolated PASS dengan 30 tabel, storage archive extraction PASS, dan target restore berhenti aman. Ini bukan production restore, bukan restore ke active DB, dan bukan cutover.
 
+Phase 2H.12 menambahkan pilot readiness gate dan server operating policy untuk kandidat `pesona`. Runtime smoke, controlled stop, smoke backup, dan smoke restore dry-run sudah PASS; RAM 16GB diterima dengan limit awal. Gate ini hanya untuk owner/operator readiness: akses tetap LAN/Tailscale-only, manual publish tetap default, backup plan harus diterima sebelum pilot data dianggap penting, dan cutover tetap blocked.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -67,6 +69,8 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/CONTROLLED_SMOKE_STOP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_SMOKE_RESTORE_DRYRUN_EVIDENCE.md`
+- `docs/ops/PILOT_READINESS_GATE.md`
+- `docs/ops/SERVER_OPERATING_POLICY.md`
 
 ## Checklist local-first Phase 2A.6B
 
