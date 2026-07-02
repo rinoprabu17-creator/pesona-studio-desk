@@ -16,6 +16,8 @@ MVP awal tidak membutuhkan VPS. Target operasional adalah server lokal kantor:
 
 Google Drive dipakai untuk backup/sharing file penting, bukan sebagai storage kerja utama footage/output. Desain final PDF tetap dipegang admin desain terpisah dan tidak menjadi core storage Studio Desk.
 
+Phase 2H.7 juga mencatat kandidat server native Ubuntu baru bernama `pesona` dengan CPU i5-13400F, RAM 16GB diterima dengan limit awal, storage kerja SATA SSD 512GB di `/srv/pesona-studio`, Docker non-sudo PASS, repo baseline `phase-2h6-complete`, dan Compose config PASS. Kandidat ini belum cutover: GPU driver, runtime smoke, backup evidence, restore dry-run, dan cutover tetap HOLD.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -52,6 +54,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/OFFICE_SERVER_BOOTSTRAP_VERIFICATION.md`
 - `docs/ops/OFFICE_SERVER_BOOTSTRAP_EVIDENCE_INTAKE.md`
 - `docs/ops/LOCAL_VISUAL_DEMO_EVIDENCE.md`
+- `docs/ops/NEW_SERVER_BOOTSTRAP_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 
