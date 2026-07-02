@@ -28,6 +28,8 @@ Phase 2H.11 mencatat owner-provided controlled smoke restore dry-run evidence un
 
 Phase 2H.12 menambahkan pilot readiness gate dan server operating policy untuk kandidat `pesona`. Runtime smoke, controlled stop, smoke backup, dan smoke restore dry-run sudah PASS; RAM 16GB diterima dengan limit awal. Gate ini hanya untuk owner/operator readiness: akses tetap LAN/Tailscale-only, manual publish tetap default, backup plan harus diterima sebelum pilot data dianggap penting, dan cutover tetap blocked.
 
+Phase 2H.13 mencatat owner-provided controlled pilot start evidence untuk `pesona` dengan project `psd_pilot`: release tag `phase-2h12-complete`, web hanya dipublish ke host port `3400`, Postgres/Redis/n8n internal-only, fake/local Campaign Planner provider, migration `001` sampai `018` applied, dan 8 route check HTTP 200. Ini bukan deployment/cutover approval: public exposure tidak approved, manual publish tetap default, production backup/restore/storage copy tidak dilakukan, dan cutover tetap blocked.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -71,6 +73,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/CONTROLLED_SMOKE_RESTORE_DRYRUN_EVIDENCE.md`
 - `docs/ops/PILOT_READINESS_GATE.md`
 - `docs/ops/SERVER_OPERATING_POLICY.md`
+- `docs/ops/CONTROLLED_PILOT_START_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 
