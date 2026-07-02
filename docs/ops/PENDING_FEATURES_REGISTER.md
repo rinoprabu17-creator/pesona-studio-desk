@@ -208,6 +208,29 @@ GPU driver, production backup policy, autostart/systemd, public exposure, schedu
 
 This phase does not execute server commands by Codex, backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down, container mutation, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.13 Controlled Pilot Start Evidence Intake Status
+
+Phase 2H.13 records owner-provided controlled pilot start evidence for the new native Ubuntu server candidate `pesona`:
+
+- Server repo path `/srv/pesona-studio/repos/pesona-studio-desk`.
+- Release tag `phase-2h12-complete`, HEAD `ea4cc57`, and clean git status before pilot start.
+- Existing non-PSD containers on ports `3010`, `3020`, and `3030` were not stopped or modified.
+- Temporary pilot override file existed at `/srv/pesona-studio/tmp/psd-pilot-compose.override.yml` and must not be committed to Git.
+- Override published only web-app host port `3400`; Postgres, Redis, and n8n host port publishing were removed.
+- Override kept `CAMPAIGN_PLANNER_PROVIDER=fake`, `CAMPAIGN_PLANNER_OPENAI_ENABLED=false`, and `OPENAI_MODEL=""`.
+- Docker Compose config evidence showed only `web-app` published on host port `3400`; no host ports for `3000`, `5432`, `5678`, or `6379`.
+- Pilot project `psd_pilot` started with Postgres and Redis first, then full stack with build.
+- Pilot database migrations `001` through `018` applied successfully.
+- Runtime status showed `web-app` published on `0.0.0.0:3400->3000/tcp`, while n8n, Postgres, and Redis were internal-only.
+- Eight route checks on `127.0.0.1:3400` returned HTTP 200.
+- Post-start host listener evidence showed PSD pilot web on `3400` plus existing `3010`, `3020`, and `3030`, with no listeners on `3000`, `5432`, `5678`, or `6379`.
+- `/srv/pesona-studio` remained mounted on `/dev/sdb1` with `469G` size and `445G` available; repo storage usage was `48K`.
+- Owner may review through LAN/Tailscale at `http://100.120.79.33:3400/content-calendar`.
+
+Controlled pilot start is PASS. Route check, port isolation, and fake/local provider are PASS. Manual publish remains default. Public exposure remains not approved. This is not cutover approval and does not authorize social API, scheduler, publisher, upload automation, OpenAI live runtime, production backup, restore, restore dry-run, storage copy, or final deployment.
+
+This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -221,6 +244,7 @@ This phase does not execute server commands by Codex, backup, restore, restore d
 - Restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Owner Go/No-Go planning for cutover readiness review or production backup policy review, only after explicit owner approval.
 - Controlled pilot start procedure planning or production backup policy review, only after explicit owner approval.
+- Controlled pilot review and operating evidence, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -233,3 +257,4 @@ This phase does not execute server commands by Codex, backup, restore, restore d
 - Runtime automation.
 - Controlled pilot runtime execution.
 - Production backup policy acceptance.
+- Treating pilot start as cutover or public exposure approval.
