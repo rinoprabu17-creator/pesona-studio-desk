@@ -24,6 +24,8 @@ Phase 2H.9 mencatat owner-provided controlled smoke stop untuk `psd_server_smoke
 
 Phase 2H.10 mencatat owner-provided controlled smoke backup evidence untuk `psd_server_smoke` saja: checksum verification PASS, `storage-smoke.tgz` readable, dan `postgres-smoke.dump` readable via `pg_restore -l`. Ini bukan production backup, bukan restore, bukan restore dry-run, dan bukan cutover.
 
+Phase 2H.11 mencatat owner-provided controlled smoke restore dry-run evidence untuk project isolated `psd_restore_dryrun`: backup checksum PASS, database restore ke Postgres isolated PASS dengan 30 tabel, storage archive extraction PASS, dan target restore berhenti aman. Ini bukan production restore, bukan restore ke active DB, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -64,6 +66,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/ISOLATED_SERVER_RUNTIME_SMOKE_EVIDENCE.md`
 - `docs/ops/CONTROLLED_SMOKE_STOP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/ops/CONTROLLED_SMOKE_RESTORE_DRYRUN_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 

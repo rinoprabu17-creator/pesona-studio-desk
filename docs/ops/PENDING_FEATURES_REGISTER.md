@@ -168,6 +168,28 @@ Phase 2H.10 records owner-provided controlled smoke backup evidence for the isol
 
 Controlled smoke backup evidence is PASS. Checksum verification, backup archive readability, and PostgreSQL dump listing readability are PASS. This is not production backup, restore, restore dry-run, storage copy, deployment, production operation, or cutover. This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.11 Controlled Smoke Restore Dry-run Evidence Intake Status
+
+Phase 2H.11 records owner-provided controlled smoke restore dry-run evidence on `pesona`:
+
+- Restore dry-run was executed only against isolated Docker Compose project `psd_restore_dryrun`.
+- Source backup `/srv/pesona-studio/backups/psd-smoke-backup-20260702T075815Z`.
+- Restore root `/srv/pesona-studio/tmp/psd-smoke-restore-dryrun-20260702T083025Z`.
+- Repo path `/srv/pesona-studio/repos/pesona-studio-desk`.
+- This was not restore to active DB, not production restore, and not cutover.
+- `sha256sum -c SHA256SUMS.txt` passed for all listed source backup files.
+- Network `psd_restore_dryrun_default`, volume `psd_restore_dryrun_postgres_data_dev`, and container `psd_restore_dryrun-postgres-1` were created by owner during the dry-run.
+- Postgres readiness check passed.
+- `postgres-smoke.dump` was restored into isolated restore Postgres using `pg_restore`.
+- Restored table list showed `30` public tables and table count validation returned `30`.
+- `storage-smoke.tgz` was extracted into an isolated tmp restore path and listed expected storage placeholder paths.
+- Restore dry-run Postgres was stopped after validation; post-stop running containers for `psd_restore_dryrun` were none; `psd_restore_dryrun-postgres-1` exited with code `0`.
+- Restore volume was preserved; no `docker compose down -v`, no `docker volume rm`, and no storage deletion was run.
+- Evidence files were created on the server restore evidence path and must not be committed to Git.
+- `/srv/pesona-studio` was mounted from `/dev/sdb1` with `469G` size and `445G` available; restore evidence root size was `80K`.
+
+Controlled smoke restore dry-run is PASS. Backup checksum validation, database restore validation, storage archive extraction validation, and restore target stopped safely are PASS. This is not production restore, restore to active DB, storage copy, deployment, production operation, or cutover. This phase does not execute new server commands by Codex, production backup, production restore, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -179,6 +201,7 @@ Controlled smoke backup evidence is PASS. Checksum verification, backup archive 
 - Server smoke review and controlled stop procedure planning, only after explicit owner approval.
 - Backup evidence acceptance or controlled backup dry-run planning, only after explicit owner approval.
 - Restore dry-run planning in a separate isolated environment, only after explicit owner approval.
+- Owner Go/No-Go planning for cutover readiness review or production backup policy review, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
