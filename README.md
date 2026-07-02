@@ -86,3 +86,4 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/OFFICE_SERVER_BOOTSTRAP_VERIFICATION.md`
 - `docs/ops/OFFICE_SERVER_BOOTSTRAP_EVIDENCE_INTAKE.md`
 - `docs/ops/LOCAL_VISUAL_DEMO_EVIDENCE.md`
+- `docs/ops/NEW_SERVER_BOOTSTRAP_EVIDENCE.md`

@@ -96,6 +96,24 @@ Phase 2H.6 records laptop-only visual demo evidence:
 
 This is not Lenovo readiness evidence, not production migration evidence, and not cutover evidence. It does not execute backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, social API activation, scheduler/publisher activation, upload automation, OpenAI live runtime, queue expansion, worker daemon expansion, or production/customer data/media use.
 
+## Phase 2H.7 New Server Bootstrap Evidence Intake Status
+
+Phase 2H.7 records owner-provided evidence for the new native Ubuntu server candidate named `pesona`:
+
+- Native Ubuntu 22.04.5 LTS, kernel `5.15.0-185-generic`.
+- Intel Core i5-13400F with 10 cores and 16 logical threads.
+- RAM about `15Gi`; owner accepted 16GB with limit for initial use and deferred 32GB until the content system proves lead/order conversion.
+- NVMe root disk SMART PASS and SATA SSD work storage mounted at `/srv/pesona-studio` with ext4 label `PSD_WORK`.
+- HDD 1TB SMART PASS, candidate for backup/archive only.
+- LAN and Tailscale evidence recorded; public exposure not approved.
+- Docker non-sudo access for user `pesona` recorded as PASS.
+- Existing unrelated containers were observed by owner but not stopped, restarted, or modified.
+- Repo cloned at `/srv/pesona-studio/repos/pesona-studio-desk`, checked out at tag `phase-2h6-complete`, HEAD `3de1646`, clean status.
+- `.env.local` created from template, ignored, and not tracked; env values were not pasted.
+- `docker compose config --quiet` passed, but `docker compose up` was not executed.
+
+New server bootstrap is a strong PASS for CPU, OS, Docker, storage mount, repo, env handling, and Compose config. GPU driver, runtime smoke, backup evidence, restore dry-run, and cutover remain HOLD. This phase does not execute server commands by Codex, backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, or existing container changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -103,6 +121,7 @@ This is not Lenovo readiness evidence, not production migration evidence, and no
 - Read-only DB counts.
 - Storage listing by filename/size.
 - Owner review preparation.
+- New server Docker non-sudo verification and isolated runtime smoke planning, only after explicit owner approval.
 
 ## Execution Work Still Pending
 

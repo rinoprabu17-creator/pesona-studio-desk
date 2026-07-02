@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, Phase 2H.4, Phase 2H.5, and Phase 2H.6.
+This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, Phase 2H.4, Phase 2H.5, Phase 2H.6, and Phase 2H.7.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -30,6 +30,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 22. `docs/ops/OFFICE_SERVER_BOOTSTRAP_VERIFICATION.md`
 23. `docs/ops/OFFICE_SERVER_BOOTSTRAP_EVIDENCE_INTAKE.md`
 24. `docs/ops/LOCAL_VISUAL_DEMO_EVIDENCE.md`
+25. `docs/ops/NEW_SERVER_BOOTSTRAP_EVIDENCE.md`
 
 ## Full Ops Document Index
 
@@ -95,6 +96,10 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 
 - `docs/ops/LOCAL_VISUAL_DEMO_EVIDENCE.md`
 
+### Phase 2H.7
+
+- `docs/ops/NEW_SERVER_BOOTSTRAP_EVIDENCE.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -137,6 +142,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Office server bootstrap verification checklist.
 - Office server bootstrap evidence intake.
 - Local visual demo evidence intake.
+- New Ubuntu server bootstrap evidence intake.
 
 ## Still Intentionally Pending
 
@@ -147,6 +153,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Actual office server bootstrap execution beyond read-only verification.
 - Hardware/storage revalidation after RAM and 2TB SSD installation.
 - Treating laptop-only visual demo evidence as Lenovo readiness or cutover evidence.
+- Treating new `pesona` server evidence as runtime smoke, backup, restore dry-run, deployment, public exposure, or cutover evidence.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.
