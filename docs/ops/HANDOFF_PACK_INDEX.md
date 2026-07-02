@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, Phase 2H.4, Phase 2H.5, Phase 2H.6, Phase 2H.7, Phase 2H.8, Phase 2H.9, and Phase 2H.10.
+This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, Phase 2H.4, Phase 2H.5, Phase 2H.6, Phase 2H.7, Phase 2H.8, Phase 2H.9, Phase 2H.10, and Phase 2H.11.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -34,6 +34,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 26. `docs/ops/ISOLATED_SERVER_RUNTIME_SMOKE_EVIDENCE.md`
 27. `docs/ops/CONTROLLED_SMOKE_STOP_EVIDENCE.md`
 28. `docs/ops/CONTROLLED_SMOKE_BACKUP_EVIDENCE.md`
+29. `docs/ops/CONTROLLED_SMOKE_RESTORE_DRYRUN_EVIDENCE.md`
 
 ## Full Ops Document Index
 
@@ -115,6 +116,10 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 
 - `docs/ops/CONTROLLED_SMOKE_BACKUP_EVIDENCE.md`
 
+### Phase 2H.11
+
+- `docs/ops/CONTROLLED_SMOKE_RESTORE_DRYRUN_EVIDENCE.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -161,6 +166,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Isolated server runtime smoke evidence intake.
 - Controlled smoke stop evidence intake.
 - Controlled smoke backup evidence intake.
+- Controlled smoke restore dry-run evidence intake.
 
 ## Still Intentionally Pending
 
@@ -175,6 +181,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating isolated server runtime smoke evidence as deployment, backup, restore dry-run, public exposure, production operation, or cutover evidence.
 - Treating controlled smoke stop evidence as backup, restore dry-run, deployment, production operation, or cutover evidence.
 - Treating controlled smoke backup evidence as production backup, restore, restore dry-run, deployment, production operation, or cutover evidence.
+- Treating controlled smoke restore dry-run evidence as production restore, deployment, production operation, or cutover evidence.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.

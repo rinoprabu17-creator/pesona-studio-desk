@@ -90,3 +90,4 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/ISOLATED_SERVER_RUNTIME_SMOKE_EVIDENCE.md`
 - `docs/ops/CONTROLLED_SMOKE_STOP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/ops/CONTROLLED_SMOKE_RESTORE_DRYRUN_EVIDENCE.md`
