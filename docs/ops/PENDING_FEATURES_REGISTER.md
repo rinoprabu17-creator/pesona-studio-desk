@@ -114,6 +114,23 @@ Phase 2H.7 records owner-provided evidence for the new native Ubuntu server cand
 
 New server bootstrap is a strong PASS for CPU, OS, Docker, storage mount, repo, env handling, and Compose config. GPU driver, runtime smoke, backup evidence, restore dry-run, and cutover remain HOLD. This phase does not execute server commands by Codex, backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, or existing container changes.
 
+## Phase 2H.8 Isolated Server Runtime Smoke Evidence Intake Status
+
+Phase 2H.8 records owner-provided isolated runtime smoke evidence for the new native Ubuntu server candidate `pesona`:
+
+- Docker Compose project `psd_server_smoke`.
+- Repo path `/srv/pesona-studio/repos/pesona-studio-desk`.
+- Release baseline `phase-2h6-complete` at `3de1646`.
+- Pre-start evidence showed existing containers on ports `3010`, `3020`, and `3030`; ports `3000`, `5432`, `5678`, and `6379` were free before smoke start.
+- Owner manually started the isolated stack; Codex did not run server commands.
+- Initial `/health` returned HTTP 200, while DB-backed routes returned HTTP 500 because the isolated smoke database had no schema.
+- Migrations `001` through `018` were applied to the isolated smoke database; `psql \dt` then showed `30` tables.
+- Basic and extended key routes returned HTTP 200 after migration.
+- Runtime status showed `postgres` and `redis` healthy, with `web-app`, `n8n`, and worker containers up.
+- Storage evidence showed `/srv/pesona-studio` on `/dev/sdb1` with `469G` total and `445G` available; repo `storage` size was `48K`.
+
+Isolated server runtime smoke is PASS after migrations. This is not deployment, not production operation, and not cutover. The smoke stack binds ports to `0.0.0.0` and is visible to LAN/Tailscale, so public exposure remains not approved. GPU driver, backup evidence, restore dry-run, storage copy, deployment, and cutover remain HOLD. This phase does not execute new server commands by Codex, backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, production/customer data or media use, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -122,6 +139,7 @@ New server bootstrap is a strong PASS for CPU, OS, Docker, storage mount, repo, 
 - Storage listing by filename/size.
 - Owner review preparation.
 - New server Docker non-sudo verification and isolated runtime smoke planning, only after explicit owner approval.
+- Server smoke review and controlled stop procedure planning, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
