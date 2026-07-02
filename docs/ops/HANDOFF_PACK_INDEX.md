@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, Phase 2H.4, Phase 2H.5, Phase 2H.6, Phase 2H.7, Phase 2H.8, Phase 2H.9, Phase 2H.10, Phase 2H.11, Phase 2H.12, and Phase 2H.13.
+This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, Phase 2H.4, Phase 2H.5, Phase 2H.6, Phase 2H.7, Phase 2H.8, Phase 2H.9, Phase 2H.10, Phase 2H.11, Phase 2H.12, Phase 2H.13, and Phase 2H.14.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -38,6 +38,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 30. `docs/ops/PILOT_READINESS_GATE.md`
 31. `docs/ops/SERVER_OPERATING_POLICY.md`
 32. `docs/ops/CONTROLLED_PILOT_START_EVIDENCE.md`
+33. `docs/ops/PILOT_BACKUP_POLICY.md`
+34. `docs/ops/FIRST_PILOT_BACKUP_EVIDENCE.md`
 
 ## Full Ops Document Index
 
@@ -132,6 +134,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 
 - `docs/ops/CONTROLLED_PILOT_START_EVIDENCE.md`
 
+### Phase 2H.14
+
+- `docs/ops/PILOT_BACKUP_POLICY.md`
+- `docs/ops/FIRST_PILOT_BACKUP_EVIDENCE.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -182,6 +189,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Pilot readiness gate.
 - Server operating policy.
 - Controlled pilot start evidence intake.
+- Pilot backup policy.
+- First pilot backup evidence intake.
 
 ## Still Intentionally Pending
 
@@ -200,6 +209,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating the Phase 2H.12 pilot readiness gate as deployment, public exposure, production operation, or cutover approval.
 - Treating the server operating policy as authorization for Docker Compose up/down, container mutation, public exposure, backup, restore, storage copy, or cutover.
 - Treating controlled pilot start evidence as final deployment, production backup, restore, storage copy, public exposure, or cutover approval.
+- Treating first pilot backup evidence as production backup, restore, restore dry-run, deployment, production operation, public exposure, storage copy, or cutover approval.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.

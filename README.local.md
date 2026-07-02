@@ -30,6 +30,8 @@ Phase 2H.12 menambahkan pilot readiness gate dan server operating policy untuk k
 
 Phase 2H.13 mencatat owner-provided controlled pilot start evidence untuk `pesona` dengan project `psd_pilot`: release tag `phase-2h12-complete`, web hanya dipublish ke host port `3400`, Postgres/Redis/n8n internal-only, fake/local Campaign Planner provider, migration `001` sampai `018` applied, dan 8 route check HTTP 200. Ini bukan deployment/cutover approval: public exposure tidak approved, manual publish tetap default, production backup/restore/storage copy tidak dilakukan, dan cutover tetap blocked.
 
+Phase 2H.14 mencatat pilot backup policy dan first pilot backup evidence untuk project `psd_pilot`: backup directory `/srv/pesona-studio/backups/psd-pilot-backup-20260702T091559Z`, pilot stack tetap running, checksum verification PASS, `storage-pilot.tgz` readable, dan `postgres-pilot.dump` readable via `pg_restore -l`. Ini pilot backup evidence, bukan production backup, bukan restore, bukan restore dry-run, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -74,6 +76,8 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/PILOT_READINESS_GATE.md`
 - `docs/ops/SERVER_OPERATING_POLICY.md`
 - `docs/ops/CONTROLLED_PILOT_START_EVIDENCE.md`
+- `docs/ops/PILOT_BACKUP_POLICY.md`
+- `docs/ops/FIRST_PILOT_BACKUP_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 

@@ -231,6 +231,29 @@ Controlled pilot start is PASS. Route check, port isolation, and fake/local prov
 
 This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.14 Pilot Backup Policy + First Pilot Backup Evidence Status
+
+Phase 2H.14 records pilot backup policy and owner-provided first pilot backup evidence for controlled pilot stack `psd_pilot` on `pesona`:
+
+- Backup was executed for controlled pilot stack `psd_pilot`.
+- This is pilot backup evidence, not production backup and not cutover.
+- No restore was performed.
+- No restore dry-run was performed.
+- Pilot stack remained running after backup.
+- Server repo path `/srv/pesona-studio/repos/pesona-studio-desk`.
+- Git head `ea4cc57120ebc9efa0a2d4f6d02079b73e23404f`, tag `phase-2h12-complete`, and git status short count `0`.
+- Backup directory `/srv/pesona-studio/backups/psd-pilot-backup-20260702T091559Z`.
+- Pilot running container evidence showed n8n, web-app, campaign planner worker, mockup worker, video worker, Postgres, and Redis up; web remained on `0.0.0.0:3400->3000/tcp`, Postgres and Redis internal-only.
+- Pilot route check, Postgres readiness, PostgreSQL custom dump, table list, table count, storage archive, and checksum evidence were created on the server backup path and must not be committed to Git.
+- `sha256sum -c SHA256SUMS.txt` passed for listed pilot backup files.
+- `storage-pilot.tgz` was readable and listed expected placeholder storage paths.
+- `postgres-pilot.dump` was readable via `pg_restore -l`, custom format for database `pesona_studio`, dumped from PostgreSQL `16.14`, with `306` TOC entries and expected schema/data entries.
+- `/srv/pesona-studio` remained mounted from `/dev/sdb1` with `469G` size and `445G` available; backup directory size was `212K`.
+
+Pilot backup policy requires manual pilot backup before pilot data is considered important and before any meaningful real content or test campaign data entry. Backup artifacts must stay outside Git. Restore dry-run for pilot backup is a separate phase. Cutover remains blocked.
+
+First pilot backup evidence is PASS. Checksum verification, storage archive readability, and PostgreSQL dump readability are PASS. This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -245,6 +268,7 @@ This phase does not execute new server commands by Codex, production backup, res
 - Owner Go/No-Go planning for cutover readiness review or production backup policy review, only after explicit owner approval.
 - Controlled pilot start procedure planning or production backup policy review, only after explicit owner approval.
 - Controlled pilot review and operating evidence, only after explicit owner approval.
+- Pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -258,3 +282,4 @@ This phase does not execute new server commands by Codex, production backup, res
 - Controlled pilot runtime execution.
 - Production backup policy acceptance.
 - Treating pilot start as cutover or public exposure approval.
+- Treating first pilot backup evidence as restore, restore dry-run, production backup, cutover, or public exposure approval.
