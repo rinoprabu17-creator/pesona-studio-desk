@@ -88,3 +88,4 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/LOCAL_VISUAL_DEMO_EVIDENCE.md`
 - `docs/ops/NEW_SERVER_BOOTSTRAP_EVIDENCE.md`
 - `docs/ops/ISOLATED_SERVER_RUNTIME_SMOKE_EVIDENCE.md`
+- `docs/ops/CONTROLLED_SMOKE_STOP_EVIDENCE.md`
