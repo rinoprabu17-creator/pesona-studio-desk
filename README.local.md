@@ -20,6 +20,8 @@ Phase 2H.7 juga mencatat kandidat server native Ubuntu baru bernama `pesona` den
 
 Phase 2H.8 mencatat owner-provided isolated server runtime smoke untuk `pesona` dengan Compose project `psd_server_smoke`. Stack bisa build/start dan route kunci PASS setelah migration isolated smoke DB diterapkan. Ini bukan cutover: public exposure tidak approved, GPU driver tetap HOLD, dan backup/restore/cutover tetap HOLD.
 
+Phase 2H.9 mencatat owner-provided controlled smoke stop untuk `psd_server_smoke`: 7/7 container smoke berhenti dengan `docker compose stop`, tidak ada container smoke yang masih running, port `3000/5432/5678/6379` tidak listening, dan volume smoke tetap preserved. Tidak ada `down -v`, `docker volume rm`, atau storage deletion. Runtime smoke Phase 2H.8 tetap valid; cutover tetap blocked.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -58,6 +60,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/LOCAL_VISUAL_DEMO_EVIDENCE.md`
 - `docs/ops/NEW_SERVER_BOOTSTRAP_EVIDENCE.md`
 - `docs/ops/ISOLATED_SERVER_RUNTIME_SMOKE_EVIDENCE.md`
+- `docs/ops/CONTROLLED_SMOKE_STOP_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 

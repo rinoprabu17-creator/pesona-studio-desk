@@ -131,6 +131,24 @@ Phase 2H.8 records owner-provided isolated runtime smoke evidence for the new na
 
 Isolated server runtime smoke is PASS after migrations. This is not deployment, not production operation, and not cutover. The smoke stack binds ports to `0.0.0.0` and is visible to LAN/Tailscale, so public exposure remains not approved. GPU driver, backup evidence, restore dry-run, storage copy, deployment, and cutover remain HOLD. This phase does not execute new server commands by Codex, backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, production/customer data or media use, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.9 Controlled Smoke Stop Evidence Intake Status
+
+Phase 2H.9 records owner-provided controlled stop evidence for the isolated server smoke project `psd_server_smoke` on `pesona`:
+
+- Server path `/srv/pesona-studio/repos/pesona-studio-desk`.
+- Owner used `docker compose --env-file .env.local -p psd_server_smoke -f docker-compose.dev.yml stop`.
+- Stop result was `7/7` smoke containers stopped.
+- Stopped containers: `psd_server_smoke-n8n-1`, `psd_server_smoke-video-worker-1`, `psd_server_smoke-web-app-1`, `psd_server_smoke-mockup-worker-1`, `psd_server_smoke-campaign-planner-worker-1`, `psd_server_smoke-postgres-1`, and `psd_server_smoke-redis-1`.
+- Post-stop verification showed no running smoke containers and no listeners on ports `3000`, `5432`, `5678`, and `6379`.
+- Post-stop `docker ps -a` showed all smoke containers exited. `psd_server_smoke-web-app-1` had `Exited (137)`, recorded as a stop warning only and not evidence of data loss.
+- Smoke volumes remain present: `psd_server_smoke_n8n_data_dev`, `psd_server_smoke_postgres_data_dev`, and `psd_server_smoke_redis_data_dev`.
+- No `docker compose down -v`, no `docker volume rm`, and no storage deletion was run.
+- No backup, restore, restore dry-run, storage copy, deployment, public exposure, or cutover occurred.
+- Smoke data and volumes should be considered preserved unless later verified otherwise.
+- Existing non-smoke containers were not modified.
+
+Controlled smoke stop is PASS. Phase 2H.8 runtime smoke evidence remains valid. This is not backup, restore, restore dry-run, storage copy, deployment, production operation, or cutover. This phase does not execute new server commands by Codex, backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -140,6 +158,7 @@ Isolated server runtime smoke is PASS after migrations. This is not deployment, 
 - Owner review preparation.
 - New server Docker non-sudo verification and isolated runtime smoke planning, only after explicit owner approval.
 - Server smoke review and controlled stop procedure planning, only after explicit owner approval.
+- Backup evidence acceptance or controlled backup dry-run planning, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
