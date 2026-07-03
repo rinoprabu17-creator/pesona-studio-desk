@@ -98,3 +98,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/FIRST_PILOT_BACKUP_EVIDENCE.md`
 - `docs/ops/PILOT_UI_FLOW_EVIDENCE.md`
 - `docs/ops/PILOT_POST_ENTRY_BACKUP_EVIDENCE.md`
+- `docs/ops/CONTROLLED_DEMO_RENDER_EVIDENCE.md`
+- `docs/ops/PILOT_POST_RENDER_BACKUP_EVIDENCE.md`
