@@ -304,6 +304,22 @@ Phase 2H.17 records owner-provided DB-only controlled draft review approval and 
 
 Controlled draft review approval, review record creation, approved-videos placeholder-only check, no promotion/handoff/package check, post-review backup, checksum validation, DB dump readability, and storage archive readability are PASS. This phase does not execute new server commands by Codex, production approval, approved-video promotion, approved handoff, manual publication package creation, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.18 Controlled Approved Draft Promotion + Handoff + Final Backup Evidence Status
+
+Phase 2H.18 records owner-provided controlled approved draft promotion, DB-only approved-video handoff, and final post-promotion-handoff backup evidence for `psd_pilot` on `pesona`:
+
+- Promotion record `1b9deb36-1468-436d-a2c5-2031dbe6dc51` succeeded in `manual_copy` mode from render attempt `5de99c97-6cf0-4f76-9638-6b39b4a0ee7c`.
+- Source output `smoke/pilot-desain-gratis-01-d01-3f6e89a4-20260703080315.mp4` was copied to approved output `smoke/pilot-desain-gratis-01-d01-pilot-desain-gratis-01-d01-3f6e89a4-20260703080315-5de99c97-approved-20260703091749.mp4`.
+- Source and approved output sizes both showed `1950179` bytes, with matching SHA256 `97b066a05d2de5689d7158592912f0f8d3d8a37565891b04bcb5b96940b29b0b`.
+- DB-only handoff record `19614d06-6e0b-43bd-87c3-deb6829720ef` was created with status `ready_for_manual_publish`, handoff by `Rino`, and handoff at `2026-07-03 09:29:31.950085+00`.
+- Final counts showed `video_render_attempts` 1, `video_render_attempt_reviews` 1, `video_render_approved_promotions` 1, `video_approved_handoff_records` 1, and `manual_publication_packages` 0.
+- Routes `/health`, `/content-items`, `/approved-videos`, and `/manual-publish-report` returned HTTP 200.
+- Final backup directory `/srv/pesona-studio/backups/psd-pilot-post-promotion-handoff-final-backup-20260703T093157Z` was recorded as evidence only.
+- Final checksum validation, DB dump readability, and storage archive readability are PASS.
+- Pilot remained running after promotion, handoff, and final backup.
+
+Controlled approved draft promotion, approved video copy, SHA256 match, DB-only handoff record, handoff marked `ready_for_manual_publish`, manual publication package count remaining `0`, final backup, checksum validation, DB dump readability, and storage archive readability are PASS. This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy from Codex, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, manual publication package creation, publishing, social API activation, scheduler/publisher activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -324,6 +340,8 @@ Controlled draft review approval, review record creation, approved-videos placeh
 - Controlled approval/promotion and manual publish package evidence, only after explicit owner approval.
 - Post-review pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Controlled approved-video promotion, approved handoff, and manual publication package evidence, only after explicit owner approval.
+- Final post-promotion-handoff pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
+- Manual publication package evidence after approved handoff, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -344,3 +362,5 @@ Controlled draft review approval, review record creation, approved-videos placeh
 - Treating post-render pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, approval/promotion, or publishing approval.
 - Treating controlled draft review evidence as production approval, approved-video promotion, approved handoff, manual publication package creation, publishing, production operation, cutover, or public exposure approval.
 - Treating post-review pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, promotion, handoff, or publishing approval.
+- Treating controlled approved draft promotion handoff evidence as manual publication package creation, upload, publishing, scheduler operation, social API activation, production operation, cutover, or public exposure approval.
+- Treating final post-promotion-handoff pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, manual publication package creation, or publishing approval.
