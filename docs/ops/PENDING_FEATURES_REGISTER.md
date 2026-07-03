@@ -271,6 +271,23 @@ Phase 2H.15 records owner-provided controlled pilot UI flow evidence and post-en
 
 Pilot UI flow evidence is PASS. Post-entry backup evidence is PASS. No render was executed, no footage was selected or uploaded, no render manifest was created, no render attempt was executed, and no manual publication package was created. This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.16 Controlled Demo Footage + Render + Post-Render Backup Evidence Status
+
+Phase 2H.16 records owner-provided controlled demo footage, controlled smoke render, and post-render backup evidence for `psd_pilot` on `pesona`:
+
+- Synthetic demo footage was created under `storage/footage/pilot-demo/pilot-sampul-raport-demo-001.mp4`; it was generated with `ffmpeg testsrc2`, vertical `720x1280`, around `5` seconds, about `2.0M`, and not production footage.
+- Footage asset was scanned/cataloged, approved/reviewed, selected for `PILOT-DESAIN-GRATIS-01-D01`, and linked to all four shot steps.
+- Render manifest `3f6e89a4-477e-43a2-84db-f5bc0da2d953` was created and approved; latest preflight `a3463232-1c80-431c-82ee-2915ba6e066b` was ready.
+- Controlled smoke render attempt `5de99c97-6cf0-4f76-9638-6b39b4a0ee7c` succeeded in `manual_smoke` mode with FFmpeg exit code `0`.
+- Draft output was `storage/draft-videos/smoke/pilot-desain-gratis-01-d01-3f6e89a4-20260703080315.mp4`, size `1950179` bytes; this rendered MP4 is a server storage artifact and is not committed to Git.
+- Render DB count evidence showed `video_render_manifests` 1, `video_render_manifest_items` 4, `video_render_preflight_runs` 2, `video_render_attempts` 1, `video_render_attempt_reviews` 0, `video_approved_handoff_records` 0, and `manual_publication_packages` 0.
+- Routes `/health`, `/content-items`, `/approved-videos`, and `/manual-publish-report` returned HTTP 200.
+- First attempted post-render backup failed due wrong query column `status`; actual column is `attempt_status`. The corrected successful backup directory was `/srv/pesona-studio/backups/psd-pilot-post-render-backup-20260703T081638Z`.
+- Post-render backup checksum verification, storage archive readability, and PostgreSQL dump readability are PASS.
+- Pilot remained running after render and backup.
+
+Controlled demo footage creation, footage metadata/catalog, footage selection, shot step footage linking, render manifest/preflight, controlled smoke render, draft MP4 creation, post-render backup, checksum validation, DB dump readability, and storage archive readability are PASS. This phase does not execute new server commands by Codex, production render, approval/promotion, manual publish package creation, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -287,6 +304,8 @@ Pilot UI flow evidence is PASS. Post-entry backup evidence is PASS. No render wa
 - Controlled pilot review and operating evidence, only after explicit owner approval.
 - Pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Post-entry pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
+- Post-render pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
+- Controlled approval/promotion and manual publish package evidence, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -303,3 +322,5 @@ Pilot UI flow evidence is PASS. Post-entry backup evidence is PASS. No render wa
 - Treating first pilot backup evidence as restore, restore dry-run, production backup, cutover, or public exposure approval.
 - Treating pilot UI flow evidence as render execution, social publishing, production operation, cutover, or public exposure approval.
 - Treating post-entry pilot backup evidence as restore, restore dry-run, production backup, cutover, or public exposure approval.
+- Treating controlled demo render evidence as production render, approval/promotion, manual publish package creation, social publishing, production operation, cutover, or public exposure approval.
+- Treating post-render pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, approval/promotion, or publishing approval.
