@@ -254,6 +254,23 @@ Pilot backup policy requires manual pilot backup before pilot data is considered
 
 First pilot backup evidence is PASS. Checksum verification, storage archive readability, and PostgreSQL dump readability are PASS. This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.15 Pilot UI Flow + Post-Entry Backup Evidence Status
+
+Phase 2H.15 records owner-provided controlled pilot UI flow evidence and post-entry pilot backup evidence for `psd_pilot` on `pesona`:
+
+- Pilot URL used: `http://100.120.79.33:3400`.
+- One pilot campaign was created: `Desain Gratis - Pilot`, code `PILOT-DESAIN-GRATIS-01`, date range `2026-07-02` to `2026-07-31`, status `Aktif`.
+- One content item was created: `PILOT-DESAIN-GRATIS-01-D01`, `Pilot Test - Sampul Raport Desain Gratis`, planned date `2026-07-03`, production status `planned`.
+- One script plan exists and four shot steps were created.
+- One video draft metadata job was created with status `draft_requested`, target format `vertical_9_16`, duration target `15`, planned output label `Pilot Test Sampul Raport - Draft 1`, and render mode `disabled_metadata_only`.
+- DB count evidence after UI flow showed `campaigns` 1, `content_items` 1, `content_publications` 0, `footage_assets` 0, `content_item_script_plans` 1, `content_item_shot_plan_steps` 4, `video_draft_jobs` 1, `video_render_manifests` 0, `video_render_attempts` 0, and `manual_publication_packages` 0.
+- Route evidence after UI flow returned HTTP 200 for `/health`, `/content-calendar`, `/content-items`, `/approved-videos`, `/publication-packages`, `/manual-publish-report`, and `/manual-publish-closeouts`.
+- Post-entry backup directory `/srv/pesona-studio/backups/psd-pilot-post-ui-backup-20260702T101832Z` was recorded as evidence only.
+- Post-entry backup checksum verification, storage archive readability, and PostgreSQL dump readability are PASS.
+- Pilot remained running after backup.
+
+Pilot UI flow evidence is PASS. Post-entry backup evidence is PASS. No render was executed, no footage was selected or uploaded, no render manifest was created, no render attempt was executed, and no manual publication package was created. This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -269,6 +286,7 @@ First pilot backup evidence is PASS. Checksum verification, storage archive read
 - Controlled pilot start procedure planning or production backup policy review, only after explicit owner approval.
 - Controlled pilot review and operating evidence, only after explicit owner approval.
 - Pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
+- Post-entry pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -283,3 +301,5 @@ First pilot backup evidence is PASS. Checksum verification, storage archive read
 - Production backup policy acceptance.
 - Treating pilot start as cutover or public exposure approval.
 - Treating first pilot backup evidence as restore, restore dry-run, production backup, cutover, or public exposure approval.
+- Treating pilot UI flow evidence as render execution, social publishing, production operation, cutover, or public exposure approval.
+- Treating post-entry pilot backup evidence as restore, restore dry-run, production backup, cutover, or public exposure approval.
