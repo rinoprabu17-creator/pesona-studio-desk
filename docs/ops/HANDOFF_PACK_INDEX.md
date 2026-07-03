@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, Phase 2H.4, Phase 2H.5, Phase 2H.6, Phase 2H.7, Phase 2H.8, Phase 2H.9, Phase 2H.10, Phase 2H.11, Phase 2H.12, Phase 2H.13, Phase 2H.14, Phase 2H.15, and Phase 2H.16.
+This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, Phase 2H.4, Phase 2H.5, Phase 2H.6, Phase 2H.7, Phase 2H.8, Phase 2H.9, Phase 2H.10, Phase 2H.11, Phase 2H.12, Phase 2H.13, Phase 2H.14, Phase 2H.15, Phase 2H.16, and Phase 2H.17.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -44,6 +44,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 36. `docs/ops/PILOT_POST_ENTRY_BACKUP_EVIDENCE.md`
 37. `docs/ops/CONTROLLED_DEMO_RENDER_EVIDENCE.md`
 38. `docs/ops/PILOT_POST_RENDER_BACKUP_EVIDENCE.md`
+39. `docs/ops/CONTROLLED_DRAFT_REVIEW_EVIDENCE.md`
+40. `docs/ops/PILOT_POST_REVIEW_BACKUP_EVIDENCE.md`
 
 ## Full Ops Document Index
 
@@ -153,6 +155,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/CONTROLLED_DEMO_RENDER_EVIDENCE.md`
 - `docs/ops/PILOT_POST_RENDER_BACKUP_EVIDENCE.md`
 
+### Phase 2H.17
+
+- `docs/ops/CONTROLLED_DRAFT_REVIEW_EVIDENCE.md`
+- `docs/ops/PILOT_POST_REVIEW_BACKUP_EVIDENCE.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -209,6 +216,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Pilot post-entry backup evidence intake.
 - Controlled demo render evidence intake.
 - Pilot post-render backup evidence intake.
+- Controlled draft review evidence intake.
+- Pilot post-review backup evidence intake.
 
 ## Still Intentionally Pending
 
@@ -232,6 +241,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating post-entry pilot backup evidence as production backup, restore, restore dry-run, deployment, production operation, public exposure, storage copy, or cutover approval.
 - Treating controlled demo render evidence as production render, approval/promotion, manual publish package creation, social publishing, production operation, public exposure, or cutover approval.
 - Treating post-render pilot backup evidence as production backup, restore, restore dry-run, deployment, production operation, public exposure, storage copy, approval/promotion, publishing, or cutover approval.
+- Treating controlled draft review evidence as production approval, approved-video promotion, approved handoff, manual publication package creation, publishing, production operation, public exposure, or cutover approval.
+- Treating post-review pilot backup evidence as production backup, restore, restore dry-run, deployment, production operation, public exposure, storage copy, promotion, handoff, publishing, or cutover approval.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.

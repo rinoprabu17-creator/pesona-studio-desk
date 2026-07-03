@@ -288,6 +288,22 @@ Phase 2H.16 records owner-provided controlled demo footage, controlled smoke ren
 
 Controlled demo footage creation, footage metadata/catalog, footage selection, shot step footage linking, render manifest/preflight, controlled smoke render, draft MP4 creation, post-render backup, checksum validation, DB dump readability, and storage archive readability are PASS. This phase does not execute new server commands by Codex, production render, approval/promotion, manual publish package creation, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.17 Controlled Draft Review Approval + Post-Review Backup Evidence Status
+
+Phase 2H.17 records owner-provided DB-only controlled draft review approval and post-review backup evidence for `psd_pilot` on `pesona`:
+
+- Render attempt `5de99c97-6cf0-4f76-9638-6b39b4a0ee7c` was reviewed. It remained a `succeeded` `manual_smoke` attempt with output `smoke/pilot-desain-gratis-01-d01-3f6e89a4-20260703080315.mp4`, output size `1950179`, and FFmpeg exit code `0`.
+- Review record `b94a495d-e857-4fe8-955b-93a2e58ffc46` was created with status `approved`, reviewer `Rino`, and reviewed at `2026-07-03 08:47:53.236638+00`.
+- Review note explicitly limits approval to pilot smoke evidence only and states it is not final production content, not published, not uploaded, and not copied to approved-videos.
+- Review/approval counts showed `video_render_attempts` 1, `video_render_attempt_reviews` 1, `video_render_approved_promotions` 0, `video_approved_handoff_records` 0, and `manual_publication_packages` 0.
+- Approved-videos remained placeholder-only with `storage/approved-videos/.gitkeep`; no copy/promotion to approved-videos occurred.
+- Routes `/health`, `/content-items`, `/approved-videos`, and `/manual-publish-report` returned HTTP 200.
+- Post-review backup directory `/srv/pesona-studio/backups/psd-pilot-post-review-backup-20260703T084853Z` was recorded as evidence only.
+- Post-review backup checksum verification, storage archive readability, and PostgreSQL dump readability are PASS.
+- Pilot remained running after review and backup.
+
+Controlled draft review approval, review record creation, approved-videos placeholder-only check, no promotion/handoff/package check, post-review backup, checksum validation, DB dump readability, and storage archive readability are PASS. This phase does not execute new server commands by Codex, production approval, approved-video promotion, approved handoff, manual publication package creation, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -306,6 +322,8 @@ Controlled demo footage creation, footage metadata/catalog, footage selection, s
 - Post-entry pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Post-render pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Controlled approval/promotion and manual publish package evidence, only after explicit owner approval.
+- Post-review pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
+- Controlled approved-video promotion, approved handoff, and manual publication package evidence, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -324,3 +342,5 @@ Controlled demo footage creation, footage metadata/catalog, footage selection, s
 - Treating post-entry pilot backup evidence as restore, restore dry-run, production backup, cutover, or public exposure approval.
 - Treating controlled demo render evidence as production render, approval/promotion, manual publish package creation, social publishing, production operation, cutover, or public exposure approval.
 - Treating post-render pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, approval/promotion, or publishing approval.
+- Treating controlled draft review evidence as production approval, approved-video promotion, approved handoff, manual publication package creation, publishing, production operation, cutover, or public exposure approval.
+- Treating post-review pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, promotion, handoff, or publishing approval.

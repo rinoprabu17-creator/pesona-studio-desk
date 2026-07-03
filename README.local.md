@@ -36,6 +36,8 @@ Phase 2H.15 mencatat owner-provided controlled pilot UI flow evidence dan post-e
 
 Phase 2H.16 mencatat owner-provided controlled demo footage, controlled smoke render, dan post-render backup evidence untuk project `psd_pilot`: synthetic demo footage dipakai untuk empat shot steps, render manifest/preflight PASS, render attempt `manual_smoke` succeeded, draft MP4 dibuat di storage server, dan post-render backup directory `/srv/pesona-studio/backups/psd-pilot-post-render-backup-20260703T081638Z` checksum/readability PASS. Ini bukan production render, bukan approval/promotion, bukan manual publish package, bukan production backup, bukan restore, bukan restore dry-run, bukan deployment, bukan public exposure, dan bukan cutover.
 
+Phase 2H.17 mencatat owner-provided controlled draft review approval dan post-review backup evidence untuk project `psd_pilot`: render attempt smoke disetujui DB-only sebagai evidence pilot, review record tercatat, approved-videos tetap placeholder-only, tidak ada promotion/handoff/manual publication package, dan post-review backup directory `/srv/pesona-studio/backups/psd-pilot-post-review-backup-20260703T084853Z` checksum/readability PASS. Ini bukan production approval, bukan approved-video promotion, bukan approved handoff, bukan manual publish package, bukan production backup, bukan restore, bukan restore dry-run, bukan deployment, bukan public exposure, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -86,6 +88,8 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/PILOT_POST_ENTRY_BACKUP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_DEMO_RENDER_EVIDENCE.md`
 - `docs/ops/PILOT_POST_RENDER_BACKUP_EVIDENCE.md`
+- `docs/ops/CONTROLLED_DRAFT_REVIEW_EVIDENCE.md`
+- `docs/ops/PILOT_POST_REVIEW_BACKUP_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 
