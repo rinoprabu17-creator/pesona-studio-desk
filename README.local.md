@@ -32,6 +32,8 @@ Phase 2H.13 mencatat owner-provided controlled pilot start evidence untuk `peson
 
 Phase 2H.14 mencatat pilot backup policy dan first pilot backup evidence untuk project `psd_pilot`: backup directory `/srv/pesona-studio/backups/psd-pilot-backup-20260702T091559Z`, pilot stack tetap running, checksum verification PASS, `storage-pilot.tgz` readable, dan `postgres-pilot.dump` readable via `pg_restore -l`. Ini pilot backup evidence, bukan production backup, bukan restore, bukan restore dry-run, dan bukan cutover.
 
+Phase 2H.15 mencatat owner-provided controlled pilot UI flow evidence dan post-entry pilot backup evidence untuk project `psd_pilot`: satu pilot campaign, satu content item, satu script plan, empat shot steps, dan satu metadata-only video draft job tercatat; tidak ada render, footage upload/selection, render manifest, render attempt, atau manual publication package. Post-entry backup directory `/srv/pesona-studio/backups/psd-pilot-post-ui-backup-20260702T101832Z` tercatat dengan checksum PASS, `storage-pilot-post-ui.tgz` readable, dan `postgres-pilot-post-ui.dump` readable via `pg_restore -l`. Pilot tetap running. Ini bukan production backup, bukan restore, bukan restore dry-run, bukan deployment, bukan public exposure, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -78,6 +80,8 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/CONTROLLED_PILOT_START_EVIDENCE.md`
 - `docs/ops/PILOT_BACKUP_POLICY.md`
 - `docs/ops/FIRST_PILOT_BACKUP_EVIDENCE.md`
+- `docs/ops/PILOT_UI_FLOW_EVIDENCE.md`
+- `docs/ops/PILOT_POST_ENTRY_BACKUP_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 
