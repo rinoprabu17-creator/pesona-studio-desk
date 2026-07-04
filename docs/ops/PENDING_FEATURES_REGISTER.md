@@ -340,6 +340,30 @@ Manual publish evidence log and closeout remain pending. Cutover remains blocked
 
 This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, actual publishing, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, manual publish evidence log creation, closeout creation, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.21 Controlled Manual Evidence Log Sandbox + Post-Evidence-Log Backup Evidence Status
+
+Phase 2H.21 records owner-provided controlled manual evidence log sandbox and post-evidence-log backup evidence for `psd_pilot` on `pesona`:
+
+- Scope was controlled manual evidence log sandbox evidence only.
+- Evidence logs were DB-only.
+- Manual publish evidence log count increased to `2`.
+- Intended Facebook `admin_note` log `cd2bba56-ea9e-4035-a24d-4a70c4a8479f` was recorded with value `PILOT_SMOKE_NO_PUBLISH`.
+- Accidental blank YouTube `admin_note` log `0b4b5ff2-c994-46d9-8f1c-e5c6743a336c` was recorded as a harmless DB-only anomaly.
+- The blank YouTube anomaly has no evidence value, no evidence note, and no recorded-by name.
+- The blank YouTube anomaly has no publish URL, no publish timestamp, no package status change, and no closeout.
+- The blank YouTube anomaly was not deleted, fixed, hidden, or mutated by Codex.
+- Package `ca5a591f-fdf1-4b8c-bb61-9295c186a7be` remains `ready_manual_publish`.
+- No closeout was created.
+- No checklist item was marked done.
+- No upload, publish, schedule, social API, OpenAI live runtime, public exposure, or cutover occurred.
+- Post-evidence-log backup directory `/srv/pesona-studio/backups/psd-pilot-post-manual-evidence-log-sandbox-backup-20260704T060835Z` was recorded as owner-provided evidence.
+- Checksum validation PASS, PostgreSQL dump readability PASS, and storage archive readability PASS.
+- Pilot remained running.
+
+Manual publish closeout remains pending. Cutover remains blocked.
+
+This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, actual publishing, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, closeout creation, anomaly deletion/fix/mutation, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Phase 2H.20 Controlled Manual Publish Readiness + Checklist Board + Post-Checklist Backup Evidence Status
 
 Phase 2H.20 records owner-provided controlled manual publish readiness, checklist board, and post-readiness checklist backup evidence for `psd_pilot` on `pesona`:
@@ -385,8 +409,9 @@ This phase does not execute new server commands by Codex, production backup, res
 - Post-review pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Controlled approved-video promotion and approved handoff evidence, only after explicit owner approval.
 - Final post-promotion-handoff pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
-- Manual publish evidence log and closeout evidence after manual package, only after explicit owner approval.
+- Manual publish closeout evidence after manual evidence log sandbox, only after explicit owner approval.
 - Post-readiness checklist pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
+- Post-evidence-log pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -413,3 +438,5 @@ This phase does not execute new server commands by Codex, production backup, res
 - Treating post-manual-package pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, manual publish evidence log creation, or closeout creation approval.
 - Treating controlled manual publish readiness checklist evidence as actual upload, publishing, scheduler operation, social API activation, production operation, public exposure, manual publish evidence log creation, closeout creation, or cutover approval.
 - Treating post-manual-readiness checklist pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, manual publish evidence log creation, or closeout creation approval.
+- Treating controlled manual evidence log sandbox evidence as actual upload, publishing, real publish proof, scheduler operation, social API activation, production operation, public exposure, blank YouTube anomaly deletion/fix/mutation, closeout creation, or cutover approval.
+- Treating post-manual-evidence-log sandbox pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, blank YouTube anomaly deletion/fix/mutation, or closeout creation approval.
