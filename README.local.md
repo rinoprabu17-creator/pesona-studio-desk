@@ -44,6 +44,8 @@ Phase 2H.19 mencatat owner-provided controlled manual publication package dan po
 
 Phase 2H.20 mencatat owner-provided controlled manual publish readiness, checklist board, dan post-readiness checklist backup evidence untuk project `psd_pilot`: package DB-only ditandai `ready_manual_publish`, 32 checklist item dibuat untuk 4 channel, semua item tetap pending, tidak ada manual publish evidence log, tidak ada closeout, dan backup directory `/srv/pesona-studio/backups/psd-pilot-post-manual-readiness-checklist-backup-20260704T054533Z` checksum/readability PASS. Ini bukan actual publish, bukan evidence log creation, bukan closeout, bukan upload/schedule, bukan social API/publisher/scheduler automation, bukan OpenAI live runtime, bukan public exposure, dan bukan cutover.
 
+Phase 2H.21 mencatat owner-provided controlled manual evidence log sandbox dan post-evidence-log backup evidence untuk project `psd_pilot`: satu Facebook `admin_note` DB-only tercatat sebagai sandbox evidence, satu YouTube blank `admin_note` tercatat eksplisit sebagai anomaly harmless DB-only, package tetap `ready_manual_publish`, tidak ada publish URL/timestamp, tidak ada closeout, tidak ada checklist item yang done, dan backup directory `/srv/pesona-studio/backups/psd-pilot-post-manual-evidence-log-sandbox-backup-20260704T060835Z` checksum/readability PASS. Ini bukan actual publish, bukan real publish proof, bukan closeout, bukan upload/schedule, bukan social API/publisher/scheduler automation, bukan OpenAI live runtime, bukan public exposure, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -102,6 +104,8 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/PILOT_POST_MANUAL_PACKAGE_BACKUP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_MANUAL_PUBLISH_READINESS_CHECKLIST_EVIDENCE.md`
 - `docs/ops/PILOT_POST_MANUAL_READINESS_CHECKLIST_BACKUP_EVIDENCE.md`
+- `docs/ops/CONTROLLED_MANUAL_EVIDENCE_LOG_SANDBOX_EVIDENCE.md`
+- `docs/ops/PILOT_POST_MANUAL_EVIDENCE_LOG_SANDBOX_BACKUP_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 
