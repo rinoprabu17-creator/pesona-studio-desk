@@ -320,6 +320,26 @@ Phase 2H.18 records owner-provided controlled approved draft promotion, DB-only 
 
 Controlled approved draft promotion, approved video copy, SHA256 match, DB-only handoff record, handoff marked `ready_for_manual_publish`, manual publication package count remaining `0`, final backup, checksum validation, DB dump readability, and storage archive readability are PASS. This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy from Codex, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, manual publication package creation, publishing, social API activation, scheduler/publisher activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.19 Controlled Manual Publication Package + Post-Package Backup Evidence Status
+
+Phase 2H.19 records owner-provided controlled manual publication package and post-package backup evidence for `psd_pilot` on `pesona`:
+
+- Scope was controlled manual publication package evidence only.
+- Package creation was DB-only from the approved-video handoff.
+- One manual publication package and four channel rows were created.
+- Package status remains `draft_package`.
+- Channel rows remain `draft_channel`.
+- No manual publish evidence log was created.
+- No closeout was created.
+- No upload, publish, schedule, social API, OpenAI live runtime, public exposure, or cutover occurred.
+- Post-package backup directory `/srv/pesona-studio/backups/psd-pilot-post-manual-package-backup-20260704T045148Z` was recorded as owner-provided evidence.
+- Checksum validation PASS, PostgreSQL dump readability PASS, and storage archive readability PASS.
+- Pilot remained running.
+
+Manual publish evidence log and closeout remain pending. Cutover remains blocked.
+
+This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, actual publishing, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, manual publish evidence log creation, closeout creation, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -337,11 +357,11 @@ Controlled approved draft promotion, approved video copy, SHA256 match, DB-only 
 - Pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Post-entry pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Post-render pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
-- Controlled approval/promotion and manual publish package evidence, only after explicit owner approval.
+- Controlled approval/promotion evidence, only after explicit owner approval.
 - Post-review pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
-- Controlled approved-video promotion, approved handoff, and manual publication package evidence, only after explicit owner approval.
+- Controlled approved-video promotion and approved handoff evidence, only after explicit owner approval.
 - Final post-promotion-handoff pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
-- Manual publication package evidence after approved handoff, only after explicit owner approval.
+- Manual publish evidence log and closeout evidence after manual package, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -364,3 +384,5 @@ Controlled approved draft promotion, approved video copy, SHA256 match, DB-only 
 - Treating post-review pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, promotion, handoff, or publishing approval.
 - Treating controlled approved draft promotion handoff evidence as manual publication package creation, upload, publishing, scheduler operation, social API activation, production operation, cutover, or public exposure approval.
 - Treating final post-promotion-handoff pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, manual publication package creation, or publishing approval.
+- Treating controlled manual publication package evidence as actual upload, publishing, scheduler operation, social API activation, production operation, public exposure, manual publish evidence log creation, closeout creation, or cutover approval.
+- Treating post-manual-package pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, manual publish evidence log creation, or closeout creation approval.
