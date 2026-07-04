@@ -40,6 +40,8 @@ Phase 2H.17 mencatat owner-provided controlled draft review approval dan post-re
 
 Phase 2H.18 mencatat owner-provided controlled approved draft promotion, DB-only approved-video handoff, dan final post-promotion-handoff backup evidence untuk project `psd_pilot`: approved draft dipromote manual copy ke approved-videos, SHA256 source/approved match, handoff DB-only berstatus `ready_for_manual_publish`, manual publication package tetap `0`, dan final backup directory `/srv/pesona-studio/backups/psd-pilot-post-promotion-handoff-final-backup-20260703T093157Z` checksum/readability PASS. Ini bukan manual publish package, bukan upload/publish/schedule, bukan social API/publisher/scheduler automation, bukan OpenAI live runtime, bukan public exposure, dan bukan cutover.
 
+Phase 2H.19 mencatat owner-provided controlled manual publication package dan post-package backup evidence untuk project `psd_pilot`: package DB-only dibuat dari approved-video handoff, satu manual publication package dan empat channel row tercatat, package tetap `draft_package`, channel tetap `draft_channel`, tidak ada manual publish evidence log, tidak ada closeout, dan backup directory `/srv/pesona-studio/backups/psd-pilot-post-manual-package-backup-20260704T045148Z` checksum/readability PASS. Ini bukan actual publish, bukan upload/schedule, bukan social API/publisher/scheduler automation, bukan OpenAI live runtime, bukan public exposure, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -94,6 +96,8 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/PILOT_POST_REVIEW_BACKUP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_APPROVED_DRAFT_PROMOTION_HANDOFF_EVIDENCE.md`
 - `docs/ops/PILOT_POST_PROMOTION_HANDOFF_FINAL_BACKUP_EVIDENCE.md`
+- `docs/ops/CONTROLLED_MANUAL_PUBLICATION_PACKAGE_EVIDENCE.md`
+- `docs/ops/PILOT_POST_MANUAL_PACKAGE_BACKUP_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 
