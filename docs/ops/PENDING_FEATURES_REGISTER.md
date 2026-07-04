@@ -364,6 +364,33 @@ Manual publish closeout remains pending. Cutover remains blocked.
 
 This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, actual publishing, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, closeout creation, anomaly deletion/fix/mutation, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.22 Controlled Manual Closeout Readiness Review + Backup Evidence Status
+
+Phase 2H.22 records owner-provided controlled manual closeout readiness review and backup evidence for `psd_pilot` on `pesona`:
+
+- Scope was controlled manual closeout readiness review evidence only.
+- This was a readiness/gap review only.
+- Package `ca5a591f-fdf1-4b8c-bb61-9295c186a7be` remains `ready_manual_publish`.
+- `published_manually_at` remains empty.
+- All four package channels remain `draft_channel`.
+- No manual publish URL or publish timestamp was recorded.
+- All checklist items remain pending.
+- No checklist item was marked done in this phase.
+- Evidence logs remain sandbox/admin_note only, not actual publish proof.
+- The intended Facebook `admin_note` remains documented.
+- The blank YouTube `admin_note` anomaly remains documented as harmless DB-only evidence.
+- The blank YouTube anomaly was not deleted, fixed, hidden, or mutated by Codex.
+- Closeouts query returned `(0 rows)` and `manual_publish_closeouts` remains `0`.
+- Assessment is `NOT_READY_FOR_CLOSEOUT`.
+- Decision is no closeout, no publish, no social API, no scheduler, and no cutover.
+- Closeout readiness review backup directory `/srv/pesona-studio/backups/psd-pilot-manual-closeout-readiness-review-backup-20260704T062557Z` was recorded as owner-provided evidence.
+- Checksum validation PASS, PostgreSQL dump readability PASS, and storage archive readability PASS.
+- Pilot remained running.
+
+Closeout remains pending and blocked by readiness gaps. Cutover remains blocked.
+
+This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, actual publishing, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, closeout creation, publish evidence creation, real publish URL creation, checklist completion, anomaly deletion/fix/mutation, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Phase 2H.20 Controlled Manual Publish Readiness + Checklist Board + Post-Checklist Backup Evidence Status
 
 Phase 2H.20 records owner-provided controlled manual publish readiness, checklist board, and post-readiness checklist backup evidence for `psd_pilot` on `pesona`:
@@ -409,9 +436,11 @@ This phase does not execute new server commands by Codex, production backup, res
 - Post-review pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Controlled approved-video promotion and approved handoff evidence, only after explicit owner approval.
 - Final post-promotion-handoff pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
-- Manual publish closeout evidence after manual evidence log sandbox, only after explicit owner approval.
+- Real manual publish proof evidence after actual manual posting, only after explicit owner approval.
+- Manual publish closeout evidence after readiness gaps are closed, only after explicit owner approval.
 - Post-readiness checklist pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Post-evidence-log pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
+- Closeout readiness review backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -440,3 +469,5 @@ This phase does not execute new server commands by Codex, production backup, res
 - Treating post-manual-readiness checklist pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, manual publish evidence log creation, or closeout creation approval.
 - Treating controlled manual evidence log sandbox evidence as actual upload, publishing, real publish proof, scheduler operation, social API activation, production operation, public exposure, blank YouTube anomaly deletion/fix/mutation, closeout creation, or cutover approval.
 - Treating post-manual-evidence-log sandbox pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, blank YouTube anomaly deletion/fix/mutation, or closeout creation approval.
+- Treating controlled manual closeout readiness review evidence as closeout creation, actual upload, publishing, real publish proof, checklist completion, scheduler operation, social API activation, production operation, public exposure, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
+- Treating closeout readiness review backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, closeout creation, checklist completion, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
