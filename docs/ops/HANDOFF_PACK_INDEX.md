@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, Phase 2H.4, Phase 2H.5, Phase 2H.6, Phase 2H.7, Phase 2H.8, Phase 2H.9, Phase 2H.10, Phase 2H.11, Phase 2H.12, Phase 2H.13, Phase 2H.14, Phase 2H.15, Phase 2H.16, Phase 2H.17, Phase 2H.18, and Phase 2H.19.
+This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, Phase 2H.4, Phase 2H.5, Phase 2H.6, Phase 2H.7, Phase 2H.8, Phase 2H.9, Phase 2H.10, Phase 2H.11, Phase 2H.12, Phase 2H.13, Phase 2H.14, Phase 2H.15, Phase 2H.16, Phase 2H.17, Phase 2H.18, Phase 2H.19, and Phase 2H.20.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -50,6 +50,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 42. `docs/ops/PILOT_POST_PROMOTION_HANDOFF_FINAL_BACKUP_EVIDENCE.md`
 43. `docs/ops/CONTROLLED_MANUAL_PUBLICATION_PACKAGE_EVIDENCE.md`
 44. `docs/ops/PILOT_POST_MANUAL_PACKAGE_BACKUP_EVIDENCE.md`
+45. `docs/ops/CONTROLLED_MANUAL_PUBLISH_READINESS_CHECKLIST_EVIDENCE.md`
+46. `docs/ops/PILOT_POST_MANUAL_READINESS_CHECKLIST_BACKUP_EVIDENCE.md`
 
 ## Full Ops Document Index
 
@@ -174,6 +176,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/CONTROLLED_MANUAL_PUBLICATION_PACKAGE_EVIDENCE.md`
 - `docs/ops/PILOT_POST_MANUAL_PACKAGE_BACKUP_EVIDENCE.md`
 
+### Phase 2H.20
+
+- `docs/ops/CONTROLLED_MANUAL_PUBLISH_READINESS_CHECKLIST_EVIDENCE.md`
+- `docs/ops/PILOT_POST_MANUAL_READINESS_CHECKLIST_BACKUP_EVIDENCE.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -236,6 +243,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Pilot post-promotion handoff final backup evidence intake.
 - Controlled manual publication package evidence intake.
 - Pilot post-manual-package backup evidence intake.
+- Controlled manual publish readiness checklist evidence intake.
+- Pilot post-manual-readiness checklist backup evidence intake.
 
 ## Still Intentionally Pending
 
@@ -265,6 +274,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating final post-promotion-handoff pilot backup evidence as production backup, restore, restore dry-run, deployment, production operation, public exposure, storage copy from Codex, manual publication package creation, publishing, or cutover approval.
 - Treating controlled manual publication package evidence as actual upload, publishing, scheduler operation, social API activation, production operation, public exposure, manual publish evidence log creation, closeout creation, or cutover approval.
 - Treating post-manual-package pilot backup evidence as production backup, restore, restore dry-run, deployment, production operation, public exposure, storage copy from Codex, actual publishing, manual publish evidence log creation, closeout creation, or cutover approval.
+- Treating controlled manual publish readiness checklist evidence as actual upload, publishing, manual publish evidence log creation, closeout creation, scheduler operation, social API activation, production operation, public exposure, or cutover approval.
+- Treating post-manual-readiness checklist pilot backup evidence as production backup, restore, restore dry-run, deployment, production operation, public exposure, storage copy from Codex, actual publishing, manual publish evidence log creation, closeout creation, or cutover approval.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.

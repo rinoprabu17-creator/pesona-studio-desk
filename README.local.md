@@ -42,6 +42,8 @@ Phase 2H.18 mencatat owner-provided controlled approved draft promotion, DB-only
 
 Phase 2H.19 mencatat owner-provided controlled manual publication package dan post-package backup evidence untuk project `psd_pilot`: package DB-only dibuat dari approved-video handoff, satu manual publication package dan empat channel row tercatat, package tetap `draft_package`, channel tetap `draft_channel`, tidak ada manual publish evidence log, tidak ada closeout, dan backup directory `/srv/pesona-studio/backups/psd-pilot-post-manual-package-backup-20260704T045148Z` checksum/readability PASS. Ini bukan actual publish, bukan upload/schedule, bukan social API/publisher/scheduler automation, bukan OpenAI live runtime, bukan public exposure, dan bukan cutover.
 
+Phase 2H.20 mencatat owner-provided controlled manual publish readiness, checklist board, dan post-readiness checklist backup evidence untuk project `psd_pilot`: package DB-only ditandai `ready_manual_publish`, 32 checklist item dibuat untuk 4 channel, semua item tetap pending, tidak ada manual publish evidence log, tidak ada closeout, dan backup directory `/srv/pesona-studio/backups/psd-pilot-post-manual-readiness-checklist-backup-20260704T054533Z` checksum/readability PASS. Ini bukan actual publish, bukan evidence log creation, bukan closeout, bukan upload/schedule, bukan social API/publisher/scheduler automation, bukan OpenAI live runtime, bukan public exposure, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -98,6 +100,8 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/PILOT_POST_PROMOTION_HANDOFF_FINAL_BACKUP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_MANUAL_PUBLICATION_PACKAGE_EVIDENCE.md`
 - `docs/ops/PILOT_POST_MANUAL_PACKAGE_BACKUP_EVIDENCE.md`
+- `docs/ops/CONTROLLED_MANUAL_PUBLISH_READINESS_CHECKLIST_EVIDENCE.md`
+- `docs/ops/PILOT_POST_MANUAL_READINESS_CHECKLIST_BACKUP_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 

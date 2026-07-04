@@ -340,6 +340,30 @@ Manual publish evidence log and closeout remain pending. Cutover remains blocked
 
 This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, actual publishing, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, manual publish evidence log creation, closeout creation, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
 
+## Phase 2H.20 Controlled Manual Publish Readiness + Checklist Board + Post-Checklist Backup Evidence Status
+
+Phase 2H.20 records owner-provided controlled manual publish readiness, checklist board, and post-readiness checklist backup evidence for `psd_pilot` on `pesona`:
+
+- Scope was controlled manual publish readiness and checklist board evidence only.
+- Readiness/checklist actions were DB-only.
+- Package `ca5a591f-fdf1-4b8c-bb61-9295c186a7be` was marked `ready_manual_publish`.
+- `ready_at` was recorded as `2026-07-04 05:29:44.13736+00`.
+- 32 checklist items were created.
+- Four channels each have eight checklist items.
+- All checklist items remain `pending`.
+- All checklist `is_done` values remain `false`.
+- No manual publish evidence log was created.
+- No closeout was created.
+- No manual publish URL or proof was recorded.
+- No upload, publish, schedule, social API, OpenAI live runtime, public exposure, or cutover occurred.
+- Post-readiness checklist backup directory `/srv/pesona-studio/backups/psd-pilot-post-manual-readiness-checklist-backup-20260704T054533Z` was recorded as owner-provided evidence.
+- Checksum validation PASS, PostgreSQL dump readability PASS, and storage archive readability PASS.
+- Pilot remained running.
+
+Manual publish evidence log and closeout remain pending. Cutover remains blocked.
+
+This phase does not execute new server commands by Codex, production backup, restore, restore dry-run execution, storage copy, deployment, cutover, public exposure, Cloudflare Tunnel, Docker Compose up/down by Codex, container mutation by Codex, actual publishing, scheduler/publisher/social API activation, OpenAI live runtime, upload automation, queue expansion, worker daemon expansion, manual publish evidence log creation, closeout creation, app/runtime code changes, migration file changes, or `scripts/prepare-test-db.mjs` changes.
+
 ## Current Safe Work
 
 - Docs-only audit.
@@ -362,6 +386,7 @@ This phase does not execute new server commands by Codex, production backup, res
 - Controlled approved-video promotion and approved handoff evidence, only after explicit owner approval.
 - Final post-promotion-handoff pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Manual publish evidence log and closeout evidence after manual package, only after explicit owner approval.
+- Post-readiness checklist pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -386,3 +411,5 @@ This phase does not execute new server commands by Codex, production backup, res
 - Treating final post-promotion-handoff pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, manual publication package creation, or publishing approval.
 - Treating controlled manual publication package evidence as actual upload, publishing, scheduler operation, social API activation, production operation, public exposure, manual publish evidence log creation, closeout creation, or cutover approval.
 - Treating post-manual-package pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, manual publish evidence log creation, or closeout creation approval.
+- Treating controlled manual publish readiness checklist evidence as actual upload, publishing, scheduler operation, social API activation, production operation, public exposure, manual publish evidence log creation, closeout creation, or cutover approval.
+- Treating post-manual-readiness checklist pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, manual publish evidence log creation, or closeout creation approval.
