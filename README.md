@@ -122,3 +122,6 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/CONTROLLED_SERVER_PULL_UI_HARDENING_SMOKE_EVIDENCE.md`
 - `docs/ops/PILOT_PHASE_2I5_UI_HARDENING_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/phase-2i5-controlled-server-pull-ui-hardening-smoke-backup-evidence.md`
+- `docs/ops/CONTROLLED_MANUAL_CHECKLIST_UPDATE_SMOKE_EVIDENCE.md`
+- `docs/ops/PILOT_PHASE_2I6_MANUAL_CHECKLIST_UPDATE_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/phase-2i6-controlled-manual-checklist-update-smoke-backup-evidence.md`

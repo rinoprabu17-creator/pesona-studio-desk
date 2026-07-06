@@ -480,6 +480,7 @@ This phase does not execute new server commands by Codex, production backup, res
 - Treating Phase 2I.3 guard regression review owner go/no-go evidence as actual upload, publishing, real publish proof, checklist completion, closeout creation, runtime smoke, deployment, production backup, restore, restore dry-run, public exposure, storage copy, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 - Treating Phase 2I.4 UI/UX evidence form hardening as actual upload, publishing, real publish proof, checklist completion, closeout creation, runtime smoke, deployment, production backup, restore, restore dry-run, public exposure, storage copy, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, DB constraint enforcement, or cutover approval.
 - Treating Phase 2I.5 controlled server pull/UI hardening smoke evidence as actual upload, publishing, real publish proof, checklist completion, evidence log creation, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, DB constraint enforcement, or cutover approval.
+- Treating Phase 2I.6 controlled manual checklist update smoke evidence as actual upload, publishing, real publish proof, evidence log creation, additional checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, DB constraint enforcement, or cutover approval.
 
 ## Phase 2I.1 Manual Evidence Log + Closeout Safety Guard Status
 
@@ -589,3 +590,32 @@ Phase 2I.5 records owner-provided controlled server pull, UI hardening smoke, an
 - Pilot remained running per owner evidence.
 
 This is runtime UI hardening smoke and backup evidence only. It is not actual publishing, not evidence log creation, not checklist completion, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy by Codex, not public exposure, not Docker Compose up/down by Codex, not container mutation by Codex, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
+
+## Phase 2I.6 Controlled Manual Checklist Update Smoke + Backup Evidence Status
+
+Phase 2I.6 records owner-provided controlled manual checklist update smoke and backup evidence for `psd_pilot` on `pesona`:
+
+- Server runtime remained at `phase-2i4-complete`.
+- Runtime Git head was `8f675052be9cb97c1d70e685a04bedbc73d912ec`.
+- Exactly one checklist item was updated.
+- Updated item was Facebook `video_file_confirmed`.
+- Checklist item ID was `99458d1a-758d-41cc-9946-4c11563e9771`.
+- Checked by `Rino` at `2026-07-06 05:14:49.29578+00`.
+- Checklist note was pilot-only and explicitly recorded no upload, no publish, no URL, no schedule, and no closeout.
+- Validation gate `1|31|2|0|ready_manual_publish|` was PASS.
+- Specific item validation returned `specific_ok=ok`.
+- Checklist done/pending state became `1/31`.
+- Evidence log count remained unchanged at `2`.
+- `manual_publish_closeouts` remained `0`.
+- Package remained `ready_manual_publish`.
+- `published_manually_at` remained empty.
+- Existing blank YouTube `admin_note` anomaly remained visible, documented, and unchanged.
+- No evidence log was created.
+- No additional checklist item was completed.
+- No closeout was created.
+- No actual publish occurred.
+- Backup directory `/srv/pesona-studio/backups/psd-pilot-phase-2i6-manual-checklist-update-smoke-backup-20260706T052108Z` was recorded as owner-provided evidence.
+- Checksum validation PASS, PostgreSQL dump readability PASS, and storage archive readability PASS.
+- Pilot remained running per owner evidence.
+
+This is runtime checklist update smoke and backup evidence only. It is not actual publishing, not evidence log creation, not additional checklist completion, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy by Codex, not public exposure, not Docker Compose up/down by Codex, not container mutation by Codex, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.

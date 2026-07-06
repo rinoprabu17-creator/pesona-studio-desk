@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2I.5.
+This index links the ops documents created across Phase 2G.3 through Phase 2I.6.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -63,6 +63,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 55. `docs/phase-2i4-ui-evidence-form-hardening.md`
 56. `docs/ops/CONTROLLED_SERVER_PULL_UI_HARDENING_SMOKE_EVIDENCE.md`
 57. `docs/ops/PILOT_PHASE_2I5_UI_HARDENING_SMOKE_BACKUP_EVIDENCE.md`
+58. `docs/ops/CONTROLLED_MANUAL_CHECKLIST_UPDATE_SMOKE_EVIDENCE.md`
+59. `docs/ops/PILOT_PHASE_2I6_MANUAL_CHECKLIST_UPDATE_SMOKE_BACKUP_EVIDENCE.md`
 
 ## Full Ops Document Index
 
@@ -227,6 +229,12 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/PILOT_PHASE_2I5_UI_HARDENING_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/phase-2i5-controlled-server-pull-ui-hardening-smoke-backup-evidence.md`
 
+### Phase 2I.6
+
+- `docs/ops/CONTROLLED_MANUAL_CHECKLIST_UPDATE_SMOKE_EVIDENCE.md`
+- `docs/ops/PILOT_PHASE_2I6_MANUAL_CHECKLIST_UPDATE_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/phase-2i6-controlled-manual-checklist-update-smoke-backup-evidence.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -302,6 +310,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Phase 2I.4 UI/UX evidence form hardening notes.
 - Controlled server pull UI hardening smoke evidence intake.
 - Pilot Phase 2I.5 UI hardening smoke backup evidence intake.
+- Controlled manual checklist update smoke evidence intake.
+- Pilot Phase 2I.6 manual checklist update smoke backup evidence intake.
 
 ## Still Intentionally Pending
 
