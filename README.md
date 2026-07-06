@@ -125,3 +125,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/CONTROLLED_MANUAL_CHECKLIST_UPDATE_SMOKE_EVIDENCE.md`
 - `docs/ops/PILOT_PHASE_2I6_MANUAL_CHECKLIST_UPDATE_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/phase-2i6-controlled-manual-checklist-update-smoke-backup-evidence.md`
+- `docs/ops/CHECKLIST_PROGRESS_REVIEW_GO_NO_GO.md`
+- `docs/phase-2i7-checklist-progress-review-go-no-go.md`
