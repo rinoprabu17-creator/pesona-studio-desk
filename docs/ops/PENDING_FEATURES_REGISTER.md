@@ -478,6 +478,7 @@ This phase does not execute new server commands by Codex, production backup, res
 - Treating Phase 2I.1 UI/server guard patch as actual upload, publishing, real publish proof, checklist completion, closeout creation, deployment, backup, restore, restore dry-run, public exposure, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 - Treating Phase 2I.2 controlled server pull/runtime guard smoke evidence as actual upload, publishing, real publish proof, checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 - Treating Phase 2I.3 guard regression review owner go/no-go evidence as actual upload, publishing, real publish proof, checklist completion, closeout creation, runtime smoke, deployment, production backup, restore, restore dry-run, public exposure, storage copy, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
+- Treating Phase 2I.4 UI/UX evidence form hardening as actual upload, publishing, real publish proof, checklist completion, closeout creation, runtime smoke, deployment, production backup, restore, restore dry-run, public exposure, storage copy, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, DB constraint enforcement, or cutover approval.
 
 ## Phase 2I.1 Manual Evidence Log + Closeout Safety Guard Status
 
@@ -542,3 +543,21 @@ Phase 2I.3 records guard regression review and owner go/no-go decision evidence 
 Closeout remains blocked. Actual publish remains blocked. Public exposure and cutover remain blocked. Recommended next work is either `Phase 2I.4 Controlled Manual Checklist Update Smoke` with owner approval and no actual publish, or `Phase 2I.4 UI/UX Evidence Form Hardening` before touching checklist state.
 
 This is a docs-only/read-only review gate. It is not actual publishing, not closeout, not runtime smoke, not deployment, not production backup, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, and not cutover.
+
+## Phase 2I.4 UI/UX Evidence Form Hardening Status
+
+Phase 2I.4 adds browser-side UI protection for manual publish evidence forms:
+
+- `Evidence Type` is required in the Add Evidence form.
+- `Recorded By` is required in the Add Evidence form.
+- `Add Evidence` is disabled when evidence type is blank.
+- `Add Evidence` is disabled when recorded by is blank.
+- `Add Evidence` is disabled when both evidence value and evidence note are blank after trimming.
+- Whitespace-only input counts as blank.
+- Helper text states that Evidence Value or Evidence Note is required and blank evidence is not valid publish proof.
+- Server-side Phase 2I.1 validation remains the final authority.
+- Existing blank YouTube `admin_note` anomaly remains visible, documented, and unchanged.
+- Blank anomaly rows remain marked as DB-only records, not valid publish proof.
+- Closeout page continues to report `NOT_READY_FOR_CLOSEOUT` and now renders blocking reasons as a visible list.
+
+This is local UI/app hardening only. It is not actual publishing, not closeout, not runtime smoke, not deployment, not production backup, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.

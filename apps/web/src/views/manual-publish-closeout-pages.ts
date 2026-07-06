@@ -12,6 +12,9 @@ function safetyNotice(): string {
 }
 
 function eligibilityTable(eligibility: ManualPublishCloseoutEligibility): string {
+  const blockingReasons = eligibility.blocking_reasons.length
+    ? `<ul>${eligibility.blocking_reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}</ul>`
+    : "-";
   return renderReadOnlyTable(
     ["Field", "Value"],
     [
@@ -29,7 +32,7 @@ function eligibilityTable(eligibility: ManualPublishCloseoutEligibility): string
       ["Channels With URL", escapeHtml(eligibility.channels_with_manual_url.join(", ") || "-")],
       ["Missing Manual URL", escapeHtml(eligibility.missing_manual_url_channels.join(", ") || "-")],
       ["Existing Closeout", escapeHtml(eligibility.existing_closeout_id || "-")],
-      ["Blocking Reasons", escapeHtml(eligibility.blocking_reasons.join(" ") || "-")]
+      ["Blocking Reasons", blockingReasons]
     ]
   );
 }
@@ -120,7 +123,7 @@ export async function renderManualPublishCloseoutPackagePage(packageId: string, 
         <label>Catatan Closeout<textarea name="closeout_note" maxlength="2000" rows="3"></textarea></label>
         <button type="submit">Create Closeout</button>
       </form>`
-    : `<div class="notice error"><strong>NOT_READY_FOR_CLOSEOUT.</strong> Closeout diblokir server-side: ${escapeHtml(eligibility.blocking_reasons.join(" ") || "Closeout sudah ada.")}</div>`;
+    : `<div class="notice error"><strong>NOT_READY_FOR_CLOSEOUT.</strong> Closeout action remains blocked server-side for unsafe state. Reasons are listed below.</div>`;
   const summary = renderReadOnlyTable(
     ["Field", "Value"],
     [
