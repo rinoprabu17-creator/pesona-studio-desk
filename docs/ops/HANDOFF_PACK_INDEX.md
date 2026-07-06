@@ -195,6 +195,16 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/CONTROLLED_MANUAL_CLOSEOUT_READINESS_REVIEW_EVIDENCE.md`
 - `docs/ops/PILOT_CLOSEOUT_READINESS_REVIEW_BACKUP_EVIDENCE.md`
 
+### Phase 2I.1
+
+- `docs/phase-2i1-ui-guard-manual-evidence-closeout-safety.md`
+
+### Phase 2I.2
+
+- `docs/ops/CONTROLLED_SERVER_PULL_RUNTIME_GUARD_SMOKE_EVIDENCE.md`
+- `docs/ops/PILOT_PHASE_2I2_RUNTIME_GUARD_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/phase-2i2-controlled-server-pull-runtime-guard-smoke-backup-evidence.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -264,6 +274,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Controlled manual closeout readiness review evidence intake.
 - Pilot closeout readiness review backup evidence intake.
 - Phase 2I.1 manual evidence log and closeout safety guard notes.
+- Controlled server pull runtime guard smoke evidence intake.
+- Pilot Phase 2I.2 runtime guard smoke backup evidence intake.
 
 ## Still Intentionally Pending
 
@@ -300,6 +312,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating controlled manual closeout readiness review evidence as closeout creation, actual upload, publishing, real publish proof, checklist completion, scheduler operation, social API activation, production operation, public exposure, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Treating closeout readiness review backup evidence as production backup, restore, restore dry-run, deployment, production operation, public exposure, storage copy from Codex, actual publishing, closeout creation, checklist completion, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Treating Phase 2I.1 guard code as actual publishing, closeout creation, backup/restore execution, deployment, public exposure, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
+- Treating Phase 2I.2 runtime guard smoke evidence as actual publishing, closeout creation, production backup, restore, restore dry-run, deployment, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.

@@ -442,6 +442,7 @@ This phase does not execute new server commands by Codex, production backup, res
 - Post-evidence-log pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Closeout readiness review backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Phase 2I.1 guard review and commit planning after validation, only after owner approval.
+- Phase 2I.2 runtime guard smoke backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 
 ## Execution Work Still Pending
 
@@ -473,6 +474,7 @@ This phase does not execute new server commands by Codex, production backup, res
 - Treating controlled manual closeout readiness review evidence as closeout creation, actual upload, publishing, real publish proof, checklist completion, scheduler operation, social API activation, production operation, public exposure, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 - Treating closeout readiness review backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, closeout creation, checklist completion, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 - Treating Phase 2I.1 UI/server guard patch as actual upload, publishing, real publish proof, checklist completion, closeout creation, deployment, backup, restore, restore dry-run, public exposure, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
+- Treating Phase 2I.2 controlled server pull/runtime guard smoke evidence as actual upload, publishing, real publish proof, checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 
 ## Phase 2I.1 Manual Evidence Log + Closeout Safety Guard Status
 
@@ -491,3 +493,26 @@ Phase 2I.1 adds code-level safety guards for manual publish evidence logs and cl
 - Blocked closeout attempts do not insert `manual_publish_closeouts` rows.
 
 This is a local code safety patch. It is not actual publishing, not closeout, not deployment, not production backup, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, and not cutover.
+
+## Phase 2I.2 Controlled Server Pull + Runtime Guard Smoke + Backup Evidence Status
+
+Phase 2I.2 records owner-provided controlled server pull, runtime guard smoke, and backup evidence for `psd_pilot` on `pesona`:
+
+- Server runtime was updated to `phase-2i1-complete`.
+- Runtime Git head was `4fa59910229c81038d7ec36a5efc4c0bba8df363`.
+- Git status short count was `0`.
+- Blank evidence guard smoke was PASS.
+- UI rejected blank evidence submit with required recorder/name validation.
+- Evidence log count remained unchanged at `2`.
+- No new blank evidence row was created.
+- Closeout readiness guard was PASS.
+- UI showed `NOT_READY_FOR_CLOSEOUT`.
+- `manual_publish_closeouts` remained `0`.
+- All four channels remained `draft_channel`.
+- All checklist items remained pending.
+- Existing blank YouTube `admin_note` anomaly remained visible, documented, and unchanged.
+- Backup directory `/srv/pesona-studio/backups/psd-pilot-phase-2i2-runtime-guard-smoke-backup-20260706T034554Z` was recorded as owner-provided evidence.
+- Checksum validation PASS, PostgreSQL dump readability PASS, and storage archive readability PASS.
+- Pilot remained running per owner evidence.
+
+This is runtime guard smoke and backup evidence only. It is not actual publishing, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy by Codex, not public exposure, not Docker Compose up/down by Codex, not container mutation by Codex, not scheduler/publisher/social API activation, not OpenAI live runtime, and not cutover.
