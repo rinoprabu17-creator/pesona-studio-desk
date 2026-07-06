@@ -50,6 +50,8 @@ Phase 2H.22 mencatat owner-provided controlled manual closeout readiness review 
 
 Phase 2I.1 menambahkan UI/server guard untuk manual evidence log dan closeout safety: evidence log baru wajib punya `evidence_type`, `recorded_by_name`, dan minimal salah satu `evidence_value` atau `evidence_note` nonblank; closeout diblokir bila package belum `published_manually`, checklist belum selesai, tidak ada valid publish proof, ada blank evidence anomaly, atau closeout sudah ada. Blank YouTube `admin_note` anomaly lama tetap terlihat sebagai DB-only anomaly dan tidak dimutasi. Ini code safety patch lokal, bukan actual publish, bukan closeout, bukan deployment, bukan backup/restore, bukan public exposure, dan bukan cutover.
 
+Phase 2I.2 mencatat owner-provided controlled server pull, runtime guard smoke, dan backup evidence untuk project `psd_pilot`: server runtime sudah berada di `phase-2i1-complete`, blank evidence guard PASS, closeout readiness guard PASS dengan UI `NOT_READY_FOR_CLOSEOUT`, evidence log count tetap `2` setelah blank submit, closeout tetap `0`, existing blank YouTube `admin_note` anomaly tetap terlihat dan unchanged, dan backup directory `/srv/pesona-studio/backups/psd-pilot-phase-2i2-runtime-guard-smoke-backup-20260706T034554Z` checksum/readability PASS. Ini runtime guard smoke evidence only, bukan actual publish, bukan closeout, bukan deployment, bukan production backup, bukan restore, bukan public exposure, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:

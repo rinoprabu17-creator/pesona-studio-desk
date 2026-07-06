@@ -113,3 +113,6 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/CONTROLLED_MANUAL_CLOSEOUT_READINESS_REVIEW_EVIDENCE.md`
 - `docs/ops/PILOT_CLOSEOUT_READINESS_REVIEW_BACKUP_EVIDENCE.md`
 - `docs/phase-2i1-ui-guard-manual-evidence-closeout-safety.md`
+- `docs/ops/CONTROLLED_SERVER_PULL_RUNTIME_GUARD_SMOKE_EVIDENCE.md`
+- `docs/ops/PILOT_PHASE_2I2_RUNTIME_GUARD_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/phase-2i2-controlled-server-pull-runtime-guard-smoke-backup-evidence.md`
