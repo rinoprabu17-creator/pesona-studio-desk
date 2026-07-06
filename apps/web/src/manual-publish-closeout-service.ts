@@ -28,12 +28,18 @@ export type ManualPublishCloseoutRow = {
 
 export type ManualPublishCloseoutEligibility = {
   ok: boolean;
+  readiness_assessment: "READY_FOR_CLOSEOUT" | "NOT_READY_FOR_CLOSEOUT";
   blocking_reasons: string[];
   package_id: string;
   report_status: string;
+  package_status: string;
+  published_manually_at: string | null;
   checklist_done: number;
   checklist_total: number;
   selected_channel_count: number;
+  valid_evidence_count: number;
+  valid_publish_proof_count: number;
+  blank_evidence_anomaly_count: number;
   manual_url_channel_count: number;
   channels_with_manual_url: string[];
   missing_manual_url_channels: string[];
@@ -87,10 +93,50 @@ function mapCloseout(row: ManualPublishCloseoutRow): ManualPublishCloseoutRow {
   };
 }
 
-function blockingReasons(report: ManualPublishReportPackage, existingCloseoutId: string | null): string[] {
+type EvidenceGuardStats = {
+  valid_evidence_count: number;
+  valid_publish_proof_count: number;
+  blank_evidence_anomaly_count: number;
+};
+
+async function getEvidenceGuardStats(packageId: string): Promise<EvidenceGuardStats> {
+  const rows = await query<EvidenceGuardStats>(
+    `SELECT count(*) FILTER (
+              WHERE coalesce(nullif(trim(evidence_type), ''), '') <> ''
+                AND coalesce(nullif(trim(recorded_by_name), ''), '') <> ''
+                AND (
+                  coalesce(nullif(trim(evidence_value), ''), '') <> ''
+                  OR coalesce(nullif(trim(evidence_note), ''), '') <> ''
+                )
+            )::int AS valid_evidence_count,
+            count(*) FILTER (
+              WHERE evidence_type = 'manual_post_url'
+                AND coalesce(nullif(trim(evidence_value), ''), '') <> ''
+                AND coalesce(nullif(trim(recorded_by_name), ''), '') <> ''
+            )::int AS valid_publish_proof_count,
+            count(*) FILTER (
+              WHERE coalesce(nullif(trim(evidence_value), ''), '') = ''
+                AND coalesce(nullif(trim(evidence_note), ''), '') = ''
+                AND coalesce(nullif(trim(recorded_by_name), ''), '') = ''
+            )::int AS blank_evidence_anomaly_count
+     FROM manual_publish_evidence_logs
+     WHERE package_id = $1`,
+    [packageId]
+  );
+  return {
+    valid_evidence_count: Number(rows[0]?.valid_evidence_count || 0),
+    valid_publish_proof_count: Number(rows[0]?.valid_publish_proof_count || 0),
+    blank_evidence_anomaly_count: Number(rows[0]?.blank_evidence_anomaly_count || 0)
+  };
+}
+
+function blockingReasons(report: ManualPublishReportPackage, existingCloseoutId: string | null, evidenceStats: EvidenceGuardStats): string[] {
   const reasons: string[] = [];
   if (existingCloseoutId) {
     reasons.push("Closeout sudah ada untuk package ini.");
+  }
+  if (!report.published_manually_at) {
+    reasons.push("Package belum ditandai published_manually.");
   }
   if (report.report_status !== "ready_evidence_complete") {
     reasons.push(`Report status belum ready_evidence_complete: ${report.report_status}.`);
@@ -103,6 +149,15 @@ function blockingReasons(report: ManualPublishReportPackage, existingCloseoutId:
   }
   if (!report.manual_url_complete) {
     reasons.push(`Manual URL belum lengkap untuk channel: ${report.missing_manual_url_channels.join(", ") || "-"}.`);
+  }
+  if (evidenceStats.valid_evidence_count <= 0) {
+    reasons.push("Belum ada evidence log valid nonblank.");
+  }
+  if (evidenceStats.valid_publish_proof_count <= 0) {
+    reasons.push("Belum ada valid publish proof; evidence admin_note/sandbox saja tidak cukup untuk closeout.");
+  }
+  if (evidenceStats.blank_evidence_anomaly_count > 0) {
+    reasons.push("Ada blank evidence log anomaly yang harus tetap terlihat dan tidak dihitung sebagai publish proof.");
   }
   if (report.selected_channel_count <= 0) {
     reasons.push("Package belum memiliki selected channel.");
@@ -120,15 +175,22 @@ export async function getManualPublishCloseoutEligibility(packageId: string): Pr
   assertUuid(packageId);
   const report = await getManualPublishReportPackageDetail(packageId);
   const existing = await getManualPublishCloseoutByPackageId(packageId);
-  const reasons = blockingReasons(report, existing?.id || null);
+  const evidenceStats = await getEvidenceGuardStats(packageId);
+  const reasons = blockingReasons(report, existing?.id || null, evidenceStats);
   return {
     ok: reasons.length === 0,
+    readiness_assessment: reasons.length === 0 ? "READY_FOR_CLOSEOUT" : "NOT_READY_FOR_CLOSEOUT",
     blocking_reasons: reasons,
     package_id: packageId,
     report_status: report.report_status,
+    package_status: report.package_status,
+    published_manually_at: report.published_manually_at,
     checklist_done: report.checklist_done,
     checklist_total: report.checklist_total,
     selected_channel_count: report.selected_channel_count,
+    valid_evidence_count: evidenceStats.valid_evidence_count,
+    valid_publish_proof_count: evidenceStats.valid_publish_proof_count,
+    blank_evidence_anomaly_count: evidenceStats.blank_evidence_anomaly_count,
     manual_url_channel_count: report.manual_url_channel_count,
     channels_with_manual_url: report.channels_with_manual_url,
     missing_manual_url_channels: report.missing_manual_url_channels,
@@ -141,10 +203,11 @@ export async function createManualPublishCloseout(packageId: string, input: unkn
   const value = validateManualPublishCloseoutInput(input);
   const report = await getManualPublishReportPackageDetail(packageId);
   const existing = await getManualPublishCloseoutByPackageId(packageId);
+  const evidenceStats = await getEvidenceGuardStats(packageId);
   if (existing) {
     throw new ManualPublishCloseoutError("manual_publish_closeout_duplicate", "Closeout sudah ada untuk package ini.", 409);
   }
-  const reasons = blockingReasons(report, null);
+  const reasons = blockingReasons(report, null, evidenceStats);
   if (reasons.length > 0) {
     throw new ManualPublishCloseoutError("manual_publish_closeout_not_ready", reasons.join(" "), 400);
   }

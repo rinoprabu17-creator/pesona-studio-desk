@@ -15,10 +15,16 @@ function eligibilityTable(eligibility: ManualPublishCloseoutEligibility): string
   return renderReadOnlyTable(
     ["Field", "Value"],
     [
+      ["Readiness Assessment", eligibility.readiness_assessment === "READY_FOR_CLOSEOUT" ? `<span class="badge badge-ok">READY_FOR_CLOSEOUT</span>` : `<span class="badge badge-warning">NOT_READY_FOR_CLOSEOUT</span>`],
       ["Eligible", eligibility.ok ? "Ya" : "Belum"],
       ["Report Status", escapeHtml(eligibility.report_status)],
+      ["Package Status", escapeHtml(eligibility.package_status)],
+      ["Published Manually At", escapeHtml(eligibility.published_manually_at || "-")],
       ["Checklist", `${escapeHtml(eligibility.checklist_done)} / ${escapeHtml(eligibility.checklist_total)}`],
       ["Selected Channels", escapeHtml(eligibility.selected_channel_count)],
+      ["Valid Evidence Logs", escapeHtml(eligibility.valid_evidence_count)],
+      ["Valid Publish Proof", escapeHtml(eligibility.valid_publish_proof_count)],
+      ["Blank Evidence Anomalies", escapeHtml(eligibility.blank_evidence_anomaly_count)],
       ["Manual URL Channels", escapeHtml(eligibility.manual_url_channel_count)],
       ["Channels With URL", escapeHtml(eligibility.channels_with_manual_url.join(", ") || "-")],
       ["Missing Manual URL", escapeHtml(eligibility.missing_manual_url_channels.join(", ") || "-")],
@@ -114,13 +120,14 @@ export async function renderManualPublishCloseoutPackagePage(packageId: string, 
         <label>Catatan Closeout<textarea name="closeout_note" maxlength="2000" rows="3"></textarea></label>
         <button type="submit">Create Closeout</button>
       </form>`
-    : `<p class="hint">Closeout belum bisa dibuat: ${escapeHtml(eligibility.blocking_reasons.join(" ") || "Closeout sudah ada.")}</p>`;
+    : `<div class="notice error"><strong>NOT_READY_FOR_CLOSEOUT.</strong> Closeout diblokir server-side: ${escapeHtml(eligibility.blocking_reasons.join(" ") || "Closeout sudah ada.")}</div>`;
   const summary = renderReadOnlyTable(
     ["Field", "Value"],
     [
       ["Package ID", escapeHtml(report.package_id)],
       ["Content", `${escapeHtml(report.content_code)} - ${escapeHtml(report.content_title)}`],
       ["Package Status", escapeHtml(report.package_status)],
+      ["Published Manually At", escapeHtml(report.published_manually_at || "-")],
       ["Report Status", escapeHtml(report.report_status)],
       ["Checklist", `${escapeHtml(report.checklist_done)} / ${escapeHtml(report.checklist_total)}`],
       ["Evidence Count", escapeHtml(report.evidence_count)],

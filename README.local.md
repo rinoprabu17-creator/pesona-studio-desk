@@ -48,6 +48,8 @@ Phase 2H.21 mencatat owner-provided controlled manual evidence log sandbox dan p
 
 Phase 2H.22 mencatat owner-provided controlled manual closeout readiness review dan backup evidence untuk project `psd_pilot`: package tetap `ready_manual_publish`, semua channel tetap `draft_channel`, semua checklist item tetap pending, evidence log masih sandbox/admin_note, blank YouTube `admin_note` anomaly tetap terdokumentasi, closeout tetap 0, assessment `NOT_READY_FOR_CLOSEOUT`, dan backup directory `/srv/pesona-studio/backups/psd-pilot-manual-closeout-readiness-review-backup-20260704T062557Z` checksum/readability PASS. Ini bukan closeout, bukan actual publish, bukan real publish proof, bukan upload/schedule, bukan social API/publisher/scheduler automation, bukan OpenAI live runtime, bukan public exposure, dan bukan cutover.
 
+Phase 2I.1 menambahkan UI/server guard untuk manual evidence log dan closeout safety: evidence log baru wajib punya `evidence_type`, `recorded_by_name`, dan minimal salah satu `evidence_value` atau `evidence_note` nonblank; closeout diblokir bila package belum `published_manually`, checklist belum selesai, tidak ada valid publish proof, ada blank evidence anomaly, atau closeout sudah ada. Blank YouTube `admin_note` anomaly lama tetap terlihat sebagai DB-only anomaly dan tidak dimutasi. Ini code safety patch lokal, bukan actual publish, bukan closeout, bukan deployment, bukan backup/restore, bukan public exposure, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
