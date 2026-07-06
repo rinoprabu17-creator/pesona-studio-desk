@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3, Phase 2G.4, Phase 2G.5, Phase 2G.6, Phase 2H.1, Phase 2H.2, Phase 2H.3, Phase 2H.4, Phase 2H.5, Phase 2H.6, Phase 2H.7, Phase 2H.8, Phase 2H.9, Phase 2H.10, Phase 2H.11, Phase 2H.12, Phase 2H.13, Phase 2H.14, Phase 2H.15, Phase 2H.16, Phase 2H.17, Phase 2H.18, Phase 2H.19, Phase 2H.20, Phase 2H.21, and Phase 2H.22.
+This index links the ops documents created across Phase 2G.3 through Phase 2I.3.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -56,6 +56,10 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 48. `docs/ops/PILOT_POST_MANUAL_EVIDENCE_LOG_SANDBOX_BACKUP_EVIDENCE.md`
 49. `docs/ops/CONTROLLED_MANUAL_CLOSEOUT_READINESS_REVIEW_EVIDENCE.md`
 50. `docs/ops/PILOT_CLOSEOUT_READINESS_REVIEW_BACKUP_EVIDENCE.md`
+51. `docs/phase-2i1-ui-guard-manual-evidence-closeout-safety.md`
+52. `docs/ops/CONTROLLED_SERVER_PULL_RUNTIME_GUARD_SMOKE_EVIDENCE.md`
+53. `docs/ops/PILOT_PHASE_2I2_RUNTIME_GUARD_SMOKE_BACKUP_EVIDENCE.md`
+54. `docs/ops/GUARD_REGRESSION_REVIEW_OWNER_GO_NO_GO.md`
 
 ## Full Ops Document Index
 
@@ -205,6 +209,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/PILOT_PHASE_2I2_RUNTIME_GUARD_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/phase-2i2-controlled-server-pull-runtime-guard-smoke-backup-evidence.md`
 
+### Phase 2I.3
+
+- `docs/ops/GUARD_REGRESSION_REVIEW_OWNER_GO_NO_GO.md`
+- `docs/phase-2i3-guard-regression-review-owner-go-no-go.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -276,6 +285,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Phase 2I.1 manual evidence log and closeout safety guard notes.
 - Controlled server pull runtime guard smoke evidence intake.
 - Pilot Phase 2I.2 runtime guard smoke backup evidence intake.
+- Guard regression review and owner go/no-go evidence.
 
 ## Still Intentionally Pending
 

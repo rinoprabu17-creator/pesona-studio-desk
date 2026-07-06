@@ -116,3 +116,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/CONTROLLED_SERVER_PULL_RUNTIME_GUARD_SMOKE_EVIDENCE.md`
 - `docs/ops/PILOT_PHASE_2I2_RUNTIME_GUARD_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/phase-2i2-controlled-server-pull-runtime-guard-smoke-backup-evidence.md`
+- `docs/ops/GUARD_REGRESSION_REVIEW_OWNER_GO_NO_GO.md`
+- `docs/phase-2i3-guard-regression-review-owner-go-no-go.md`
