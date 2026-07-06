@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2I.6.
+This index links the ops documents created across Phase 2G.3 through Phase 2I.7.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -65,6 +65,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 57. `docs/ops/PILOT_PHASE_2I5_UI_HARDENING_SMOKE_BACKUP_EVIDENCE.md`
 58. `docs/ops/CONTROLLED_MANUAL_CHECKLIST_UPDATE_SMOKE_EVIDENCE.md`
 59. `docs/ops/PILOT_PHASE_2I6_MANUAL_CHECKLIST_UPDATE_SMOKE_BACKUP_EVIDENCE.md`
+60. `docs/ops/CHECKLIST_PROGRESS_REVIEW_GO_NO_GO.md`
+61. `docs/phase-2i7-checklist-progress-review-go-no-go.md`
 
 ## Full Ops Document Index
 
@@ -235,6 +237,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/PILOT_PHASE_2I6_MANUAL_CHECKLIST_UPDATE_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/phase-2i6-controlled-manual-checklist-update-smoke-backup-evidence.md`
 
+### Phase 2I.7
+
+- `docs/ops/CHECKLIST_PROGRESS_REVIEW_GO_NO_GO.md`
+- `docs/phase-2i7-checklist-progress-review-go-no-go.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -312,6 +319,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Pilot Phase 2I.5 UI hardening smoke backup evidence intake.
 - Controlled manual checklist update smoke evidence intake.
 - Pilot Phase 2I.6 manual checklist update smoke backup evidence intake.
+- Checklist progress review and owner go/no-go evidence.
 
 ## Still Intentionally Pending
 
