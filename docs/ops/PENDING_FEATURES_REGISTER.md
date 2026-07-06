@@ -443,6 +443,8 @@ This phase does not execute new server commands by Codex, production backup, res
 - Closeout readiness review backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Phase 2I.1 guard review and commit planning after validation, only after owner approval.
 - Phase 2I.2 runtime guard smoke backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
+- Phase 2I.4 controlled manual checklist update smoke, only after explicit owner approval and still without actual publish.
+- Phase 2I.4 UI/UX evidence form hardening, only if owner wants more protection before touching checklist state.
 
 ## Execution Work Still Pending
 
@@ -475,6 +477,7 @@ This phase does not execute new server commands by Codex, production backup, res
 - Treating closeout readiness review backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, closeout creation, checklist completion, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 - Treating Phase 2I.1 UI/server guard patch as actual upload, publishing, real publish proof, checklist completion, closeout creation, deployment, backup, restore, restore dry-run, public exposure, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 - Treating Phase 2I.2 controlled server pull/runtime guard smoke evidence as actual upload, publishing, real publish proof, checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
+- Treating Phase 2I.3 guard regression review owner go/no-go evidence as actual upload, publishing, real publish proof, checklist completion, closeout creation, runtime smoke, deployment, production backup, restore, restore dry-run, public exposure, storage copy, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 
 ## Phase 2I.1 Manual Evidence Log + Closeout Safety Guard Status
 
@@ -516,3 +519,26 @@ Phase 2I.2 records owner-provided controlled server pull, runtime guard smoke, a
 - Pilot remained running per owner evidence.
 
 This is runtime guard smoke and backup evidence only. It is not actual publishing, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy by Codex, not public exposure, not Docker Compose up/down by Codex, not container mutation by Codex, not scheduler/publisher/social API activation, not OpenAI live runtime, and not cutover.
+
+## Phase 2I.3 Guard Regression Review / Owner Go-No-Go Status
+
+Phase 2I.3 records guard regression review and owner go/no-go decision evidence after the Phase 2I.1 guard patch and Phase 2I.2 runtime guard smoke:
+
+- Manual evidence blank-input guard remains PASS per owner evidence.
+- UI rejected blank submit with recorder/name validation.
+- Evidence log count remained unchanged at `2`.
+- Blank anomaly display remains PASS.
+- Existing blank YouTube `admin_note` anomaly remains documented, visible, and unchanged.
+- Closeout readiness guard remains PASS.
+- UI showed `NOT_READY_FOR_CLOSEOUT`.
+- `manual_publish_closeouts` remained `0`.
+- Package `ca5a591f-fdf1-4b8c-bb61-9295c186a7be` remained `ready_manual_publish`.
+- `published_manually_at` remained empty.
+- All checklist items remained pending.
+- All channels remained `draft_channel` with no manual publish URL or manual published timestamp.
+- Owner go/no-go decision is NO for closeout, actual publish, cutover, and social API/scheduler.
+- Owner go/no-go decision is YES only for continued controlled local pilot hardening.
+
+Closeout remains blocked. Actual publish remains blocked. Public exposure and cutover remain blocked. Recommended next work is either `Phase 2I.4 Controlled Manual Checklist Update Smoke` with owner approval and no actual publish, or `Phase 2I.4 UI/UX Evidence Form Hardening` before touching checklist state.
+
+This is a docs-only/read-only review gate. It is not actual publishing, not closeout, not runtime smoke, not deployment, not production backup, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, and not cutover.
