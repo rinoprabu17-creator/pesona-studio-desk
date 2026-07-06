@@ -43,6 +43,9 @@ export function validateManualPublishChecklistStatus(value: unknown): ManualPubl
 
 export function validateManualPublishEvidenceType(value: unknown): ManualPublishEvidenceType {
   const evidenceType = normalizeText(value);
+  if (!evidenceType) {
+    throw new ManualPublishChecklistError("manual_publish_checklist_validation_failed", "Tipe evidence wajib diisi.", 400);
+  }
   if (!manualPublishEvidenceTypes.includes(evidenceType as ManualPublishEvidenceType)) {
     throw new ManualPublishChecklistError("manual_publish_checklist_validation_failed", "Tipe evidence manual publish tidak valid.", 400);
   }
@@ -82,6 +85,14 @@ export function validateManualPublishEvidenceInput(input: unknown): {
   const value = input && typeof input === "object" ? input as Record<string, unknown> : {};
   const evidenceType = validateManualPublishEvidenceType(value.evidence_type);
   const evidenceValue = optionalText(value.evidence_value, 2000, "Nilai evidence");
+  const evidenceNote = optionalText(value.evidence_note, 2000, "Catatan evidence");
+  const recordedByName = optionalText(value.recorded_by_name, 120, "Nama pencatat");
+  if (!recordedByName) {
+    throw new ManualPublishChecklistError("manual_publish_checklist_validation_failed", "Nama pencatat wajib diisi.", 400);
+  }
+  if (!evidenceValue && !evidenceNote) {
+    throw new ManualPublishChecklistError("manual_publish_checklist_validation_failed", "Isi nilai evidence atau catatan evidence wajib diisi.", 400);
+  }
   if (evidenceType === "manual_post_url") {
     if (!evidenceValue) {
       throw new ManualPublishChecklistError("manual_publish_checklist_validation_failed", "Manual post URL wajib diisi.", 400);
@@ -99,7 +110,7 @@ export function validateManualPublishEvidenceInput(input: unknown): {
   return {
     evidence_type: evidenceType,
     evidence_value: evidenceValue,
-    evidence_note: optionalText(value.evidence_note, 2000, "Catatan evidence"),
-    recorded_by_name: optionalText(value.recorded_by_name, 120, "Nama pencatat")
+    evidence_note: evidenceNote,
+    recorded_by_name: recordedByName
   };
 }

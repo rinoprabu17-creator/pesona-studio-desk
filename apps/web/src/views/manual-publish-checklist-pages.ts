@@ -5,6 +5,7 @@ import {
 import {
   getManualPublishChecklistContext
 } from "../manual-publish-checklist-service.ts";
+import { isBlankEvidenceLogAnomaly } from "../manual-publish-evidence-guards.ts";
 import type {
   ManualPublishChecklistItemRow,
   ManualPublishEvidenceLogRow,
@@ -50,14 +51,17 @@ function checklistTable(packageId: string, channel: ManualPublishPackageChannelC
 
 function evidenceTable(logs: ManualPublishEvidenceLogRow[]): string {
   return renderReadOnlyTable(
-    ["Channel", "Type", "Value", "Note", "Recorded By", "Recorded At"],
+    ["Channel", "Type", "Value", "Note", "Recorded By", "Recorded At", "Warning"],
     logs.map((log) => [
       escapeHtml(channelLabels[log.channel] || log.channel),
       escapeHtml(log.evidence_type),
       escapeHtml(log.evidence_value || "-"),
       escapeHtml(log.evidence_note || "-"),
       escapeHtml(log.recorded_by_name || "-"),
-      escapeHtml(log.recorded_at || "-")
+      escapeHtml(log.recorded_at || "-"),
+      isBlankEvidenceLogAnomaly(log)
+        ? `<span class="badge badge-warning">Blank evidence log anomaly - DB-only record, not valid publish proof</span>`
+        : "-"
     ])
   );
 }
@@ -73,6 +77,7 @@ function evidenceForms(packageId: string, channels: ManualPublishPackageChannelC
     </div>
     <label>Evidence Value<textarea name="evidence_value" maxlength="2000" rows="2"></textarea></label>
     <label>Evidence Note<textarea name="evidence_note" maxlength="2000" rows="2"></textarea></label>
+    <p class="hint">Recorded By wajib diisi. Isi minimal Evidence Value atau Evidence Note. Blank/whitespace-only evidence ditolak server-side.</p>
     <button type="submit">Add Evidence</button>
   </form>`).join("");
 }

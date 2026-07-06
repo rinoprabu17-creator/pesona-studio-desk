@@ -178,6 +178,11 @@ import {
   setManualPublishChecklistItemStatus
 } from "../../apps/web/src/manual-publish-checklist-service.ts";
 import {
+  isBlankEvidenceLogAnomaly,
+  isValidManualPublishEvidenceLog,
+  isValidPublishProofEvidenceLog
+} from "../../apps/web/src/manual-publish-evidence-guards.ts";
+import {
   validateManualPublishChecklistItemInput,
   validateManualPublishChecklistStatus,
   validateManualPublishEvidenceInput,
@@ -3599,9 +3604,19 @@ maybeTest("manual publish checklist and evidence validation rejects unsafe value
   assert.throws(() => validateManualPublishEvidenceType("file_upload"), /Tipe evidence/i);
   assert.equal(validateManualPublishChecklistItemInput({ checklist_status: "done", checked_by_name: " Owner " }).checked_by_name, "Owner");
   assert.throws(() => validateManualPublishChecklistItemInput({ checklist_note: "x".repeat(2001) }), /Catatan checklist maksimal/i);
-  assert.equal(validateManualPublishEvidenceInput({ evidence_type: "manual_post_url", evidence_value: "https://example.com/post" }).evidence_value, "https://example.com/post");
-  assert.throws(() => validateManualPublishEvidenceInput({ evidence_type: "manual_post_url", evidence_value: "ftp://example.com/post" }), /http/i);
-  assert.equal(validateManualPublishEvidenceInput({ evidence_type: "screenshot_reference", evidence_value: "../screenshots/manual.png" }).evidence_value, "../screenshots/manual.png");
+  assert.equal(validateManualPublishEvidenceInput({ evidence_type: "manual_post_url", evidence_value: "https://example.com/post", recorded_by_name: " Owner " }).evidence_value, "https://example.com/post");
+  assert.equal(validateManualPublishEvidenceInput({ evidence_type: "manual_post_url", evidence_value: "https://example.com/post", recorded_by_name: " Owner " }).recorded_by_name, "Owner");
+  assert.throws(() => validateManualPublishEvidenceInput({ evidence_value: "x", recorded_by_name: "Owner" }), /Tipe evidence wajib/i);
+  assert.throws(() => validateManualPublishEvidenceInput({ evidence_type: "admin_note", evidence_value: "x" }), /Nama pencatat wajib/i);
+  assert.throws(() => validateManualPublishEvidenceInput({ evidence_type: "admin_note", evidence_value: "   ", evidence_note: " ", recorded_by_name: "Owner" }), /nilai evidence atau catatan evidence wajib/i);
+  assert.throws(() => validateManualPublishEvidenceInput({ evidence_type: "manual_post_url", evidence_value: "ftp://example.com/post", recorded_by_name: "Owner" }), /http/i);
+  assert.equal(validateManualPublishEvidenceInput({ evidence_type: "screenshot_reference", evidence_value: "../screenshots/manual.png", recorded_by_name: "Owner" }).evidence_value, "../screenshots/manual.png");
+  assert.equal(validateManualPublishEvidenceInput({ evidence_type: "admin_note", evidence_note: "Evidence note only.", recorded_by_name: "Owner" }).evidence_note, "Evidence note only.");
+  assert.equal(isBlankEvidenceLogAnomaly({ evidence_value: " ", evidence_note: "", recorded_by_name: null }), true);
+  assert.equal(isBlankEvidenceLogAnomaly({ evidence_value: "x", evidence_note: "", recorded_by_name: null }), false);
+  assert.equal(isValidManualPublishEvidenceLog({ evidence_type: "admin_note", evidence_note: "note", recorded_by_name: "Owner" }), true);
+  assert.equal(isValidPublishProofEvidenceLog({ evidence_type: "admin_note", evidence_note: "note", recorded_by_name: "Owner" }), false);
+  assert.equal(isValidPublishProofEvidenceLog({ evidence_type: "manual_post_url", evidence_value: "https://example.com/post", recorded_by_name: "Owner" }), true);
 });
 
 maybeTest("manual publish evidence and completion summary do not mutate package, channels, parents, files, or content publications", async () => {
@@ -3683,6 +3698,88 @@ maybeTest("manual publish evidence and completion summary do not mutate package,
   });
 });
 
+maybeTest("manual publish evidence guard rejects blank logs and accepts nonblank note or value", async () => {
+  const fixture = await createManualPublicationPackageFixture("evidence-guard");
+  const packageId = fixture.packageContext.package.id;
+  const before = await pool!.query<{ count: string }>(
+    `SELECT count(*)::text AS count FROM manual_publish_evidence_logs WHERE package_id = $1`,
+    [packageId]
+  );
+
+  await assert.rejects(
+    () => addManualPublishEvidence(packageId, "youtube", {
+      evidence_type: "admin_note",
+      evidence_value: "",
+      evidence_note: "",
+      recorded_by_name: ""
+    }),
+    /Nama pencatat wajib/i
+  );
+  await assert.rejects(
+    () => addManualPublishEvidence(packageId, "youtube", {
+      evidence_type: "admin_note",
+      evidence_value: "   ",
+      evidence_note: " \t ",
+      recorded_by_name: "Owner"
+    }),
+    /nilai evidence atau catatan evidence wajib/i
+  );
+
+  const afterReject = await pool!.query<{ count: string }>(
+    `SELECT count(*)::text AS count FROM manual_publish_evidence_logs WHERE package_id = $1`,
+    [packageId]
+  );
+  assert.equal(afterReject.rows[0].count, before.rows[0].count);
+
+  const noteOnly = await addManualPublishEvidence(packageId, "youtube", {
+    evidence_type: "admin_note",
+    evidence_note: "Owner note only.",
+    recorded_by_name: "Owner"
+  });
+  assert.equal(noteOnly.evidence_value, null);
+  assert.equal(noteOnly.evidence_note, "Owner note only.");
+  assert.equal(noteOnly.recorded_by_name, "Owner");
+
+  const valueOnly = await addManualPublishEvidence(packageId, "youtube", {
+    evidence_type: "confirmation_note",
+    evidence_value: "Confirmed manually.",
+    recorded_by_name: "Owner"
+  });
+  assert.equal(valueOnly.evidence_value, "Confirmed manually.");
+  assert.equal(valueOnly.evidence_note, null);
+  assert.equal(valueOnly.recorded_by_name, "Owner");
+
+  const afterAccept = await pool!.query<{ count: string }>(
+    `SELECT count(*)::text AS count FROM manual_publish_evidence_logs WHERE package_id = $1`,
+    [packageId]
+  );
+  assert.equal(Number(afterAccept.rows[0].count), Number(before.rows[0].count) + 2);
+
+  const context = await getManualPublishChecklistContext(packageId);
+  const youtube = context.channels.find((row) => row.channel === "youtube");
+  assert.ok(youtube);
+  await pool!.query(
+    `INSERT INTO manual_publish_evidence_logs (
+       package_id,
+       package_channel_id,
+       content_item_id,
+       channel,
+       evidence_type,
+       evidence_value,
+       evidence_note,
+       recorded_by_name
+     )
+     VALUES ($1, $2, $3, 'youtube', 'admin_note', '', '', '')`,
+    [packageId, youtube.package_channel_id, youtube.content_item_id]
+  );
+  const pageResponse = mockResponse();
+  const pagePath = `/publication-packages/${packageId}/checklist`;
+  const pageHandled = await handleManualPublishChecklistPageGet(pageResponse, pagePath, new URL(`http://localhost${pagePath}`));
+  assert.equal(pageHandled, true);
+  assert.equal(pageResponse.statusCode, 200);
+  assert.match(pageResponse.body, /Blank evidence log anomaly - DB-only record, not valid publish proof/);
+});
+
 maybeTest("manual publish checklist page and API routes are ordered before generic package detail", async () => {
   const fixture = await createManualPublicationPackageFixture("checklist-routes");
   const packageId = fixture.packageContext.package.id;
@@ -3754,7 +3851,7 @@ maybeTest("manual publish checklist page and API routes are ordered before gener
     const pagePostResponse = mockResponse();
     const pagePostPath = `/publication-packages/${packageId}/evidence/instagram/add`;
     const pagePostHandled = await handleManualPublishChecklistPagePost(
-      { ...jsonRequest({ evidence_type: "admin_note", evidence_value: "page evidence" }), url: pagePostPath } as any,
+      { ...jsonRequest({ evidence_type: "admin_note", evidence_value: "page evidence", recorded_by_name: "Owner" }), url: pagePostPath } as any,
       pagePostResponse,
       pagePostPath
     );
@@ -3978,6 +4075,9 @@ maybeTest("manual publish report detail, CSV export, and routes are read-only", 
 });
 
 async function makePackageCloseoutReady(packageId: string) {
+  await markManualPublicationPackagePublishedManually(packageId, {
+    manual_publish_note: "Marked manually published for closeout fixture."
+  });
   await markPackageChecklistComplete(packageId);
   for (const channel of ["instagram", "facebook", "tiktok", "youtube"]) {
     await addManualPublishEvidence(packageId, channel, {
@@ -4003,6 +4103,7 @@ maybeTest("manual publish closeout eligibility blocks missing, incomplete, and m
   assert.equal(incompleteEligibility.ok, false);
   assert.equal(incompleteEligibility.report_status, "checklist_incomplete");
   assert.match(incompleteEligibility.blocking_reasons.join(" "), /Checklist belum lengkap/i);
+  assert.match(incompleteEligibility.blocking_reasons.join(" "), /belum ditandai published_manually/i);
   await assert.rejects(() => createManualPublishCloseout(incomplete.packageContext.package.id), /Checklist belum lengkap/i);
 
   const missingUrl = await createManualPublicationPackageFixture("closeout-missing-url");
@@ -4011,6 +4112,7 @@ maybeTest("manual publish closeout eligibility blocks missing, incomplete, and m
   assert.equal(missingUrlEligibility.ok, false);
   assert.equal(missingUrlEligibility.report_status, "missing_manual_url");
   assert.match(missingUrlEligibility.blocking_reasons.join(" "), /Manual URL belum lengkap/i);
+  assert.match(missingUrlEligibility.blocking_reasons.join(" "), /Belum ada valid publish proof/i);
   await assert.rejects(() => createManualPublishCloseout(missingUrl.packageContext.package.id), /Manual URL belum lengkap/i);
 
   const closeouts = await pool!.query<{ count: string }>(`SELECT count(*)::text AS count FROM manual_publish_closeouts WHERE package_id IN ($1, $2)`, [
@@ -4018,6 +4120,76 @@ maybeTest("manual publish closeout eligibility blocks missing, incomplete, and m
     missingUrl.packageContext.package.id
   ]);
   assert.equal(closeouts.rows[0].count, "0");
+});
+
+maybeTest("manual publish closeout blocks unpublished package, pending checklist, sandbox-only evidence, and does not insert rows", async () => {
+  const unpublished = await createManualPublicationPackageFixture("closeout-unpublished");
+  await markPackageChecklistComplete(unpublished.packageContext.package.id);
+  for (const channel of ["instagram", "facebook", "tiktok", "youtube"]) {
+    await addManualPublishEvidence(unpublished.packageContext.package.id, channel, {
+      evidence_type: "manual_post_url",
+      evidence_value: `https://example.com/${channel}/unpublished`,
+      recorded_by_name: "Owner"
+    });
+  }
+  const unpublishedEligibility = await getManualPublishCloseoutEligibility(unpublished.packageContext.package.id);
+  assert.equal(unpublishedEligibility.ok, false);
+  assert.equal(unpublishedEligibility.readiness_assessment, "NOT_READY_FOR_CLOSEOUT");
+  assert.match(unpublishedEligibility.blocking_reasons.join(" "), /belum ditandai published_manually/i);
+  await assert.rejects(() => createManualPublishCloseout(unpublished.packageContext.package.id), /belum ditandai published_manually/i);
+
+  const pending = await createManualPublicationPackageFixture("closeout-pending-checklist");
+  await markManualPublicationPackagePublishedManually(pending.packageContext.package.id);
+  await addManualPublishEvidence(pending.packageContext.package.id, "instagram", {
+    evidence_type: "manual_post_url",
+    evidence_value: "https://example.com/instagram/pending-checklist",
+    recorded_by_name: "Owner"
+  });
+  const pendingEligibility = await getManualPublishCloseoutEligibility(pending.packageContext.package.id);
+  assert.equal(pendingEligibility.ok, false);
+  assert.match(pendingEligibility.blocking_reasons.join(" "), /Checklist/i);
+
+  const sandboxOnly = await createManualPublicationPackageFixture("closeout-sandbox-only");
+  await markManualPublicationPackagePublishedManually(sandboxOnly.packageContext.package.id);
+  await markPackageChecklistComplete(sandboxOnly.packageContext.package.id);
+  await addManualPublishEvidence(sandboxOnly.packageContext.package.id, "youtube", {
+    evidence_type: "admin_note",
+    evidence_note: "Sandbox/admin note only.",
+    recorded_by_name: "Owner"
+  });
+  const sandboxContext = await getManualPublishChecklistContext(sandboxOnly.packageContext.package.id);
+  const sandboxYoutube = sandboxContext.channels.find((row) => row.channel === "youtube");
+  assert.ok(sandboxYoutube);
+  await pool!.query(
+    `INSERT INTO manual_publish_evidence_logs (
+       package_id,
+       package_channel_id,
+       content_item_id,
+       channel,
+       evidence_type,
+       evidence_value,
+       evidence_note,
+       recorded_by_name
+     )
+     VALUES ($1, $2, $3, 'youtube', 'admin_note', '', '', '')`,
+    [sandboxOnly.packageContext.package.id, sandboxYoutube.package_channel_id, sandboxYoutube.content_item_id]
+  );
+  const sandboxEligibility = await getManualPublishCloseoutEligibility(sandboxOnly.packageContext.package.id);
+  assert.equal(sandboxEligibility.ok, false);
+  assert.equal(sandboxEligibility.valid_evidence_count, 1);
+  assert.equal(sandboxEligibility.valid_publish_proof_count, 0);
+  assert.equal(sandboxEligibility.blank_evidence_anomaly_count, 1);
+  assert.match(sandboxEligibility.blocking_reasons.join(" "), /admin_note\/sandbox saja tidak cukup/i);
+  assert.match(sandboxEligibility.blocking_reasons.join(" "), /blank evidence log anomaly/i);
+  await assert.rejects(() => createManualPublishCloseout(sandboxOnly.packageContext.package.id), /admin_note\/sandbox saja tidak cukup/i);
+
+  const count = await pool!.query<{ count: string }>(
+    `SELECT count(*)::text AS count
+     FROM manual_publish_closeouts
+     WHERE package_id = ANY($1::uuid[])`,
+    [[unpublished.packageContext.package.id, pending.packageContext.package.id, sandboxOnly.packageContext.package.id]]
+  );
+  assert.equal(count.rows[0].count, "0");
 });
 
 maybeTest("manual publish closeout creates certificate only when report is complete and keeps parents and files unchanged", async () => {

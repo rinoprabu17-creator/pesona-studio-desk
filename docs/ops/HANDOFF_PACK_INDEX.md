@@ -263,6 +263,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Pilot post-manual-evidence-log sandbox backup evidence intake.
 - Controlled manual closeout readiness review evidence intake.
 - Pilot closeout readiness review backup evidence intake.
+- Phase 2I.1 manual evidence log and closeout safety guard notes.
 
 ## Still Intentionally Pending
 
@@ -298,6 +299,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating post-manual-evidence-log sandbox pilot backup evidence as production backup, restore, restore dry-run, deployment, production operation, public exposure, storage copy from Codex, actual publishing, closeout creation, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Treating controlled manual closeout readiness review evidence as closeout creation, actual upload, publishing, real publish proof, checklist completion, scheduler operation, social API activation, production operation, public exposure, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Treating closeout readiness review backup evidence as production backup, restore, restore dry-run, deployment, production operation, public exposure, storage copy from Codex, actual publishing, closeout creation, checklist completion, deleting or hiding the blank YouTube anomaly, or cutover approval.
+- Treating Phase 2I.1 guard code as actual publishing, closeout creation, backup/restore execution, deployment, public exposure, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.

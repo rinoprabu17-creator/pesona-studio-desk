@@ -441,6 +441,7 @@ This phase does not execute new server commands by Codex, production backup, res
 - Post-readiness checklist pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Post-evidence-log pilot backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
 - Closeout readiness review backup restore dry-run planning in a separate isolated environment, only after explicit owner approval.
+- Phase 2I.1 guard review and commit planning after validation, only after owner approval.
 
 ## Execution Work Still Pending
 
@@ -471,3 +472,22 @@ This phase does not execute new server commands by Codex, production backup, res
 - Treating post-manual-evidence-log sandbox pilot backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, blank YouTube anomaly deletion/fix/mutation, or closeout creation approval.
 - Treating controlled manual closeout readiness review evidence as closeout creation, actual upload, publishing, real publish proof, checklist completion, scheduler operation, social API activation, production operation, public exposure, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 - Treating closeout readiness review backup evidence as restore, restore dry-run, production backup, cutover, public exposure, storage copy from Codex, actual publishing, closeout creation, checklist completion, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
+- Treating Phase 2I.1 UI/server guard patch as actual upload, publishing, real publish proof, checklist completion, closeout creation, deployment, backup, restore, restore dry-run, public exposure, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
+
+## Phase 2I.1 Manual Evidence Log + Closeout Safety Guard Status
+
+Phase 2I.1 adds code-level safety guards for manual publish evidence logs and closeout readiness:
+
+- New manual evidence logs require nonblank `evidence_type`.
+- New manual evidence logs require nonblank `recorded_by_name`.
+- New manual evidence logs require at least one nonblank `evidence_value` or `evidence_note`.
+- Whitespace-only input is treated as blank and rejected.
+- Validation trims accepted inputs before insert.
+- Validation failure does not insert a `manual_publish_evidence_logs` row.
+- Existing blank YouTube `admin_note` anomaly remains visible and documented.
+- Blank evidence anomaly rows are marked in UI as DB-only records, not valid publish proof.
+- Closeout readiness now reports `NOT_READY_FOR_CLOSEOUT` when blocked.
+- Closeout creation is blocked when package is not marked `published_manually`, checklist is incomplete, no valid publish proof exists, blank evidence anomaly exists, or closeout already exists.
+- Blocked closeout attempts do not insert `manual_publish_closeouts` rows.
+
+This is a local code safety patch. It is not actual publishing, not closeout, not deployment, not production backup, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, and not cutover.

@@ -112,3 +112,4 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/PILOT_POST_MANUAL_EVIDENCE_LOG_SANDBOX_BACKUP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_MANUAL_CLOSEOUT_READINESS_REVIEW_EVIDENCE.md`
 - `docs/ops/PILOT_CLOSEOUT_READINESS_REVIEW_BACKUP_EVIDENCE.md`
+- `docs/phase-2i1-ui-guard-manual-evidence-closeout-safety.md`

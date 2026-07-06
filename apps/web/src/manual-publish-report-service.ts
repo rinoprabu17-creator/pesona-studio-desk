@@ -10,6 +10,7 @@ import type { ManualPublishReportFilters, ManualPublishReportStatus } from "./va
 type PackageBaseRow = {
   package_id: string;
   package_status: string;
+  published_manually_at: string | null;
   content_item_id: string;
   content_code: string;
   content_title: string;
@@ -102,6 +103,7 @@ export type ManualPublishReportBoard = {
 const packageSql = `
   SELECT package.id AS package_id,
          package.package_status,
+         package.published_manually_at,
          package.content_item_id,
          item.content_code,
          item.title AS content_title,
