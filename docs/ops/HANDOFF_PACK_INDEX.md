@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2I.4.
+This index links the ops documents created across Phase 2G.3 through Phase 2I.5.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -61,6 +61,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 53. `docs/ops/PILOT_PHASE_2I2_RUNTIME_GUARD_SMOKE_BACKUP_EVIDENCE.md`
 54. `docs/ops/GUARD_REGRESSION_REVIEW_OWNER_GO_NO_GO.md`
 55. `docs/phase-2i4-ui-evidence-form-hardening.md`
+56. `docs/ops/CONTROLLED_SERVER_PULL_UI_HARDENING_SMOKE_EVIDENCE.md`
+57. `docs/ops/PILOT_PHASE_2I5_UI_HARDENING_SMOKE_BACKUP_EVIDENCE.md`
 
 ## Full Ops Document Index
 
@@ -219,6 +221,12 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 
 - `docs/phase-2i4-ui-evidence-form-hardening.md`
 
+### Phase 2I.5
+
+- `docs/ops/CONTROLLED_SERVER_PULL_UI_HARDENING_SMOKE_EVIDENCE.md`
+- `docs/ops/PILOT_PHASE_2I5_UI_HARDENING_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/phase-2i5-controlled-server-pull-ui-hardening-smoke-backup-evidence.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -292,6 +300,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Pilot Phase 2I.2 runtime guard smoke backup evidence intake.
 - Guard regression review and owner go/no-go evidence.
 - Phase 2I.4 UI/UX evidence form hardening notes.
+- Controlled server pull UI hardening smoke evidence intake.
+- Pilot Phase 2I.5 UI hardening smoke backup evidence intake.
 
 ## Still Intentionally Pending
 

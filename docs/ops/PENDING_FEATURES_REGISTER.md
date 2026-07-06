@@ -479,6 +479,7 @@ This phase does not execute new server commands by Codex, production backup, res
 - Treating Phase 2I.2 controlled server pull/runtime guard smoke evidence as actual upload, publishing, real publish proof, checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 - Treating Phase 2I.3 guard regression review owner go/no-go evidence as actual upload, publishing, real publish proof, checklist completion, closeout creation, runtime smoke, deployment, production backup, restore, restore dry-run, public exposure, storage copy, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, or cutover approval.
 - Treating Phase 2I.4 UI/UX evidence form hardening as actual upload, publishing, real publish proof, checklist completion, closeout creation, runtime smoke, deployment, production backup, restore, restore dry-run, public exposure, storage copy, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, DB constraint enforcement, or cutover approval.
+- Treating Phase 2I.5 controlled server pull/UI hardening smoke evidence as actual upload, publishing, real publish proof, checklist completion, evidence log creation, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, DB constraint enforcement, or cutover approval.
 
 ## Phase 2I.1 Manual Evidence Log + Closeout Safety Guard Status
 
@@ -561,3 +562,30 @@ Phase 2I.4 adds browser-side UI protection for manual publish evidence forms:
 - Closeout page continues to report `NOT_READY_FOR_CLOSEOUT` and now renders blocking reasons as a visible list.
 
 This is local UI/app hardening only. It is not actual publishing, not closeout, not runtime smoke, not deployment, not production backup, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
+
+## Phase 2I.5 Controlled Server Pull + UI Hardening Smoke + Backup Evidence Status
+
+Phase 2I.5 records owner-provided controlled server pull, UI hardening smoke, and backup evidence for `psd_pilot` on `pesona`:
+
+- Server runtime was updated to `phase-2i4-complete`.
+- Runtime Git head was `8f675052be9cb97c1d70e685a04bedbc73d912ec`.
+- Git status short count was `0`.
+- Owner manually rebuilt and restarted the web-app; Codex did not run server commands.
+- First route check had a transient restart timing connection reset, then subsequent route checks passed.
+- UI Add Evidence hardening smoke was PASS.
+- Blank form kept Add Evidence disabled.
+- Helper text was visible: `Evidence Value or Evidence Note is required. Blank evidence is not valid publish proof.`
+- Existing blank YouTube `admin_note` anomaly remained visible, documented, and unchanged.
+- Closeout readiness remained `NOT_READY_FOR_CLOSEOUT`.
+- Evidence log count remained unchanged at `2`.
+- `manual_publish_closeouts` remained `0`.
+- All checklist items remained pending.
+- No evidence log was created.
+- No checklist item was completed.
+- No closeout was created.
+- No actual publish occurred.
+- Backup directory `/srv/pesona-studio/backups/psd-pilot-phase-2i5-ui-hardening-smoke-backup-20260706T045015Z` was recorded as owner-provided evidence.
+- Checksum validation PASS, PostgreSQL dump readability PASS, and storage archive readability PASS.
+- Pilot remained running per owner evidence.
+
+This is runtime UI hardening smoke and backup evidence only. It is not actual publishing, not evidence log creation, not checklist completion, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy by Codex, not public exposure, not Docker Compose up/down by Codex, not container mutation by Codex, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.

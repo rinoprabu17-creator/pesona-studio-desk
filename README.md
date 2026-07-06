@@ -119,3 +119,6 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/ops/GUARD_REGRESSION_REVIEW_OWNER_GO_NO_GO.md`
 - `docs/phase-2i3-guard-regression-review-owner-go-no-go.md`
 - `docs/phase-2i4-ui-evidence-form-hardening.md`
+- `docs/ops/CONTROLLED_SERVER_PULL_UI_HARDENING_SMOKE_EVIDENCE.md`
+- `docs/ops/PILOT_PHASE_2I5_UI_HARDENING_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/phase-2i5-controlled-server-pull-ui-hardening-smoke-backup-evidence.md`

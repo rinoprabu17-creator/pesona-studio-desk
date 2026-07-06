@@ -56,6 +56,8 @@ Phase 2I.3 mencatat guard regression review dan owner go/no-go untuk project `ps
 
 Phase 2I.4 menambahkan UI/UX evidence form hardening: field Evidence Type dan Recorded By required, Add Evidence disabled saat evidence type/recorded by/value/note masih blank atau whitespace-only, helper text menjelaskan bahwa Evidence Value atau Evidence Note wajib diisi, dan blank evidence bukan valid publish proof. Server-side guard Phase 2I.1 tetap otoritas final. Blank YouTube `admin_note` anomaly lama tetap terlihat, documented, dan unchanged. Closeout tetap `NOT_READY_FOR_CLOSEOUT`; actual publish, social API/scheduler, public exposure, dan cutover tetap blocked.
 
+Phase 2I.5 mencatat owner-provided controlled server pull, UI hardening smoke, dan backup evidence untuk project `psd_pilot`: server runtime berada di `phase-2i4-complete`, Add Evidence blank form tetap disabled PASS, helper text visible PASS, blank YouTube `admin_note` anomaly tetap visible/unchanged, closeout readiness tetap `NOT_READY_FOR_CLOSEOUT`, evidence log count tetap `2`, closeout tetap `0`, dan backup directory `/srv/pesona-studio/backups/psd-pilot-phase-2i5-ui-hardening-smoke-backup-20260706T045015Z` checksum/readability PASS. Ini runtime UI hardening smoke evidence only, bukan actual publish, bukan evidence log creation, bukan checklist completion, bukan closeout, bukan deployment, bukan production backup, bukan restore, bukan public exposure, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
