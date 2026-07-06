@@ -482,6 +482,7 @@ This phase does not execute new server commands by Codex, production backup, res
 - Treating Phase 2I.5 controlled server pull/UI hardening smoke evidence as actual upload, publishing, real publish proof, checklist completion, evidence log creation, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, DB constraint enforcement, or cutover approval.
 - Treating Phase 2I.6 controlled manual checklist update smoke evidence as actual upload, publishing, real publish proof, evidence log creation, additional checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, DB constraint enforcement, or cutover approval.
 - Treating Phase 2I.7 checklist progress review go/no-go evidence as actual upload, publishing, real publish proof, evidence log creation, checklist completion, closeout creation, runtime smoke, deployment, production backup, restore, restore dry-run, public exposure, storage copy, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, uncontrolled checklist batch update approval, DB constraint enforcement, or cutover approval.
+- Treating Phase 2I.8 controlled content-prep checklist smoke evidence as actual upload, publishing, real publish proof, evidence log creation, publish-proof checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, blank YouTube anomaly deletion/fix/mutation, DB constraint enforcement, or cutover approval.
 
 ## Phase 2I.1 Manual Evidence Log + Closeout Safety Guard Status
 
@@ -658,3 +659,32 @@ Owner go/no-go decision:
 Preferred next phase is `Phase 2I.8 Controlled Checklist Content-Prep Update Smoke`, limited to low-risk content/package-prep checklist items such as `caption_ready`, `hashtags_ready`, `cta_ready`, or `final_visual_check`. Blocked until real/manual publish path approval: `manual_post_created`, `manual_url_recorded`, channel status to published/manual published, `published_manually_at`, and closeout.
 
 This is checklist progress review and go/no-go evidence only. It is not runtime smoke, not checklist mutation, not actual publishing, not evidence log creation, not checklist completion, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
+
+## Phase 2I.8 Controlled Checklist Content-Prep Update Smoke + Backup Evidence Status
+
+Phase 2I.8 records owner-provided controlled Facebook content-prep checklist update smoke and backup evidence for `psd_pilot` on `pesona`:
+
+- Runtime server remained at `phase-2i4-complete`.
+- Runtime Git head was `8f675052be9cb97c1d70e685a04bedbc73d912ec`.
+- Four low-risk Facebook content-prep checklist items were marked done: `caption_ready`, `hashtags_ready`, `cta_ready`, and `final_visual_check`.
+- Previously completed Facebook `video_file_confirmed` remained done.
+- Facebook checklist state became `5` done and `3` pending.
+- Total checklist state became `5` done and `27` pending.
+- Validation gate `5|27|2|0|ready_manual_publish|` was PASS.
+- `content_prep_ok=ok` and `blocked_items_ok=ok`.
+- `manual_post_created` remained pending.
+- `manual_url_recorded` remained pending.
+- Evidence log count remained unchanged at `2`.
+- `manual_publish_closeouts` remained `0`.
+- Package remained `ready_manual_publish`.
+- `published_manually_at` remained empty.
+- Existing blank YouTube `admin_note` anomaly remained visible, documented, and unchanged.
+- No evidence log was created.
+- No publish-proof checklist item was completed.
+- No closeout was created.
+- No actual publish occurred.
+- Backup directory `/srv/pesona-studio/backups/psd-pilot-phase-2i8-content-prep-checklist-smoke-backup-20260706T060858Z` was recorded as owner-provided evidence.
+- Checksum validation PASS, PostgreSQL dump readability PASS, and storage archive readability PASS.
+- Pilot remained running per owner evidence.
+
+This is runtime content-prep checklist smoke and backup evidence only. It is not actual publishing, not evidence log creation, not publish-proof checklist completion, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy by Codex, not public exposure, not Docker Compose up/down by Codex, not container mutation by Codex, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
