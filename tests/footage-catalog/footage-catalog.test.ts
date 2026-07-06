@@ -178,6 +178,7 @@ import {
   setManualPublishChecklistItemStatus
 } from "../../apps/web/src/manual-publish-checklist-service.ts";
 import {
+  getManualPublishEvidenceFormState,
   isBlankEvidenceLogAnomaly,
   isValidManualPublishEvidenceLog,
   isValidPublishProofEvidenceLog
@@ -3619,6 +3620,45 @@ maybeTest("manual publish checklist and evidence validation rejects unsafe value
   assert.equal(isValidPublishProofEvidenceLog({ evidence_type: "manual_post_url", evidence_value: "https://example.com/post", recorded_by_name: "Owner" }), true);
 });
 
+maybeTest("manual publish evidence form state disables blank submissions and allows note or value", () => {
+  assert.deepEqual(getManualPublishEvidenceFormState({
+    evidence_type: "admin_note",
+    recorded_by_name: "",
+    evidence_value: "Owner note",
+    evidence_note: ""
+  }), {
+    canSubmit: false,
+    missingEvidenceType: false,
+    missingRecordedByName: true,
+    missingEvidenceBody: false,
+    message: "Recorded By wajib diisi. Blank evidence is not valid publish proof."
+  });
+  assert.equal(getManualPublishEvidenceFormState({
+    evidence_type: "admin_note",
+    recorded_by_name: "Owner",
+    evidence_value: "   ",
+    evidence_note: " \t "
+  }).canSubmit, false);
+  assert.equal(getManualPublishEvidenceFormState({
+    evidence_type: "admin_note",
+    recorded_by_name: "Owner",
+    evidence_value: "",
+    evidence_note: "Evidence note only."
+  }).canSubmit, true);
+  assert.equal(getManualPublishEvidenceFormState({
+    evidence_type: "confirmation_note",
+    recorded_by_name: "Owner",
+    evidence_value: "Confirmed manually.",
+    evidence_note: ""
+  }).canSubmit, true);
+  assert.equal(getManualPublishEvidenceFormState({
+    evidence_type: "   ",
+    recorded_by_name: "Owner",
+    evidence_value: "Confirmed manually.",
+    evidence_note: ""
+  }).missingEvidenceType, true);
+});
+
 maybeTest("manual publish evidence and completion summary do not mutate package, channels, parents, files, or content publications", async () => {
   const fixture = await createManualPublicationPackageFixture("evidence-safety");
   const packageId = fixture.packageContext.package.id;
@@ -3778,6 +3818,9 @@ maybeTest("manual publish evidence guard rejects blank logs and accepts nonblank
   assert.equal(pageHandled, true);
   assert.equal(pageResponse.statusCode, 200);
   assert.match(pageResponse.body, /Blank evidence log anomaly - DB-only record, not valid publish proof/);
+  assert.match(pageResponse.body, /This row remains visible as historical DB data and is not valid publish proof/);
+  assert.match(pageResponse.body, /Evidence Value or Evidence Note is required\. Blank evidence is not valid publish proof\./);
+  assert.match(pageResponse.body, /data-evidence-submit="true" disabled/);
 });
 
 maybeTest("manual publish checklist page and API routes are ordered before generic package detail", async () => {

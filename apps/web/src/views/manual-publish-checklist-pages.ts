@@ -5,7 +5,7 @@ import {
 import {
   getManualPublishChecklistContext
 } from "../manual-publish-checklist-service.ts";
-import { isBlankEvidenceLogAnomaly } from "../manual-publish-evidence-guards.ts";
+import { getManualPublishEvidenceFormState, isBlankEvidenceLogAnomaly } from "../manual-publish-evidence-guards.ts";
 import type {
   ManualPublishChecklistItemRow,
   ManualPublishEvidenceLogRow,
@@ -60,26 +60,70 @@ function evidenceTable(logs: ManualPublishEvidenceLogRow[]): string {
       escapeHtml(log.recorded_by_name || "-"),
       escapeHtml(log.recorded_at || "-"),
       isBlankEvidenceLogAnomaly(log)
-        ? `<span class="badge badge-warning">Blank evidence log anomaly - DB-only record, not valid publish proof</span>`
+        ? `<span class="badge badge-warning">Blank evidence log anomaly - DB-only record, not valid publish proof</span><br><span class="hint">This row remains visible as historical DB data and is not valid publish proof.</span>`
         : "-"
     ])
   );
 }
 
 function evidenceForms(packageId: string, channels: ManualPublishPackageChannelContext[]): string {
-  return channels.map((channel) => `<form method="post" action="/publication-packages/${escapeHtml(packageId)}/evidence/${escapeHtml(channel.channel)}/add">
+  const initialState = getManualPublishEvidenceFormState({
+    evidence_type: "",
+    recorded_by_name: "",
+    evidence_value: "",
+    evidence_note: ""
+  });
+  return channels.map((channel) => `<form method="post" data-evidence-form="true" action="/publication-packages/${escapeHtml(packageId)}/evidence/${escapeHtml(channel.channel)}/add">
     <h2>Add Evidence - ${escapeHtml(channelLabels[channel.channel] || channel.channel)}</h2>
     <div class="form-grid">
       <label>Evidence Type
-        <select name="evidence_type">${optionList(manualPublishEvidenceTypes, "admin_note")}</select>
+        <select name="evidence_type" required aria-describedby="evidence-helper-${escapeHtml(channel.channel)}">
+          <option value="">Pilih tipe evidence</option>
+          ${optionList(manualPublishEvidenceTypes, null)}
+        </select>
       </label>
-      <label>Recorded By<input type="text" name="recorded_by_name" maxlength="120" /></label>
+      <label>Recorded By<input type="text" name="recorded_by_name" maxlength="120" required aria-describedby="evidence-helper-${escapeHtml(channel.channel)}" /></label>
     </div>
     <label>Evidence Value<textarea name="evidence_value" maxlength="2000" rows="2"></textarea></label>
     <label>Evidence Note<textarea name="evidence_note" maxlength="2000" rows="2"></textarea></label>
-    <p class="hint">Recorded By wajib diisi. Isi minimal Evidence Value atau Evidence Note. Blank/whitespace-only evidence ditolak server-side.</p>
-    <button type="submit">Add Evidence</button>
+    <p class="hint" id="evidence-helper-${escapeHtml(channel.channel)}">Evidence Value or Evidence Note is required. Blank evidence is not valid publish proof.</p>
+    <p class="hint" data-evidence-form-message="true">${escapeHtml(initialState.message || "")}</p>
+    <button type="submit" data-evidence-submit="true" disabled>Add Evidence</button>
   </form>`).join("");
+}
+
+function evidenceFormScript(): string {
+  return `<script>
+    (() => {
+      const blank = (value) => !String(value || "").trim();
+      const updateEvidenceState = (form) => {
+        const evidenceType = form.elements.namedItem("evidence_type")?.value || "";
+        const recordedByName = form.elements.namedItem("recorded_by_name")?.value || "";
+        const evidenceValue = form.elements.namedItem("evidence_value")?.value || "";
+        const evidenceNote = form.elements.namedItem("evidence_note")?.value || "";
+        const missingEvidenceType = blank(evidenceType);
+        const missingRecordedByName = blank(recordedByName);
+        const missingEvidenceBody = blank(evidenceValue) && blank(evidenceNote);
+        const canSubmit = !missingEvidenceType && !missingRecordedByName && !missingEvidenceBody;
+        const button = form.querySelector("[data-evidence-submit]");
+        const message = form.querySelector("[data-evidence-form-message]");
+        if (button) button.disabled = !canSubmit;
+        if (message) {
+          const parts = [
+            missingEvidenceType ? "Evidence Type wajib diisi" : "",
+            missingRecordedByName ? "Recorded By wajib diisi" : "",
+            missingEvidenceBody ? "Evidence Value atau Evidence Note wajib diisi" : ""
+          ].filter(Boolean);
+          message.textContent = parts.length ? parts.join(". ") + ". Blank evidence is not valid publish proof." : "Form siap dikirim. Server-side validation tetap menjadi otoritas final.";
+        }
+      };
+      document.querySelectorAll("[data-evidence-form]").forEach((form) => {
+        form.addEventListener("input", () => updateEvidenceState(form));
+        form.addEventListener("change", () => updateEvidenceState(form));
+        updateEvidenceState(form);
+      });
+    })();
+  </script>`;
 }
 
 export async function renderManualPublishChecklistPage(packageId: string, url: URL): Promise<string> {
@@ -112,6 +156,7 @@ export async function renderManualPublishChecklistPage(packageId: string, url: U
     <section><h2>Evidence Logs</h2>${context.evidenceLogs.length ? evidenceTable(context.evidenceLogs) : `<p class="hint">Belum ada evidence log.</p>`}</section>
     <section>${evidenceForms(context.package.id, context.channels)}</section>
     <div class="button-row"><a class="button button-secondary" href="/publication-packages/${escapeHtml(context.package.id)}">Package Detail</a></div>
+    ${evidenceFormScript()}
   `;
   return renderLayout(
     "/publication-packages",
