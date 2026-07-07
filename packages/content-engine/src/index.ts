@@ -11,3 +11,4 @@ export * from "./expanded-batch.ts";
 export * from "./metadata-coverage-review.ts";
 export * from "./intake-dry-run-gate.ts";
 export * from "./read-only-intake.ts";
+export * from "./read-only-intake-review.ts";

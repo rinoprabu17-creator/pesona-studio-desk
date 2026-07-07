@@ -598,6 +598,36 @@ OPENAI_LIVE_SMOKE=1 npm run smoke:campaign-planner-openai
 
 Jangan commit API key. Jangan paste API key ke chat/log. OpenAI request memakai Responses API, Structured Outputs, `store:false`, dan SDK retry dimatikan; retry tetap dikontrol Campaign Planner Worker.
 
+## Phase 2J.9 Real Footage Read-Only Intake Review
+
+Phase 2J.9 menambahkan review lokal read-only untuk candidate manifest rows dari fixture Phase 2J.8.
+
+Command:
+
+```powershell
+npm run ai:real-footage-read-only-review:smoke
+```
+
+Status:
+
+- Baseline: `c576349`, tag `phase-2j8-complete`.
+- Review utility: `packages/content-engine/src/read-only-intake-review.ts`.
+- Source fixture: `packages/content-engine/fixtures/read-only-intake-sample`.
+- Review memakai metadata filename-only dari safe fixture intake.
+- Candidate status: `metadata_review_ok`, `needs_manual_metadata`, `blocked_candidate`, dan `low_confidence`.
+- Privacy, unrelated, placeholder, atau suspicious signal diblokir.
+- Horizontal dan still-image candidates butuh review manual untuk channel fit.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan evidence log/checklist/closeout mutation, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.10 Real Footage Owner-Approved Source Folder Gate`
+
 ## Folder storage lokal
 
 - `storage/footage`
