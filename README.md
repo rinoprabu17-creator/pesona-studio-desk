@@ -144,3 +144,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2i13-final-manual-publish-preflight-go-no-go.md`
 - `docs/ops/MANUAL_PUBLISH_SOP_PROOF_CAPTURE_PLAN.md`
 - `docs/phase-2i14-manual-publish-sop-proof-capture-plan.md`
+- `docs/ops/CONTROLLED_ONE_CHANNEL_MANUAL_PUBLISH_OWNER_APPROVAL_GATE.md`
+- `docs/phase-2i15-controlled-one-channel-manual-publish-owner-approval-gate.md`
