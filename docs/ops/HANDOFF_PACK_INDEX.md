@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2I.9.
+This index links the ops documents created across Phase 2G.3 through Phase 2I.10.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -72,6 +72,9 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 64. `docs/phase-2i8-controlled-content-prep-checklist-smoke-backup-evidence.md`
 65. `docs/ops/CONTENT_PREP_PROGRESS_REVIEW_GO_NO_GO.md`
 66. `docs/phase-2i9-content-prep-progress-review-go-no-go.md`
+67. `docs/ops/CONTROLLED_MULTI_CHANNEL_CONTENT_PREP_SMOKE_EVIDENCE.md`
+68. `docs/ops/PILOT_PHASE_2I10_MULTI_CHANNEL_CONTENT_PREP_SMOKE_BACKUP_EVIDENCE.md`
+69. `docs/phase-2i10-controlled-multi-channel-content-prep-smoke-backup-evidence.md`
 
 ## Full Ops Document Index
 
@@ -258,6 +261,12 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/CONTENT_PREP_PROGRESS_REVIEW_GO_NO_GO.md`
 - `docs/phase-2i9-content-prep-progress-review-go-no-go.md`
 
+### Phase 2I.10
+
+- `docs/ops/CONTROLLED_MULTI_CHANNEL_CONTENT_PREP_SMOKE_EVIDENCE.md`
+- `docs/ops/PILOT_PHASE_2I10_MULTI_CHANNEL_CONTENT_PREP_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/phase-2i10-controlled-multi-channel-content-prep-smoke-backup-evidence.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -338,6 +347,9 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Checklist progress review and owner go/no-go evidence.
 - Controlled content-prep checklist smoke evidence intake.
 - Pilot Phase 2I.8 content-prep checklist smoke backup evidence intake.
+- Content-prep progress review and owner go/no-go evidence.
+- Controlled multi-channel content-prep checklist smoke evidence intake.
+- Pilot Phase 2I.10 multi-channel content-prep smoke backup evidence intake.
 
 ## Still Intentionally Pending
 
@@ -375,6 +387,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating closeout readiness review backup evidence as production backup, restore, restore dry-run, deployment, production operation, public exposure, storage copy from Codex, actual publishing, closeout creation, checklist completion, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Treating Phase 2I.1 guard code as actual publishing, closeout creation, backup/restore execution, deployment, public exposure, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Treating Phase 2I.2 runtime guard smoke evidence as actual publishing, closeout creation, production backup, restore, restore dry-run, deployment, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
+- Treating Phase 2I.10 multi-channel content-prep checklist smoke evidence as account-login readiness, publish-proof checklist completion, actual publishing, evidence log creation, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.
