@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2I.10.
+This index links the ops documents created across Phase 2G.3 through Phase 2I.11.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -75,6 +75,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 67. `docs/ops/CONTROLLED_MULTI_CHANNEL_CONTENT_PREP_SMOKE_EVIDENCE.md`
 68. `docs/ops/PILOT_PHASE_2I10_MULTI_CHANNEL_CONTENT_PREP_SMOKE_BACKUP_EVIDENCE.md`
 69. `docs/phase-2i10-controlled-multi-channel-content-prep-smoke-backup-evidence.md`
+70. `docs/ops/MANUAL_PUBLISH_PATH_READINESS_REVIEW_GO_NO_GO.md`
+71. `docs/phase-2i11-manual-publish-path-readiness-review-go-no-go.md`
 
 ## Full Ops Document Index
 
@@ -267,6 +269,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/PILOT_PHASE_2I10_MULTI_CHANNEL_CONTENT_PREP_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/phase-2i10-controlled-multi-channel-content-prep-smoke-backup-evidence.md`
 
+### Phase 2I.11
+
+- `docs/ops/MANUAL_PUBLISH_PATH_READINESS_REVIEW_GO_NO_GO.md`
+- `docs/phase-2i11-manual-publish-path-readiness-review-go-no-go.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -350,6 +357,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Content-prep progress review and owner go/no-go evidence.
 - Controlled multi-channel content-prep checklist smoke evidence intake.
 - Pilot Phase 2I.10 multi-channel content-prep smoke backup evidence intake.
+- Manual publish path readiness review and owner go/no-go evidence.
 
 ## Still Intentionally Pending
 

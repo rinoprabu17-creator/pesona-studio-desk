@@ -68,6 +68,8 @@ Phase 2I.9 mencatat content-prep progress review dan owner go/no-go setelah Phas
 
 Phase 2I.10 mencatat owner-provided controlled multi-channel content-prep checklist smoke dan backup evidence untuk project `psd_pilot`: server runtime tetap `phase-2i4-complete`, low-risk checklist item Instagram/TikTok/YouTube (`video_file_confirmed`, `caption_ready`, `hashtags_ready`, `cta_ready`, `final_visual_check`) ditandai done, semua channel menjadi `5` done / `3` pending, total checklist state `20` done / `12` pending, `account_login_ready`, `manual_post_created`, dan `manual_url_recorded` tetap pending di semua channel, evidence log count tetap `2`, closeout tetap `0`, blank YouTube `admin_note` anomaly tetap visible/unchanged, dan backup directory `/srv/pesona-studio/backups/psd-pilot-phase-2i10-multi-channel-content-prep-smoke-backup-20260707T034049Z` checksum/readability PASS. Ini runtime content-prep checklist smoke evidence only, bukan actual publish, bukan evidence log creation, bukan account-login atau publish-proof checklist completion, bukan closeout, bukan deployment, bukan production backup, bukan restore, bukan public exposure, dan bukan cutover.
 
+Phase 2I.11 mencatat manual publish path readiness review dan owner go/no-go setelah Phase 2I.10: repo baseline `2943a90`, tag `phase-2i10-complete`, runtime server tetap `phase-2i4-complete` per owner evidence, package tetap `ready_manual_publish`, `published_manually_at` tetap empty, semua channel `5` done / `3` pending, total checklist state `20` done / `12` pending, `account_login_ready`, `manual_post_created`, dan `manual_url_recorded` tetap pending di semua channel, evidence log count tetap `2`, closeout tetap `0`, dan blank YouTube `admin_note` anomaly tetap documented/unchanged. Decision: closeout NO, actual publish NO, social API/scheduler NO, public exposure NO, cutover NO, publish-proof checklist items NO, uncontrolled checklist batch update NO, controlled local hardening YES. Account-login readiness boleh lanjut hanya tanpa credential capture dan tanpa posting.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -133,6 +135,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/CONTENT_PREP_PROGRESS_REVIEW_GO_NO_GO.md`
 - `docs/ops/CONTROLLED_MULTI_CHANNEL_CONTENT_PREP_SMOKE_EVIDENCE.md`
 - `docs/ops/PILOT_PHASE_2I10_MULTI_CHANNEL_CONTENT_PREP_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/ops/MANUAL_PUBLISH_PATH_READINESS_REVIEW_GO_NO_GO.md`
 
 ## Checklist local-first Phase 2A.6B
 
