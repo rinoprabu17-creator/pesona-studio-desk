@@ -1224,3 +1224,46 @@ Recommended next phase:
 `Phase 2J.5 Real Footage Batch Metadata Expansion`
 
 This is metadata/plan fixture smoke only. It is not actual media intake, not real storage scanning, not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
+
+## Phase 2J.5 Real Footage Batch Metadata Expansion Status
+
+Phase 2J.5 adds a safe local-only expanded real footage metadata batch foundation:
+
+- Current baseline was `9f3beef`, tag `phase-2j4-complete`.
+- Expanded fixture path is `packages/content-engine/fixtures/real-footage-expanded-batch-smoke.json`.
+- Fixture mode remains metadata-only.
+- Manifest paths are strings only and are not scanned or opened.
+- Expanded schema requires `footage_id`, `filename`, `relative_path`, `product_family`, `visual_type`, `process_stage`, `duration_sec`, `orientation`, `location`, `school_level`, `color_variant`, `content_tags`, `notes`, `usable`, `risk_flags`, `recommended_use`, `channel_fit`, and `quality_score`.
+- Current expanded fixture has `36` rows, `30` usable rows, and `6` blocked rows.
+- Coverage includes Sampul Raport, Map Ijazah, required cover color variants, close-ups, foil/poly, penamaan, assembly, inner sheet, packing/QC, delivery, workshop, mockup/CTA metadata, and blocked risk samples.
+- Expanded summary reports product family, process stage, visual type, orientation, channel fit, school level, color variant, risk flag, average quality, low quality count, and metadata coverage gaps.
+- Current coverage gap count is `0`.
+- Usable expanded rows feed fake-provider footage metadata, footage selection, video draft plan, and draft-plan quality paths.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false` for all smoke outputs.
+- Publish track remains blocked.
+
+Still pending:
+
+- Real footage folder scanning.
+- Real media file inspection.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.6 Real Footage Metadata Coverage Review`
+
+This is metadata fixture smoke only. It is not actual media intake, not real storage scanning, not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
