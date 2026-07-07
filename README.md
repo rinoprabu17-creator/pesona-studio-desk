@@ -137,3 +137,6 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2i10-controlled-multi-channel-content-prep-smoke-backup-evidence.md`
 - `docs/ops/MANUAL_PUBLISH_PATH_READINESS_REVIEW_GO_NO_GO.md`
 - `docs/phase-2i11-manual-publish-path-readiness-review-go-no-go.md`
+- `docs/ops/CONTROLLED_ACCOUNT_LOGIN_READINESS_SMOKE_EVIDENCE.md`
+- `docs/ops/PILOT_PHASE_2I12_ACCOUNT_LOGIN_READINESS_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/phase-2i12-controlled-account-login-readiness-smoke-backup-evidence.md`

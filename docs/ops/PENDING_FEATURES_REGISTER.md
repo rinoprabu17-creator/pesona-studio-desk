@@ -829,3 +829,48 @@ Owner go/no-go decision:
 Preferred next phase is `Phase 2I.12 Controlled Account-Login Readiness Smoke`. Alternative safe next phase if owner wants to avoid touching accounts is `Phase 2I.12 Pilot Manual Publish SOP Draft`.
 
 This is manual publish path readiness review and go/no-go evidence only. It is not runtime smoke, not checklist mutation, not actual publishing, not evidence log creation, not checklist completion, not credential capture, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
+
+## Phase 2I.12 Controlled Account-Login Readiness Smoke + Backup Evidence Status
+
+Phase 2I.12 records owner-provided controlled account-login readiness smoke and backup evidence for `psd_pilot` on `pesona`:
+
+- Runtime server remained at `phase-2i4-complete`.
+- Runtime Git head was `8f675052be9cb97c1d70e685a04bedbc73d912ec`.
+- Backup timestamp UTC was `2026-07-07T04:17:30Z`.
+- Backup directory was `/srv/pesona-studio/backups/psd-pilot-phase-2i12-account-login-readiness-smoke-backup-20260707T041730Z`.
+- Runtime git status short was `0`.
+- `account_login_ready` was marked done for Facebook, Instagram, TikTok, and YouTube.
+- All updated account-login readiness items were checked by `Rino`.
+- Shared checklist note recorded human account access readiness only, with no credentials captured, no password/token/cookie/session stored, no upload, no publish, no URL, no schedule, no evidence log, and no closeout.
+- Validation gate `24|8|2|0|ready_manual_publish|` was PASS.
+- `account_login_ready_ok=ok`, `channel_distribution_ok=ok`, `publish_proof_blocked_ok=ok`, and `secret_note_scan_ok=ok`.
+- Facebook checklist state became `6` done and `2` pending.
+- Instagram checklist state became `6` done and `2` pending.
+- TikTok checklist state became `6` done and `2` pending.
+- YouTube checklist state became `6` done and `2` pending.
+- Total checklist state became `24` done and `8` pending.
+- `manual_post_created` remained pending for Facebook, Instagram, TikTok, and YouTube.
+- `manual_url_recorded` remained pending for Facebook, Instagram, TikTok, and YouTube.
+- Package `ca5a591f-fdf1-4b8c-bb61-9295c186a7be` remained `ready_manual_publish`.
+- `published_manually_at` remained empty.
+- Route checks returned HTTP 200 for `/health`, `/publication-packages`, the package checklist page, the package closeout page, `/manual-publish-report`, and `/manual-publish-closeouts`.
+- Pilot containers remained running, including web-app on `0.0.0.0:3400->3000`, n8n, campaign planner worker, mockup worker, video worker, healthy Postgres, and healthy Redis.
+- Runtime DB counts remained `manual_publication_packages = 1`, `manual_publication_package_channels = 4`, `manual_publish_checklist_items = 32`, `manual_publish_evidence_logs = 2`, and `manual_publish_closeouts = 0`.
+- Evidence log count remained unchanged at `2`.
+- Existing Facebook `admin_note` remained `PILOT_SMOKE_NO_PUBLISH`, recorded by `Rino`.
+- Existing blank YouTube `admin_note` anomaly remained visible, documented, and unchanged.
+- `manual_publish_closeouts` remained `0`; closeouts query returned `(0 rows)`.
+- No evidence log was created.
+- No publish-proof checklist item was completed.
+- No closeout was created.
+- No actual publish or upload occurred.
+- No publish timestamp or URL was created.
+- No credentials were captured or stored.
+- Approved video file size remained `1950179` bytes.
+- Backup directory size was `6.0M`.
+- `/srv/pesona-studio` storage evidence was size `469G`, used `91M`, available `445G`.
+- Checksum validation PASS, PostgreSQL dump readability PASS, and storage archive readability PASS.
+- No restore was performed.
+- Pilot remained running per owner evidence.
+
+This is runtime account-login readiness smoke and backup evidence only. It is not actual posting, not upload, not evidence log creation, not publish-proof checklist completion, not credential capture, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy by Codex, not public exposure, not Docker Compose up/down by Codex, not container mutation by Codex, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.

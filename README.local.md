@@ -70,6 +70,8 @@ Phase 2I.10 mencatat owner-provided controlled multi-channel content-prep checkl
 
 Phase 2I.11 mencatat manual publish path readiness review dan owner go/no-go setelah Phase 2I.10: repo baseline `2943a90`, tag `phase-2i10-complete`, runtime server tetap `phase-2i4-complete` per owner evidence, package tetap `ready_manual_publish`, `published_manually_at` tetap empty, semua channel `5` done / `3` pending, total checklist state `20` done / `12` pending, `account_login_ready`, `manual_post_created`, dan `manual_url_recorded` tetap pending di semua channel, evidence log count tetap `2`, closeout tetap `0`, dan blank YouTube `admin_note` anomaly tetap documented/unchanged. Decision: closeout NO, actual publish NO, social API/scheduler NO, public exposure NO, cutover NO, publish-proof checklist items NO, uncontrolled checklist batch update NO, controlled local hardening YES. Account-login readiness boleh lanjut hanya tanpa credential capture dan tanpa posting.
 
+Phase 2I.12 mencatat owner-provided controlled account-login readiness smoke dan backup evidence untuk project `psd_pilot`: server runtime tetap `phase-2i4-complete`, `account_login_ready` ditandai done untuk Facebook, Instagram, TikTok, dan YouTube, semua channel menjadi `6` done / `2` pending, total checklist state `24` done / `8` pending, `manual_post_created` dan `manual_url_recorded` tetap pending di semua channel, evidence log count tetap `2`, closeout tetap `0`, tidak ada publish timestamp atau URL, tidak ada credential captured/stored, blank YouTube `admin_note` anomaly tetap visible/unchanged, dan backup directory `/srv/pesona-studio/backups/psd-pilot-phase-2i12-account-login-readiness-smoke-backup-20260707T041730Z` checksum/readability PASS. Ini runtime account-login readiness smoke evidence only, bukan actual publishing, bukan upload, bukan evidence log creation, bukan publish-proof checklist completion, bukan closeout, bukan production backup by Codex, bukan restore, bukan public exposure, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -136,6 +138,8 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/CONTROLLED_MULTI_CHANNEL_CONTENT_PREP_SMOKE_EVIDENCE.md`
 - `docs/ops/PILOT_PHASE_2I10_MULTI_CHANNEL_CONTENT_PREP_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/ops/MANUAL_PUBLISH_PATH_READINESS_REVIEW_GO_NO_GO.md`
+- `docs/ops/CONTROLLED_ACCOUNT_LOGIN_READINESS_SMOKE_EVIDENCE.md`
+- `docs/ops/PILOT_PHASE_2I12_ACCOUNT_LOGIN_READINESS_SMOKE_BACKUP_EVIDENCE.md`
 
 ## Checklist local-first Phase 2A.6B
 
