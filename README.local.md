@@ -72,6 +72,8 @@ Phase 2I.11 mencatat manual publish path readiness review dan owner go/no-go set
 
 Phase 2I.12 mencatat owner-provided controlled account-login readiness smoke dan backup evidence untuk project `psd_pilot`: server runtime tetap `phase-2i4-complete`, `account_login_ready` ditandai done untuk Facebook, Instagram, TikTok, dan YouTube, semua channel menjadi `6` done / `2` pending, total checklist state `24` done / `8` pending, `manual_post_created` dan `manual_url_recorded` tetap pending di semua channel, evidence log count tetap `2`, closeout tetap `0`, tidak ada publish timestamp atau URL, tidak ada credential captured/stored, blank YouTube `admin_note` anomaly tetap visible/unchanged, dan backup directory `/srv/pesona-studio/backups/psd-pilot-phase-2i12-account-login-readiness-smoke-backup-20260707T041730Z` checksum/readability PASS. Ini runtime account-login readiness smoke evidence only, bukan actual publishing, bukan upload, bukan evidence log creation, bukan publish-proof checklist completion, bukan closeout, bukan production backup by Codex, bukan restore, bukan public exposure, dan bukan cutover.
 
+Phase 2I.13 mencatat final manual publish preflight dan owner go/no-go setelah Phase 2I.12: repo baseline `d104119`, tag `phase-2i12-complete`, runtime server tetap `phase-2i4-complete` per owner evidence, package tetap `ready_manual_publish`, `published_manually_at` tetap empty, semua channel tetap `6` done / `2` pending, total checklist state tetap `24` done / `8` pending, `manual_post_created` dan `manual_url_recorded` tetap pending di semua channel, evidence log count tetap `2`, closeout tetap `0`, dan blank YouTube `admin_note` anomaly tetap documented/unchanged. Decision: closeout NO, cutover NO, public exposure NO, social API/scheduler/publisher automation NO, OpenAI live runtime NO, uncontrolled checklist batch update NO, evidence log creation in this phase NO, publish-proof checklist items in this phase NO, future controlled one-channel manual publish pilot CONDITIONAL YES only after explicit owner approval and strict proof/safety rules. Preferred next safe phase adalah docs-only Manual Publish SOP / Proof Capture Plan sebelum real post.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -140,6 +142,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/MANUAL_PUBLISH_PATH_READINESS_REVIEW_GO_NO_GO.md`
 - `docs/ops/CONTROLLED_ACCOUNT_LOGIN_READINESS_SMOKE_EVIDENCE.md`
 - `docs/ops/PILOT_PHASE_2I12_ACCOUNT_LOGIN_READINESS_SMOKE_BACKUP_EVIDENCE.md`
+- `docs/ops/FINAL_MANUAL_PUBLISH_PREFLIGHT_GO_NO_GO.md`
 
 ## Checklist local-first Phase 2A.6B
 

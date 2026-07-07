@@ -874,3 +874,61 @@ Phase 2I.12 records owner-provided controlled account-login readiness smoke and 
 - Pilot remained running per owner evidence.
 
 This is runtime account-login readiness smoke and backup evidence only. It is not actual posting, not upload, not evidence log creation, not publish-proof checklist completion, not credential capture, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy by Codex, not public exposure, not Docker Compose up/down by Codex, not container mutation by Codex, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
+
+## Phase 2I.13 Final Manual Publish Preflight / Owner Go-No-Go Status
+
+Phase 2I.13 records final manual publish preflight and owner go/no-go review after the Phase 2I.12 controlled account-login readiness smoke:
+
+- Repo baseline was `d104119`, tag `phase-2i12-complete`.
+- Runtime server remained at `phase-2i4-complete` per owner evidence.
+- Runtime Git head was `8f675052be9cb97c1d70e685a04bedbc73d912ec`.
+- Package `ca5a591f-fdf1-4b8c-bb61-9295c186a7be` remained `ready_manual_publish`.
+- `published_manually_at` remained empty.
+- Total checklist items remained `32`.
+- Done checklist items were `24`.
+- Pending checklist items were `8`.
+- Facebook checklist state was `6` done and `2` pending.
+- Instagram checklist state was `6` done and `2` pending.
+- TikTok checklist state was `6` done and `2` pending.
+- YouTube checklist state was `6` done and `2` pending.
+- Completed checklist categories across all channels were `video_file_confirmed`, `caption_ready`, `hashtags_ready`, `cta_ready`, `final_visual_check`, and `account_login_ready`.
+- Pending checklist categories across all channels were `manual_post_created` and `manual_url_recorded`.
+- Evidence log count remained unchanged at `2`.
+- Existing Facebook `admin_note` remained `PILOT_SMOKE_NO_PUBLISH`, recorded by `Rino`.
+- Existing blank YouTube `admin_note` anomaly remained visible, documented, and unchanged.
+- `manual_publish_closeouts` remained `0`.
+- Closeout remained blocked.
+- Content-prep readiness: PASS.
+- Account-login readiness: PASS.
+- Publish-proof readiness: NOT READY.
+- Closeout readiness: NOT READY.
+- Cutover readiness: NOT READY.
+- Scheduler/social API readiness: NOT APPROVED.
+- No evidence log was created.
+- No checklist completion was created in this review phase.
+- No publish-proof checklist item was completed.
+- No closeout was created.
+- No actual publish or upload occurred.
+- No credential capture occurred.
+
+Owner go/no-go decision:
+
+- Closeout: NO.
+- Cutover: NO.
+- Public exposure: NO.
+- Social API/scheduler/publisher automation: NO.
+- OpenAI live runtime: NO.
+- Uncontrolled checklist batch update: NO.
+- Evidence log creation in this docs phase: NO.
+- Publish-proof checklist items in this docs phase: NO.
+- `manual_post_created`: NO.
+- `manual_url_recorded`: NO.
+- `published_manually_at`: NO.
+- Future controlled one-channel manual publish pilot: CONDITIONAL YES, only after explicit owner approval and strict proof/safety rules.
+- Continued docs-only SOP hardening: YES.
+
+Preferred next safe phase is `Phase 2I.14 Manual Publish SOP / Proof Capture Plan`, before any real post. The plan should define exact manual posting SOP, proof capture fields, safe URL evidence rules, screenshot redaction rules, channel order, and go/no-go checklist, with no runtime mutation.
+
+Alternative next phase is `Phase 2I.14 Controlled One-Channel Manual Publish Pilot` only if the owner explicitly approves real posting. That alternative is one channel only, with a real manual upload/post, real URL only if the platform provides it, only that channel's `manual_post_created` and `manual_url_recorded` marked, backup after validation, and still no closeout, cutover, social API, or scheduler.
+
+This is final manual publish preflight and owner go/no-go evidence only. It is not runtime smoke, not checklist mutation, not actual publishing, not upload, not evidence log creation, not checklist completion, not publish-proof checklist completion, not credential capture, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
