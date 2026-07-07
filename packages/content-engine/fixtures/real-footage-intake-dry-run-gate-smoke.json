@@ -1,0 +1,109 @@
+{
+  "fixture_version": "real-footage-intake-dry-run-gate-smoke-v1",
+  "mode": "gate_only_metadata_fixture",
+  "cases": [
+    {
+      "case_id": "gate-safe-expanded-metadata-fixture",
+      "source_mode": "metadata_fixture",
+      "source_fixture": "packages/content-engine/fixtures/real-footage-expanded-batch-smoke.json",
+      "dry_run": true,
+      "provider": "fake_content_engine",
+      "requested_actions": {
+        "media_scan_requested": false,
+        "media_open_requested": false,
+        "file_walk_requested": false,
+        "file_stat_requested": false,
+        "render_requested": false,
+        "upload_requested": false,
+        "publish_requested": false,
+        "publish_package_requested": false,
+        "storage_mutation_requested": false,
+        "env_secret_requested": false,
+        "server_command_requested": false,
+        "docker_command_requested": false
+      },
+      "metadata_path_strings": [
+        "packages/content-engine/fixtures/real-footage-expanded-batch-smoke.json"
+      ],
+      "notes": "Safe metadata-only fixture dry-run gate. No media scan or media open is requested."
+    },
+    {
+      "case_id": "gate-block-real-media-folder-scan",
+      "source_mode": "real_media_folder_request",
+      "source_fixture": "metadata-string-only:/srv/pesona-studio/storage/footage/real-batch-01",
+      "dry_run": true,
+      "provider": "fake_content_engine",
+      "requested_actions": {
+        "media_scan_requested": true,
+        "media_open_requested": false,
+        "file_walk_requested": true,
+        "file_stat_requested": true,
+        "render_requested": false,
+        "upload_requested": false,
+        "publish_requested": false,
+        "publish_package_requested": false,
+        "storage_mutation_requested": false,
+        "env_secret_requested": false,
+        "server_command_requested": false,
+        "docker_command_requested": false
+      },
+      "metadata_path_strings": [
+        "/srv/pesona-studio/storage/footage/real-batch-01",
+        "storage/footage/owner-real-batch-01"
+      ],
+      "notes": "Blocked example: absolute and storage-root paths are metadata strings only and must not be accessed in this phase."
+    },
+    {
+      "case_id": "gate-block-render-upload-publish-request",
+      "source_mode": "render_publish_request",
+      "source_fixture": "metadata-string-only:future-render-plan",
+      "dry_run": true,
+      "provider": "fake_content_engine",
+      "requested_actions": {
+        "media_scan_requested": false,
+        "media_open_requested": false,
+        "file_walk_requested": false,
+        "file_stat_requested": false,
+        "render_requested": true,
+        "upload_requested": true,
+        "publish_requested": true,
+        "publish_package_requested": true,
+        "storage_mutation_requested": true,
+        "env_secret_requested": false,
+        "server_command_requested": false,
+        "docker_command_requested": false
+      },
+      "metadata_path_strings": [
+        "storage/draft-videos/future-output.mp4",
+        "storage/approved-videos/future-approved.mp4"
+      ],
+      "notes": "Blocked example: render, upload, publish, package creation, and storage mutation requests are outside the dry-run gate."
+    },
+    {
+      "case_id": "gate-manual-review-future-real-footage-config",
+      "source_mode": "future_real_footage_config",
+      "source_fixture": "metadata-string-only:owner-approved-future-source",
+      "dry_run": true,
+      "provider": "fake_content_engine",
+      "requested_actions": {
+        "media_scan_requested": false,
+        "media_open_requested": false,
+        "file_walk_requested": false,
+        "file_stat_requested": false,
+        "render_requested": false,
+        "upload_requested": false,
+        "publish_requested": false,
+        "publish_package_requested": false,
+        "storage_mutation_requested": false,
+        "env_secret_requested": false,
+        "server_command_requested": false,
+        "docker_command_requested": false
+      },
+      "metadata_path_strings": [
+        "/srv/pesona-studio/storage/footage/owner-approved-batch",
+        "storage/footage/owner-approved-batch"
+      ],
+      "notes": "Manual review example: future source config is represented as metadata strings only and needs owner approval before any file access."
+    }
+  ]
+}

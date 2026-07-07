@@ -158,3 +158,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2j5-real-footage-batch-metadata-expansion.md`
 - `docs/ops/REAL_FOOTAGE_METADATA_COVERAGE_REVIEW.md`
 - `docs/phase-2j6-real-footage-metadata-coverage-review.md`
+- `docs/ops/REAL_FOOTAGE_INTAKE_DRY_RUN_GATE.md`
+- `docs/phase-2j7-real-footage-intake-dry-run-gate.md`

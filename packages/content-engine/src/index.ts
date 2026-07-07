@@ -9,3 +9,4 @@ export * from "./script-draft-review.ts";
 export * from "./draft-plan-quality.ts";
 export * from "./expanded-batch.ts";
 export * from "./metadata-coverage-review.ts";
+export * from "./intake-dry-run-gate.ts";
