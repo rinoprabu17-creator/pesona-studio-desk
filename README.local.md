@@ -84,6 +84,8 @@ Phase 2J.2 menambahkan Real Footage Intake & Metadata Batch Smoke sebagai local-
 
 Phase 2J.3 menambahkan Real Footage Script-To-Draft Plan Batch Review sebagai local-only metadata/plan smoke: planned-content fixture di `packages/content-engine/fixtures/script-draft-review-smoke.json` memakai metadata footage Phase 2J.2 untuk menghasilkan review script outline, shot list, selected footage, missing footage notes, risk notes, draft plan scenes, dan readiness score. Command `npm run ai:script-draft-review:smoke` berjalan dengan fake provider, tidak render video, tidak menjalankan FFmpeg, tidak scan real media, tidak publish, tidak upload, tidak membuat publish package, tidak membuat evidence log, tidak update checklist, tidak closeout, tidak cutover, dan menjaga `public_ready` false serta `publish_track` blocked.
 
+Phase 2J.4 menambahkan Real Footage Draft Plan Quality Tuning sebagai local-only metadata/plan smoke: quality fixture di `packages/content-engine/fixtures/draft-plan-quality-tuning-smoke.json` mengevaluasi readiness level, score components, blocking reasons, improvement actions, footage coverage, missing footage priority, channel fit, product relevance, hook strength, scene flow, dan risk notes. Command `npm run ai:draft-plan-quality:smoke` berjalan dengan fake provider, tidak render video, tidak menjalankan FFmpeg, tidak scan real media, tidak publish, tidak upload, tidak membuat publish package, tidak membuat evidence log, tidak update checklist, tidak closeout, tidak cutover, dan menjaga `public_ready` false serta `publish_track` blocked.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:

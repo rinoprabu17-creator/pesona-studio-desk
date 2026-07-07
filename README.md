@@ -152,3 +152,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2j2-real-footage-intake-metadata-batch-smoke.md`
 - `docs/ops/REAL_FOOTAGE_SCRIPT_TO_DRAFT_PLAN_BATCH_REVIEW.md`
 - `docs/phase-2j3-real-footage-script-to-draft-plan-batch-review.md`
+- `docs/ops/REAL_FOOTAGE_DRAFT_PLAN_QUALITY_TUNING.md`
+- `docs/phase-2j4-real-footage-draft-plan-quality-tuning.md`

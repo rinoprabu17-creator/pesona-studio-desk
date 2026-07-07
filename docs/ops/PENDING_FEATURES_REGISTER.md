@@ -1182,3 +1182,45 @@ Recommended next phase:
 `Phase 2J.4 Real Footage Draft Plan Quality Tuning`
 
 This is metadata/plan fixture smoke only. It is not actual media intake, not real storage scanning, not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
+
+## Phase 2J.4 Real Footage Draft Plan Quality Tuning Status
+
+Phase 2J.4 adds a safe local-only draft plan quality tuning foundation:
+
+- Current baseline was `3e9cce9`, tag `phase-2j3-complete`.
+- Quality fixture path is `packages/content-engine/fixtures/draft-plan-quality-tuning-smoke.json`.
+- Footage metadata fixture path remains `packages/content-engine/fixtures/real-footage-intake-smoke.json`.
+- Fixture mode remains metadata/plan-only.
+- Manifest paths are strings only and are not scanned or opened.
+- Quality model produces `content_id`, `readiness_level`, `readiness_score`, `score_components`, `blocking_reasons`, `improvement_actions`, `footage_coverage`, `missing_footage_priority`, `channel_fit_notes`, `product_relevance_notes`, `hook_strength_notes`, `scene_flow_notes`, `risk_notes`, `public_ready`, and `publish_track`.
+- Batch fixture includes strong Sampul Raport, medium Sampul Raport needs-footage, Map Ijazah partial-gap, and blocked risky/placeholder cases.
+- Readiness scoring is deterministic and covers selected footage count, required product footage coverage, hook/product match, vertical orientation fit, missing footage severity, risky/privacy/placeholder flags, scene count sufficiency, CTA clarity, and product family relevance.
+- `draft_plan_ok` is allowed only as metadata-only draft plan quality status; it is not public-ready approval.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false` for all smoke outputs.
+- Publish track remains blocked.
+
+Still pending:
+
+- Real footage folder scanning.
+- Real media file inspection.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.5 Real Footage Batch Metadata Expansion`
+
+This is metadata/plan fixture smoke only. It is not actual media intake, not real storage scanning, not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.

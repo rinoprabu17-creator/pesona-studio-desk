@@ -1,0 +1,55 @@
+{
+  "fixture_version": "draft-plan-quality-tuning-smoke-v1",
+  "source": "Phase 2J.4 metadata-only draft plan quality tuning fixture",
+  "mode": "metadata_plan_only_fixture",
+  "planned_content": [
+    {
+      "content_id": "PSD-2J4-SR-STRONG-01",
+      "content_goal": "Strong Sampul Raport vertical plan with clear product proof and MOCKUP CTA.",
+      "product_family": "sampul_raport",
+      "target_channel": "instagram",
+      "hook": "Sampul raport sekolah terlihat rapi sebelum masuk penawaran.",
+      "required_visual_types": ["close_up_cover", "detail_finishing_foil", "product_stack"],
+      "preferred_orientation": "vertical",
+      "planned_scene_count": 3,
+      "cta": "Ketik MOCKUP",
+      "closing_line": "Ketik MOCKUP untuk minta gambaran sampul raport sekolah."
+    },
+    {
+      "content_id": "PSD-2J4-SR-NEEDS-CLOSEUP-01",
+      "content_goal": "Medium Sampul Raport plan that needs additional close-up identity footage.",
+      "product_family": "sampul_raport",
+      "target_channel": "youtube",
+      "hook": "Sekolah bisa pilih warna sampul yang cocok dengan identitas.",
+      "required_visual_types": ["color_swatch", "product_stack", "logo_mockup_closeup"],
+      "preferred_orientation": "vertical",
+      "planned_scene_count": 3,
+      "cta": "Ketik MOCKUP",
+      "closing_line": "Ketik MOCKUP untuk cek contoh awal."
+    },
+    {
+      "content_id": "PSD-2J4-MI-PARTIAL-01",
+      "content_goal": "Map Ijazah plan with partial product footage gap before draft render planning.",
+      "product_family": "map_ijazah",
+      "target_channel": "facebook",
+      "hook": "Map ijazah sekolah terlihat lebih rapi saat detail cover jelas.",
+      "required_visual_types": ["detail_cover", "product_stack", "admin_process"],
+      "preferred_orientation": "vertical",
+      "planned_scene_count": 3,
+      "cta": "Ketik MOCKUP",
+      "closing_line": "Ketik MOCKUP untuk lihat gambaran map ijazah."
+    },
+    {
+      "content_id": "PSD-2J4-BLOCKED-RISK-01",
+      "content_goal": "Blocked quality case using placeholder/privacy style footage and unclear CTA.",
+      "product_family": "technical_placeholder",
+      "target_channel": "tiktok",
+      "hook": "Contoh teknis tidak boleh jadi konten publik.",
+      "required_visual_types": ["placeholder_smoke", "label_detail", "workshop_wide"],
+      "preferred_orientation": "vertical",
+      "planned_scene_count": 2,
+      "cta": "Hubungi admin",
+      "closing_line": "Hubungi admin untuk informasi."
+    }
+  ]
+}
