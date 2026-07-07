@@ -148,3 +148,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2i15-controlled-one-channel-manual-publish-owner-approval-gate.md`
 - `docs/ops/REAL_FOOTAGE_AI_CONTENT_ENGINE_AGENT_ACTIVATION.md`
 - `docs/phase-2j1-real-footage-ai-content-engine-agent-activation-foundation.md`
+- `docs/ops/REAL_FOOTAGE_INTAKE_METADATA_BATCH_SMOKE.md`
+- `docs/phase-2j2-real-footage-intake-metadata-batch-smoke.md`

@@ -80,6 +80,8 @@ Phase 2I.15 mencatat Controlled One-Channel Manual Publish Pilot - Owner Approva
 
 Phase 2J.1 memulai Real Footage AI Content Engine Agent Activation Foundation: publishing track diparkir karena approved pilot MP4 saat ini hanya placeholder teknis 4 detik, bukan production-ready video. Fokus berpindah ke content engine untuk calendar, idea/angle, caption, hashtag, CTA, script, shot list, footage metadata, footage selection, video draft plan, dan public-readiness review. Default smoke memakai fake provider/offline melalui `npm run ai:content-engine:smoke`; live AI memerlukan env eksplisit dan secret handling. Phase ini tidak publish, tidak upload, tidak membuat evidence log, tidak update manual publish checklist, tidak closeout, tidak cutover, dan tidak mengaktifkan scheduler/social API/publisher.
 
+Phase 2J.2 menambahkan Real Footage Intake & Metadata Batch Smoke sebagai local-only fixture smoke: manifest JSON di `packages/content-engine/fixtures/real-footage-intake-smoke.json` berisi metadata-only rows, bukan media scan. Command `npm run ai:real-footage-intake:smoke` membaca fixture, memvalidasi required fields, normalize tags, memfilter unusable/risky footage, membuat intake summary, lalu meneruskan usable rows ke fake content-engine pipeline untuk metadata, selection, dan draft plan. Phase ini tidak render video, tidak publish, tidak upload, tidak scan real storage folder, tidak membuat evidence log, tidak update checklist, tidak closeout, tidak cutover, dan tidak memerlukan OpenAI/live AI.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -152,6 +154,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/MANUAL_PUBLISH_SOP_PROOF_CAPTURE_PLAN.md`
 - `docs/ops/CONTROLLED_ONE_CHANNEL_MANUAL_PUBLISH_OWNER_APPROVAL_GATE.md`
 - `docs/ops/REAL_FOOTAGE_AI_CONTENT_ENGINE_AGENT_ACTIVATION.md`
+- `docs/ops/REAL_FOOTAGE_INTAKE_METADATA_BATCH_SMOKE.md`
 
 ## Checklist local-first Phase 2A.6B
 

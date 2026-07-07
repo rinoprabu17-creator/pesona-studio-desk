@@ -1101,3 +1101,43 @@ Recommended next phase:
 `Phase 2J.2 Real Footage Intake & Metadata Batch Smoke`
 
 This is agent activation foundation only. It is not actual publishing, not upload, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not rendered video creation, not storage media mutation, and not worker expansion.
+
+## Phase 2J.2 Real Footage Intake & Metadata Batch Smoke Status
+
+Phase 2J.2 adds a safe local-only real footage intake and metadata batch smoke foundation:
+
+- Current baseline was `185eb08`, tag `phase-2j1-complete`.
+- Fixture manifest path is `packages/content-engine/fixtures/real-footage-intake-smoke.json`.
+- Fixture mode is metadata-only.
+- Manifest paths are strings only and are not scanned or opened.
+- Intake parser validates required fields and safe relative paths.
+- Tags, product family, visual type, location, school level, and risk flags are normalized.
+- Unusable or risky footage rows are blocked before content-engine pipeline input.
+- Intake summary reports total rows, usable rows, blocked rows, missing required fields, orientation breakdown, product family breakdown, and risk flag breakdown.
+- Usable rows feed the fake content-engine pipeline for footage metadata, footage selection, and video draft plan.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Real footage folder scanning.
+- Real media file inspection.
+- OCR/CV.
+- Actual render from selected footage.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.3 Real Footage Script-To-Draft Plan Batch Review`
+
+This is metadata fixture smoke only. It is not actual media intake, not real storage scanning, not rendered video creation, not upload, not publishing, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
