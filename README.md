@@ -142,3 +142,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2i12-controlled-account-login-readiness-smoke-backup-evidence.md`
 - `docs/ops/FINAL_MANUAL_PUBLISH_PREFLIGHT_GO_NO_GO.md`
 - `docs/phase-2i13-final-manual-publish-preflight-go-no-go.md`
+- `docs/ops/MANUAL_PUBLISH_SOP_PROOF_CAPTURE_PLAN.md`
+- `docs/phase-2i14-manual-publish-sop-proof-capture-plan.md`

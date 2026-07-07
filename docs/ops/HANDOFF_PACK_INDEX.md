@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2I.13.
+This index links the ops documents created across Phase 2G.3 through Phase 2I.14.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -82,6 +82,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 74. `docs/phase-2i12-controlled-account-login-readiness-smoke-backup-evidence.md`
 75. `docs/ops/FINAL_MANUAL_PUBLISH_PREFLIGHT_GO_NO_GO.md`
 76. `docs/phase-2i13-final-manual-publish-preflight-go-no-go.md`
+77. `docs/ops/MANUAL_PUBLISH_SOP_PROOF_CAPTURE_PLAN.md`
+78. `docs/phase-2i14-manual-publish-sop-proof-capture-plan.md`
 
 ## Full Ops Document Index
 
@@ -290,6 +292,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/FINAL_MANUAL_PUBLISH_PREFLIGHT_GO_NO_GO.md`
 - `docs/phase-2i13-final-manual-publish-preflight-go-no-go.md`
 
+### Phase 2I.14
+
+- `docs/ops/MANUAL_PUBLISH_SOP_PROOF_CAPTURE_PLAN.md`
+- `docs/phase-2i14-manual-publish-sop-proof-capture-plan.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -377,6 +384,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Controlled account-login readiness smoke evidence intake.
 - Pilot Phase 2I.12 account-login readiness smoke backup evidence intake.
 - Final manual publish preflight and owner go/no-go evidence.
+- Manual publish SOP and proof capture plan.
 
 ## Still Intentionally Pending
 
@@ -417,6 +425,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating Phase 2I.10 multi-channel content-prep checklist smoke evidence as account-login readiness, publish-proof checklist completion, actual publishing, evidence log creation, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Treating Phase 2I.12 account-login readiness smoke evidence as actual publishing, upload, publish-proof checklist completion, evidence log creation, closeout creation, credential capture, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Treating Phase 2I.13 final manual publish preflight as actual publishing, upload, publish-proof checklist completion, evidence log creation, closeout creation, credential capture, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
+- Treating Phase 2I.14 manual publish SOP/proof capture plan as actual publishing, upload, publish-proof checklist completion, evidence log creation, closeout creation, credential capture, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.

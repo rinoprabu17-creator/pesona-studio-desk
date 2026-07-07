@@ -74,6 +74,8 @@ Phase 2I.12 mencatat owner-provided controlled account-login readiness smoke dan
 
 Phase 2I.13 mencatat final manual publish preflight dan owner go/no-go setelah Phase 2I.12: repo baseline `d104119`, tag `phase-2i12-complete`, runtime server tetap `phase-2i4-complete` per owner evidence, package tetap `ready_manual_publish`, `published_manually_at` tetap empty, semua channel tetap `6` done / `2` pending, total checklist state tetap `24` done / `8` pending, `manual_post_created` dan `manual_url_recorded` tetap pending di semua channel, evidence log count tetap `2`, closeout tetap `0`, dan blank YouTube `admin_note` anomaly tetap documented/unchanged. Decision: closeout NO, cutover NO, public exposure NO, social API/scheduler/publisher automation NO, OpenAI live runtime NO, uncontrolled checklist batch update NO, evidence log creation in this phase NO, publish-proof checklist items in this phase NO, future controlled one-channel manual publish pilot CONDITIONAL YES only after explicit owner approval and strict proof/safety rules. Preferred next safe phase adalah docs-only Manual Publish SOP / Proof Capture Plan sebelum real post.
 
+Phase 2I.14 mencatat Manual Publish SOP / Proof Capture Plan sebagai docs-only release: runtime server tetap `phase-2i4-complete`, checklist tetap `24` done / `8` pending, semua channel tetap `6` done / `2` pending, `manual_post_created` dan `manual_url_recorded` tetap pending, evidence log count tetap `2`, closeout tetap `0`, dan blank YouTube `admin_note` anomaly tetap documented/unchanged. SOP menetapkan one-channel pilot first, proof harus real bukan dummy, credential/security data tidak boleh tertangkap, closeout/cutover tetap blocked, dan next phase yang direkomendasikan adalah owner approval gate untuk controlled one-channel manual publish pilot.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -143,6 +145,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/CONTROLLED_ACCOUNT_LOGIN_READINESS_SMOKE_EVIDENCE.md`
 - `docs/ops/PILOT_PHASE_2I12_ACCOUNT_LOGIN_READINESS_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/ops/FINAL_MANUAL_PUBLISH_PREFLIGHT_GO_NO_GO.md`
+- `docs/ops/MANUAL_PUBLISH_SOP_PROOF_CAPTURE_PLAN.md`
 
 ## Checklist local-first Phase 2A.6B
 
