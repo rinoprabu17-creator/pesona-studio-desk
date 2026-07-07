@@ -146,3 +146,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2i14-manual-publish-sop-proof-capture-plan.md`
 - `docs/ops/CONTROLLED_ONE_CHANNEL_MANUAL_PUBLISH_OWNER_APPROVAL_GATE.md`
 - `docs/phase-2i15-controlled-one-channel-manual-publish-owner-approval-gate.md`
+- `docs/ops/REAL_FOOTAGE_AI_CONTENT_ENGINE_AGENT_ACTIVATION.md`
+- `docs/phase-2j1-real-footage-ai-content-engine-agent-activation-foundation.md`

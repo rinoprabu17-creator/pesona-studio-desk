@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2I.15.
+This index links the ops documents created across Phase 2G.3 through Phase 2J.1.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -86,6 +86,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 78. `docs/phase-2i14-manual-publish-sop-proof-capture-plan.md`
 79. `docs/ops/CONTROLLED_ONE_CHANNEL_MANUAL_PUBLISH_OWNER_APPROVAL_GATE.md`
 80. `docs/phase-2i15-controlled-one-channel-manual-publish-owner-approval-gate.md`
+81. `docs/ops/REAL_FOOTAGE_AI_CONTENT_ENGINE_AGENT_ACTIVATION.md`
+82. `docs/phase-2j1-real-footage-ai-content-engine-agent-activation-foundation.md`
 
 ## Full Ops Document Index
 
@@ -304,6 +306,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/CONTROLLED_ONE_CHANNEL_MANUAL_PUBLISH_OWNER_APPROVAL_GATE.md`
 - `docs/phase-2i15-controlled-one-channel-manual-publish-owner-approval-gate.md`
 
+### Phase 2J.1
+
+- `docs/ops/REAL_FOOTAGE_AI_CONTENT_ENGINE_AGENT_ACTIVATION.md`
+- `docs/phase-2j1-real-footage-ai-content-engine-agent-activation-foundation.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -393,6 +400,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Final manual publish preflight and owner go/no-go evidence.
 - Manual publish SOP and proof capture plan.
 - Controlled one-channel manual publish owner approval gate.
+- Real footage AI content engine agent activation foundation.
 
 ## Still Intentionally Pending
 
@@ -435,6 +443,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating Phase 2I.13 final manual publish preflight as actual publishing, upload, publish-proof checklist completion, evidence log creation, closeout creation, credential capture, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Treating Phase 2I.14 manual publish SOP/proof capture plan as actual publishing, upload, publish-proof checklist completion, evidence log creation, closeout creation, credential capture, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
 - Treating Phase 2I.15 controlled one-channel manual publish owner approval gate as actual publishing, upload, publish-proof checklist completion, evidence log creation, closeout creation, credential capture, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, deleting or hiding the blank YouTube anomaly, or cutover approval.
+- Treating Phase 2J.1 real footage AI content engine agent activation foundation as actual publishing, upload, rendered video creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.

@@ -78,6 +78,8 @@ Phase 2I.14 mencatat Manual Publish SOP / Proof Capture Plan sebagai docs-only r
 
 Phase 2I.15 mencatat Controlled One-Channel Manual Publish Pilot - Owner Approval Gate sebagai docs-only release: runtime server tetap `phase-2i4-complete`, checklist tetap `24` done / `8` pending, semua channel tetap `6` done / `2` pending, `manual_post_created` dan `manual_url_recorded` tetap pending, evidence log count tetap `2`, closeout tetap `0`, dan blank YouTube `admin_note` anomaly tetap documented/unchanged. Gate status adalah `HOLD / PENDING_OWNER_CHANNEL_SELECTION` karena owner belum memilih channel pertama dan detail publish final. Actual publish, upload, evidence log creation, checklist mutation, closeout, public exposure, scheduler/social API/publisher, OpenAI live runtime, dan cutover tetap NO pada phase ini.
 
+Phase 2J.1 memulai Real Footage AI Content Engine Agent Activation Foundation: publishing track diparkir karena approved pilot MP4 saat ini hanya placeholder teknis 4 detik, bukan production-ready video. Fokus berpindah ke content engine untuk calendar, idea/angle, caption, hashtag, CTA, script, shot list, footage metadata, footage selection, video draft plan, dan public-readiness review. Default smoke memakai fake provider/offline melalui `npm run ai:content-engine:smoke`; live AI memerlukan env eksplisit dan secret handling. Phase ini tidak publish, tidak upload, tidak membuat evidence log, tidak update manual publish checklist, tidak closeout, tidak cutover, dan tidak mengaktifkan scheduler/social API/publisher.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -149,6 +151,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/FINAL_MANUAL_PUBLISH_PREFLIGHT_GO_NO_GO.md`
 - `docs/ops/MANUAL_PUBLISH_SOP_PROOF_CAPTURE_PLAN.md`
 - `docs/ops/CONTROLLED_ONE_CHANNEL_MANUAL_PUBLISH_OWNER_APPROVAL_GATE.md`
+- `docs/ops/REAL_FOOTAGE_AI_CONTENT_ENGINE_AGENT_ACTIVATION.md`
 
 ## Checklist local-first Phase 2A.6B
 

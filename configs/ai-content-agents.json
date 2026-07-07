@@ -1,0 +1,51 @@
+{
+  "version": "content-engine-v1",
+  "default_provider": "fake",
+  "live_provider": {
+    "name": "openai",
+    "enabled_by_default": false,
+    "required_env": ["AI_PROVIDER=openai", "AI_LIVE_ENABLED=true", "OPENAI_MODEL", "OPENAI_API_KEY or OPENAI_API_KEY_FILE"]
+  },
+  "agents": [
+    {
+      "id": "content_calendar",
+      "enabled": true,
+      "prompt_path": "prompts/agents/content-calendar-agent.md"
+    },
+    {
+      "id": "content_angle",
+      "enabled": true,
+      "prompt_path": "prompts/agents/content-angle-agent.md"
+    },
+    {
+      "id": "script_shot_list",
+      "enabled": true,
+      "prompt_path": "prompts/agents/script-shot-list-agent.md"
+    },
+    {
+      "id": "caption_hashtag_cta",
+      "enabled": true,
+      "prompt_path": "prompts/agents/caption-hashtag-cta-agent.md"
+    },
+    {
+      "id": "footage_metadata",
+      "enabled": true,
+      "prompt_path": "prompts/agents/footage-metadata-agent.md"
+    },
+    {
+      "id": "footage_selection",
+      "enabled": true,
+      "prompt_path": "prompts/agents/footage-selection-agent.md"
+    },
+    {
+      "id": "video_draft_plan",
+      "enabled": true,
+      "prompt_path": "prompts/agents/video-draft-plan-agent.md"
+    },
+    {
+      "id": "video_review_readiness",
+      "enabled": true,
+      "prompt_path": "prompts/agents/video-review-readiness-agent.md"
+    }
+  ]
+}

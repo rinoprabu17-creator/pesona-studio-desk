@@ -1050,3 +1050,54 @@ Go/no-go decision:
 Still pending: actual one-channel publish, real publish proof, evidence log if approved, `manual_post_created`, `manual_url_recorded`, closeout, scheduler/social API/publisher, public exposure, and cutover.
 
 This is owner approval gate documentation only. It is not runtime smoke, not checklist mutation, not actual publishing, not upload, not evidence log creation, not checklist completion, not publish-proof checklist completion, not credential capture, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
+
+## Phase 2J.1 Real Footage AI Content Engine Agent Activation Foundation Status
+
+Phase 2J.1 parks the publishing track and starts the real-footage AI content engine foundation:
+
+- Current repo baseline was `64230ca`, tag `phase-2i15-complete`.
+- Publishing/posting is deferred.
+- The current approved pilot MP4 is only a 4-second placeholder/rainbow/color-line technical smoke output and is not production-ready.
+- Posting is last priority.
+- Focus is now content calendar, content ideas, caption, hashtags, CTA, script, shot list, real footage selection, video draft plan, and video public-readiness review.
+- Agent registry is recorded in `configs/ai-content-agents.json`.
+- Agent prompts are recorded under `prompts/agents/`.
+- TypeScript foundation lives in `packages/content-engine`.
+- Smoke script is `npm run ai:content-engine:smoke`.
+- Default provider is fake/offline.
+- OpenAI/live AI requires explicit env and secret handling.
+- Missing OpenAI live env falls back to fake provider.
+
+Activated agents:
+
+- Content Calendar Agent.
+- Content Idea / Angle Agent.
+- Script + Shot List Agent.
+- Caption / Hashtag / CTA Agent.
+- Footage Metadata Agent.
+- Footage Selection Agent.
+- Video Draft Plan Agent.
+- Video Review / Public Readiness Agent.
+
+Still pending:
+
+- Real footage intake and metadata batch smoke.
+- Real footage file batch validation.
+- Public-ready video draft generation.
+- Human review of real footage plans.
+- Any actual render from many real footage files.
+- Actual publish or upload.
+- Manual publish evidence log creation.
+- Manual publish checklist mutation.
+- `manual_post_created`.
+- `manual_url_recorded`.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.2 Real Footage Intake & Metadata Batch Smoke`
+
+This is agent activation foundation only. It is not actual publishing, not upload, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not rendered video creation, not storage media mutation, and not worker expansion.
