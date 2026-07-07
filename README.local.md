@@ -76,6 +76,8 @@ Phase 2I.13 mencatat final manual publish preflight dan owner go/no-go setelah P
 
 Phase 2I.14 mencatat Manual Publish SOP / Proof Capture Plan sebagai docs-only release: runtime server tetap `phase-2i4-complete`, checklist tetap `24` done / `8` pending, semua channel tetap `6` done / `2` pending, `manual_post_created` dan `manual_url_recorded` tetap pending, evidence log count tetap `2`, closeout tetap `0`, dan blank YouTube `admin_note` anomaly tetap documented/unchanged. SOP menetapkan one-channel pilot first, proof harus real bukan dummy, credential/security data tidak boleh tertangkap, closeout/cutover tetap blocked, dan next phase yang direkomendasikan adalah owner approval gate untuk controlled one-channel manual publish pilot.
 
+Phase 2I.15 mencatat Controlled One-Channel Manual Publish Pilot - Owner Approval Gate sebagai docs-only release: runtime server tetap `phase-2i4-complete`, checklist tetap `24` done / `8` pending, semua channel tetap `6` done / `2` pending, `manual_post_created` dan `manual_url_recorded` tetap pending, evidence log count tetap `2`, closeout tetap `0`, dan blank YouTube `admin_note` anomaly tetap documented/unchanged. Gate status adalah `HOLD / PENDING_OWNER_CHANNEL_SELECTION` karena owner belum memilih channel pertama dan detail publish final. Actual publish, upload, evidence log creation, checklist mutation, closeout, public exposure, scheduler/social API/publisher, OpenAI live runtime, dan cutover tetap NO pada phase ini.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -146,6 +148,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/PILOT_PHASE_2I12_ACCOUNT_LOGIN_READINESS_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/ops/FINAL_MANUAL_PUBLISH_PREFLIGHT_GO_NO_GO.md`
 - `docs/ops/MANUAL_PUBLISH_SOP_PROOF_CAPTURE_PLAN.md`
+- `docs/ops/CONTROLLED_ONE_CHANNEL_MANUAL_PUBLISH_OWNER_APPROVAL_GATE.md`
 
 ## Checklist local-first Phase 2A.6B
 

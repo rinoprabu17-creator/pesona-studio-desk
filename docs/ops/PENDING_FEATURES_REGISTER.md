@@ -987,3 +987,66 @@ Recommended next phase is `Phase 2I.15 Controlled One-Channel Manual Publish Pil
 Still pending: actual one-channel publish, real publish proof, `manual_post_created`, `manual_url_recorded`, evidence log creation, closeout, scheduler/social API/publisher, public exposure, and cutover.
 
 This is manual publish SOP/proof capture planning only. It is not runtime smoke, not checklist mutation, not actual publishing, not upload, not evidence log creation, not checklist completion, not publish-proof checklist completion, not credential capture, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
+
+## Phase 2I.15 Controlled One-Channel Manual Publish Pilot - Owner Approval Gate Status
+
+Phase 2I.15 records the docs-only owner approval gate for a future controlled one-channel manual publish pilot:
+
+- Repo baseline was `891bacb`, tag `phase-2i14-complete`.
+- Runtime server remained at `phase-2i4-complete` per owner evidence.
+- Runtime Git head was `8f675052be9cb97c1d70e685a04bedbc73d912ec`.
+- Package `ca5a591f-fdf1-4b8c-bb61-9295c186a7be` remained `ready_manual_publish`.
+- `published_manually_at` remained empty.
+- Checklist state remained `24` done and `8` pending.
+- Facebook checklist state remained `6` done and `2` pending.
+- Instagram checklist state remained `6` done and `2` pending.
+- TikTok checklist state remained `6` done and `2` pending.
+- YouTube checklist state remained `6` done and `2` pending.
+- `manual_post_created` remained pending for all channels.
+- `manual_url_recorded` remained pending for all channels.
+- Evidence log count remained unchanged at `2`.
+- Existing blank YouTube `admin_note` anomaly remained visible, documented, and unchanged.
+- `manual_publish_closeouts` remained `0`.
+- Owner approval gate is complete.
+- Gate status is `HOLD / PENDING_OWNER_CHANNEL_SELECTION`.
+- Actual one-channel manual publish remains pending.
+- Publish proof remains pending.
+- Evidence log creation remains pending unless owner explicitly approves it.
+- Closeout remains blocked.
+- Cutover remains blocked.
+- Recommended first channel is Facebook, with Instagram as the safe alternative if owner prefers IG-first campaign flow.
+- TikTok and YouTube should not be first unless owner explicitly chooses them.
+
+Owner approval required before the next runtime phase:
+
+- Selected channel.
+- Publication mode.
+- Final caption/hashtags/CTA.
+- Approved video file.
+- Publish operator.
+- Proof capture method.
+- Explicit permission to manually publish.
+- Explicit permission whether to create evidence log.
+- Explicit permission to update only selected channel publish-proof checklist items.
+- Confirmation that no credential/account-sensitive data will be captured.
+- Confirmation that no closeout will be created.
+
+Go/no-go decision:
+
+- Docs-only owner approval gate: YES.
+- Actual publish in this phase: NO.
+- Upload in this phase: NO.
+- `manual_post_created` in this phase: NO.
+- `manual_url_recorded` in this phase: NO.
+- Evidence log creation in this phase: NO.
+- Closeout: NO.
+- Cutover: NO.
+- Public exposure: NO.
+- Scheduler/social API/publisher: NO.
+- OpenAI live runtime: NO.
+- Uncontrolled checklist mutation: NO.
+- Future controlled one-channel manual publish pilot: CONDITIONAL YES after explicit owner approval.
+
+Still pending: actual one-channel publish, real publish proof, evidence log if approved, `manual_post_created`, `manual_url_recorded`, closeout, scheduler/social API/publisher, public exposure, and cutover.
+
+This is owner approval gate documentation only. It is not runtime smoke, not checklist mutation, not actual publishing, not upload, not evidence log creation, not checklist completion, not publish-proof checklist completion, not credential capture, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
