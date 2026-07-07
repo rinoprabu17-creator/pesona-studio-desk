@@ -156,3 +156,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2j4-real-footage-draft-plan-quality-tuning.md`
 - `docs/ops/REAL_FOOTAGE_BATCH_METADATA_EXPANSION.md`
 - `docs/phase-2j5-real-footage-batch-metadata-expansion.md`
+- `docs/ops/REAL_FOOTAGE_METADATA_COVERAGE_REVIEW.md`
+- `docs/phase-2j6-real-footage-metadata-coverage-review.md`

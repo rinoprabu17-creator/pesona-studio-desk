@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2J.5.
+This index links the ops documents created across Phase 2G.3 through Phase 2J.6.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -96,6 +96,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 88. `docs/phase-2j4-real-footage-draft-plan-quality-tuning.md`
 89. `docs/ops/REAL_FOOTAGE_BATCH_METADATA_EXPANSION.md`
 90. `docs/phase-2j5-real-footage-batch-metadata-expansion.md`
+91. `docs/ops/REAL_FOOTAGE_METADATA_COVERAGE_REVIEW.md`
+92. `docs/phase-2j6-real-footage-metadata-coverage-review.md`
 
 ## Full Ops Document Index
 
@@ -339,6 +341,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/REAL_FOOTAGE_BATCH_METADATA_EXPANSION.md`
 - `docs/phase-2j5-real-footage-batch-metadata-expansion.md`
 
+### Phase 2J.6
+
+- `docs/ops/REAL_FOOTAGE_METADATA_COVERAGE_REVIEW.md`
+- `docs/phase-2j6-real-footage-metadata-coverage-review.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -480,6 +487,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating Phase 2J.3 real footage script-to-draft plan batch review as real media scanning, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval.
 - Treating Phase 2J.4 real footage draft plan quality tuning as real media scanning, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval.
 - Treating Phase 2J.5 real footage batch metadata expansion as real media scanning, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval.
+- Treating Phase 2J.6 real footage metadata coverage review as real media scanning, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.
