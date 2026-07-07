@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2I.8.
+This index links the ops documents created across Phase 2G.3 through Phase 2I.9.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -69,6 +69,9 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 61. `docs/phase-2i7-checklist-progress-review-go-no-go.md`
 62. `docs/ops/CONTROLLED_CONTENT_PREP_CHECKLIST_SMOKE_EVIDENCE.md`
 63. `docs/ops/PILOT_PHASE_2I8_CONTENT_PREP_CHECKLIST_SMOKE_BACKUP_EVIDENCE.md`
+64. `docs/phase-2i8-controlled-content-prep-checklist-smoke-backup-evidence.md`
+65. `docs/ops/CONTENT_PREP_PROGRESS_REVIEW_GO_NO_GO.md`
+66. `docs/phase-2i9-content-prep-progress-review-go-no-go.md`
 
 ## Full Ops Document Index
 
@@ -249,6 +252,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/CONTROLLED_CONTENT_PREP_CHECKLIST_SMOKE_EVIDENCE.md`
 - `docs/ops/PILOT_PHASE_2I8_CONTENT_PREP_CHECKLIST_SMOKE_BACKUP_EVIDENCE.md`
 - `docs/phase-2i8-controlled-content-prep-checklist-smoke-backup-evidence.md`
+
+### Phase 2I.9
+
+- `docs/ops/CONTENT_PREP_PROGRESS_REVIEW_GO_NO_GO.md`
+- `docs/phase-2i9-content-prep-progress-review-go-no-go.md`
 
 ## Audience Mapping
 
