@@ -1,0 +1,37 @@
+{
+  "fixture_version": "script-draft-review-smoke-v1",
+  "source": "Phase 2J.3 metadata-only planned content review fixture",
+  "mode": "metadata_only_fixture",
+  "planned_content": [
+    {
+      "content_id": "PSD-2J3-SR-STRONG-01",
+      "content_goal": "Strong Sampul Raport mockup CTA draft using close-up, finishing, and product stack footage.",
+      "product_family": "sampul_raport",
+      "target_channel": "instagram",
+      "hook": "Sekolah bisa lihat gambaran sampul raport sebelum masuk penawaran.",
+      "required_visual_types": ["close_up_cover", "detail_finishing_foil", "product_stack"],
+      "preferred_orientation": "vertical",
+      "planned_scene_count": 3
+    },
+    {
+      "content_id": "PSD-2J3-MI-PARTIAL-01",
+      "content_goal": "Map Ijazah proof draft with partial footage gap for product stack/process support.",
+      "product_family": "map_ijazah",
+      "target_channel": "facebook",
+      "hook": "Map ijazah sekolah terlihat lebih rapi saat detail cover jelas.",
+      "required_visual_types": ["detail_cover", "product_stack", "admin_process"],
+      "preferred_orientation": "vertical",
+      "planned_scene_count": 3
+    },
+    {
+      "content_id": "PSD-2J3-BLOCKED-LOW-01",
+      "content_goal": "Blocked low-readiness draft that intentionally depends on risky placeholder and privacy footage.",
+      "product_family": "technical_placeholder",
+      "target_channel": "tiktok",
+      "hook": "Contoh teknis tidak boleh dipakai sebagai konten publik.",
+      "required_visual_types": ["placeholder_smoke", "label_detail", "workshop_wide"],
+      "preferred_orientation": "vertical",
+      "planned_scene_count": 2
+    }
+  ]
+}

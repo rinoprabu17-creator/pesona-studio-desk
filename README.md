@@ -150,3 +150,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2j1-real-footage-ai-content-engine-agent-activation-foundation.md`
 - `docs/ops/REAL_FOOTAGE_INTAKE_METADATA_BATCH_SMOKE.md`
 - `docs/phase-2j2-real-footage-intake-metadata-batch-smoke.md`
+- `docs/ops/REAL_FOOTAGE_SCRIPT_TO_DRAFT_PLAN_BATCH_REVIEW.md`
+- `docs/phase-2j3-real-footage-script-to-draft-plan-batch-review.md`
