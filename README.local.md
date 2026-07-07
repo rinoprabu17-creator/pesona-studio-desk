@@ -64,6 +64,8 @@ Phase 2I.7 mencatat checklist progress review dan owner go/no-go setelah Phase 2
 
 Phase 2I.8 mencatat owner-provided controlled Facebook content-prep checklist update smoke dan backup evidence untuk project `psd_pilot`: server runtime tetap `phase-2i4-complete`, empat low-risk checklist item Facebook (`caption_ready`, `hashtags_ready`, `cta_ready`, `final_visual_check`) ditandai done, Facebook menjadi `5` done / `3` pending, total checklist state `5` done / `27` pending, `manual_post_created` dan `manual_url_recorded` tetap pending, evidence log count tetap `2`, closeout tetap `0`, blank YouTube `admin_note` anomaly tetap visible/unchanged, dan backup directory `/srv/pesona-studio/backups/psd-pilot-phase-2i8-content-prep-checklist-smoke-backup-20260706T060858Z` checksum/readability PASS. Ini runtime content-prep checklist smoke evidence only, bukan actual publish, bukan evidence log creation, bukan publish-proof checklist completion, bukan closeout, bukan deployment, bukan production backup, bukan restore, bukan public exposure, dan bukan cutover.
 
+Phase 2I.9 mencatat content-prep progress review dan owner go/no-go setelah Phase 2I.8: repo baseline `6efa045`, tag `phase-2i8-complete`, runtime server tetap `phase-2i4-complete` per owner evidence, package tetap `ready_manual_publish`, `published_manually_at` tetap empty, checklist state `5` done dan `27` pending, Facebook `5/8` done, Instagram/TikTok/YouTube masing-masing `0/8` done, evidence log count tetap `2`, closeout tetap `0`, dan blank YouTube `admin_note` anomaly tetap documented/unchanged. Decision: closeout NO, actual publish NO, social API/scheduler NO, public exposure NO, cutover NO, publish-proof checklist items NO, uncontrolled checklist batch update NO, controlled local content-prep hardening YES. Ini review/go-no-go docs-only, bukan runtime smoke, bukan checklist mutation, bukan evidence log creation, bukan actual publish, bukan closeout, dan bukan cutover.
+
 Untuk alignment Phase 2A.6A, baca `docs/phase-2a6-local-first-blueprint.md`.
 
 Untuk operasi harian server lokal, baca:
@@ -126,6 +128,7 @@ Untuk operasi harian server lokal, baca:
 - `docs/ops/PILOT_POST_MANUAL_EVIDENCE_LOG_SANDBOX_BACKUP_EVIDENCE.md`
 - `docs/ops/CONTROLLED_MANUAL_CLOSEOUT_READINESS_REVIEW_EVIDENCE.md`
 - `docs/ops/PILOT_CLOSEOUT_READINESS_REVIEW_BACKUP_EVIDENCE.md`
+- `docs/ops/CONTENT_PREP_PROGRESS_REVIEW_GO_NO_GO.md`
 
 ## Checklist local-first Phase 2A.6B
 
