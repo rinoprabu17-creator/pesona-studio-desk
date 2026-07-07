@@ -1,0 +1,1 @@
+Nested fixture entry. The read-only smoke lists only the allowlisted top-level directory.

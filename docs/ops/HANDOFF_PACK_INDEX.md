@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2J.7.
+This index links the ops documents created across Phase 2G.3 through Phase 2J.8.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -100,6 +100,8 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 92. `docs/phase-2j6-real-footage-metadata-coverage-review.md`
 93. `docs/ops/REAL_FOOTAGE_INTAKE_DRY_RUN_GATE.md`
 94. `docs/phase-2j7-real-footage-intake-dry-run-gate.md`
+95. `docs/ops/REAL_FOOTAGE_READ_ONLY_INTAKE_DRY_RUN.md`
+96. `docs/phase-2j8-real-footage-read-only-intake-dry-run.md`
 
 ## Full Ops Document Index
 
@@ -353,6 +355,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/REAL_FOOTAGE_INTAKE_DRY_RUN_GATE.md`
 - `docs/phase-2j7-real-footage-intake-dry-run-gate.md`
 
+### Phase 2J.8
+
+- `docs/ops/REAL_FOOTAGE_READ_ONLY_INTAKE_DRY_RUN.md`
+- `docs/phase-2j8-real-footage-read-only-intake-dry-run.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -496,6 +503,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating Phase 2J.5 real footage batch metadata expansion as real media scanning, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval.
 - Treating Phase 2J.6 real footage metadata coverage review as real media scanning, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval.
 - Treating Phase 2J.7 real footage intake dry-run gate as real media scanning, media file opening, folder walk/file metadata lookup against storage, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval.
+- Treating Phase 2J.8 real footage read-only intake dry-run as real storage/media folder scanning, media content opening, media decoding, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval. Phase 2J.8 only allows controlled directory listing/stat on the safe repo fixture path.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.

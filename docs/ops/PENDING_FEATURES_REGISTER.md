@@ -1348,3 +1348,45 @@ Recommended next phase:
 `Phase 2J.8 Real Footage Read-Only Intake Dry-Run`
 
 This must be owner-approved and read-only before any actual source folder is touched. It is not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
+
+## Phase 2J.8 Real Footage Read-Only Intake Dry-Run Status
+
+Phase 2J.8 adds a safe local-only read-only intake dry-run foundation:
+
+- Current baseline is `85609e2`, tag `phase-2j7-complete`.
+- Read-only utility is `packages/content-engine/src/read-only-intake.ts`.
+- Safe fixture root is `packages/content-engine/fixtures/read-only-intake-sample`.
+- Smoke command is `npm run ai:real-footage-read-only-intake:smoke`.
+- The smoke performs directory listing/stat only on the safe repo fixture root.
+- Fixture files are small text placeholders with media-like filenames; they are not rendered videos and are not generated media outputs.
+- Candidate metadata is derived from filenames only.
+- Current smoke result has 12 scanned entries, 9 accepted media-like candidates, 2 rejected entries, 1 skipped entry, 9 candidate manifest rows, validation errors 0, safety warnings 3, gate status `dry_run_allowed`, public-ready count 0, and publish track blocked.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Real footage folder scanning.
+- Media content opening.
+- Media decoding.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.9 Real Footage Read-Only Intake Review`
+
+This should review the fixture dry-run output and decide whether a later owner-approved real source folder read-only scan is appropriate. It is not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
