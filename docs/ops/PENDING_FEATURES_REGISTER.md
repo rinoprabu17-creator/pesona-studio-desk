@@ -932,3 +932,58 @@ Preferred next safe phase is `Phase 2I.14 Manual Publish SOP / Proof Capture Pla
 Alternative next phase is `Phase 2I.14 Controlled One-Channel Manual Publish Pilot` only if the owner explicitly approves real posting. That alternative is one channel only, with a real manual upload/post, real URL only if the platform provides it, only that channel's `manual_post_created` and `manual_url_recorded` marked, backup after validation, and still no closeout, cutover, social API, or scheduler.
 
 This is final manual publish preflight and owner go/no-go evidence only. It is not runtime smoke, not checklist mutation, not actual publishing, not upload, not evidence log creation, not checklist completion, not publish-proof checklist completion, not credential capture, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
+
+## Phase 2I.14 Manual Publish SOP / Proof Capture Plan Status
+
+Phase 2I.14 records the docs-only Manual Publish SOP / Proof Capture Plan before any real post:
+
+- Repo baseline was `8c19f32`, tag `phase-2i13-complete`.
+- Runtime server remained at `phase-2i4-complete` per owner evidence.
+- Runtime Git head was `8f675052be9cb97c1d70e685a04bedbc73d912ec`.
+- Package `ca5a591f-fdf1-4b8c-bb61-9295c186a7be` remained `ready_manual_publish`.
+- `published_manually_at` remained empty.
+- Checklist state remained `24` done and `8` pending.
+- Facebook checklist state remained `6` done and `2` pending.
+- Instagram checklist state remained `6` done and `2` pending.
+- TikTok checklist state remained `6` done and `2` pending.
+- YouTube checklist state remained `6` done and `2` pending.
+- `manual_post_created` remained pending for all channels.
+- `manual_url_recorded` remained pending for all channels.
+- Evidence log count remained unchanged at `2`.
+- Existing blank YouTube `admin_note` anomaly remained visible, documented, and unchanged.
+- `manual_publish_closeouts` remained `0`.
+- Manual publish SOP/proof plan is complete.
+- Proof must be real, not dummy.
+- One-channel pilot first is required; recommended first channel is Facebook or Instagram.
+- Owner approval is required for selected channel, video file, caption, hashtags, CTA, visibility/publication mode, publish operator, and proof capture method.
+- Operator must use official platform UI only, with no automation, scheduler, social API, publisher, or third-party posting tool.
+- Screenshot proof must not capture credentials, password, token, cookie, session, OTP, 2FA code, recovery code, private phone number, private email inbox, security settings, or business payment data.
+- Existing blank YouTube anomaly must not be used as publish proof.
+- No evidence log was created.
+- No checklist completion was created.
+- No publish-proof checklist item was completed.
+- No closeout was created.
+- No actual publish or upload occurred.
+- No credential capture occurred.
+
+Go/no-go decision:
+
+- Docs-only SOP/proof plan: YES.
+- Actual publish in this phase: NO.
+- Upload in this phase: NO.
+- `manual_post_created` in this phase: NO.
+- `manual_url_recorded` in this phase: NO.
+- Evidence log creation in this phase: NO.
+- Closeout: NO.
+- Cutover: NO.
+- Public exposure: NO.
+- Scheduler/social API/publisher: NO.
+- OpenAI live runtime: NO.
+- Uncontrolled checklist mutation: NO.
+- Future controlled one-channel manual publish pilot: CONDITIONAL YES after explicit owner approval.
+
+Recommended next phase is `Phase 2I.15 Controlled One-Channel Manual Publish Pilot - Owner Approval Gate`, not immediate publish. It should choose exact first channel, confirm public/draft/private/unlisted/test-only mode, approve caption/hashtags/CTA, approve video file, approve proof capture method, confirm no credential capture, and confirm no closeout.
+
+Still pending: actual one-channel publish, real publish proof, `manual_post_created`, `manual_url_recorded`, evidence log creation, closeout, scheduler/social API/publisher, public exposure, and cutover.
+
+This is manual publish SOP/proof capture planning only. It is not runtime smoke, not checklist mutation, not actual publishing, not upload, not evidence log creation, not checklist completion, not publish-proof checklist completion, not credential capture, not closeout, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not public exposure, not Docker Compose up/down, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime, not DB constraint enforcement, and not cutover.
