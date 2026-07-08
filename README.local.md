@@ -1069,6 +1069,46 @@ Recommended next phase:
 
 `Phase 2J.23 Real Footage Source Folder Fixture Manifest Write Dry-Run Approval Gate`
 
+## Phase 2J.23 Real Footage Source Folder Fixture Manifest Write Dry-Run Approval Gate
+
+Phase 2J.23 menambahkan approval gate untuk rows `write_plan_ok` dari Phase 2J.22. Approval ini hanya berarti row boleh dipertimbangkan pada future fixture-manifest file creation gate, bukan fixture manifest file creation, fixture manifest write performed, draft manifest file creation, production manifest write, manifest export/import/write/save/persist, atau real metadata store mutation.
+
+Command:
+
+```powershell
+npm run ai:real-footage-source-fixture-manifest-write-approval:smoke
+```
+
+Status:
+
+- Baseline: `5b90aea`, tag `phase-2j22-complete`.
+- Fixture manifest write dry-run approval gate utility: `packages/content-engine/src/source-folder-fixture-manifest-write-dry-run-approval-gate.ts`.
+- Smoke fixture: `packages/content-engine/fixtures/source-folder-fixture-manifest-write-dry-run-approval-gate-smoke.json`.
+- Fixture manifest write dry-run review dependency: `packages/content-engine/src/source-folder-fixture-manifest-write-dry-run-review.ts`.
+- Satu-satunya flow yang boleh digate adalah approved safe repo fixture flow melalui Phase 2J.12 sampai 2J.22 untuk `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied upstream listing/review/enrichment/approval/draft-manifest-review/draft-manifest-approval/creation-gate/creation-review/creation-approval/write-gate/write-plan cases tidak di-upgrade.
+- Approval status: `approved_for_future_fixture_manifest_file_creation_gate`, `needs_owner_review`, `incomplete_approval`, atau `blocked_approval`.
+- `fixture_manifest_file_creation_gate_allowed` berarti future eligibility only, bukan manifest creation.
+- `fixture_manifest_write_allowed` tetap inherited future dry-run eligibility only, bukan manifest write.
+- `fixture_manifest_write_performed` tetap `false`.
+- `fixture_manifest_file_created` tetap `false`.
+- `metadata_write_allowed` tetap `false`.
+- `manifest_write_allowed` tetap `false`.
+- `production_manifest_write_allowed` tetap `false`.
+- `manifest_export_allowed` tetap `false`.
+- Tidak ada write ke production manifests, draft manifests, fixture manifests, real metadata stores, manifest import/export/write/save/persist, atau metadata import/write.
+- Target fixture manifest path hanya string planning untuk future phase dan tidak dibuat.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file stat/walk terhadap actual storage, bukan actual SSD access, bukan Google Drive access, bukan storage/production/backup/render/upload/publish folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan production metadata mutation, bukan manifest write/import/export/save/persist, bukan draft/fixture/production manifest file creation, bukan fixture manifest write performed, bukan evidence log/checklist/closeout mutation, bukan migration, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.24 Real Footage Source Folder Fixture Manifest File Creation Gate`
+
 ## Folder storage lokal
 
 - `storage/footage`
