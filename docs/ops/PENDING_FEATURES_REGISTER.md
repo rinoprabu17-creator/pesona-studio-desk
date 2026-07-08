@@ -1433,3 +1433,51 @@ Recommended next phase:
 `Phase 2J.10 Real Footage Owner-Approved Source Folder Gate`
 
 This should define exact owner approval, source folder allowlist, and read-only handling before any real media folder can be scanned. It is not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
+
+## Phase 2J.10 Real Footage Owner-Approved Source Folder Gate Status
+
+Phase 2J.10 adds a safe config-only owner approval gate for future real footage source folders:
+
+- Current baseline is `b88c530`, tag `phase-2j9-complete`.
+- Gate utility is `packages/content-engine/src/source-folder-gate.ts`.
+- Smoke fixture is `packages/content-engine/fixtures/source-folder-gate-smoke.json`.
+- Smoke command is `npm run ai:real-footage-source-folder-gate:smoke`.
+- Gate statuses are `owner_approved_dry_run`, `manual_review_required`, and `blocked`.
+- The only source string that can reach owner-approved dry-run in this phase is `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Real-looking paths in the fixture are metadata strings only and are not accessed.
+- Scan/open/decode/render/upload/publish allowed counts remain `0`.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Real source folder approval review.
+- Real footage folder scanning.
+- Actual SSD access.
+- Google Drive access.
+- Storage folder access.
+- Production media access.
+- Backup/upload folder access.
+- Media content opening.
+- Media decoding.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.11 Real Footage Source Folder Approval Review`
+
+This should review source folder approval requirements before any real folder listing is allowed. It is not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.

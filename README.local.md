@@ -628,6 +628,36 @@ Recommended next phase:
 
 `Phase 2J.10 Real Footage Owner-Approved Source Folder Gate`
 
+## Phase 2J.10 Real Footage Owner-Approved Source Folder Gate
+
+Phase 2J.10 menambahkan gate config-only untuk validasi owner approval sebelum source folder real footage boleh dipertimbangkan.
+
+Command:
+
+```powershell
+npm run ai:real-footage-source-folder-gate:smoke
+```
+
+Status:
+
+- Baseline: `b88c530`, tag `phase-2j9-complete`.
+- Gate utility: `packages/content-engine/src/source-folder-gate.ts`.
+- Smoke fixture: `packages/content-engine/fixtures/source-folder-gate-smoke.json`.
+- Gate status: `owner_approved_dry_run`, `manual_review_required`, atau `blocked`.
+- Satu-satunya source yang bisa diterima pada phase ini adalah safe repo fixture `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Real-looking source path di fixture hanya metadata string dan tidak diakses.
+- Scan/open/decode/render/upload/publish allowed count tetap `0`.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan actual SSD access, bukan Google Drive access, bukan storage folder access, bukan production media access, bukan backup/upload folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan evidence log/checklist/closeout mutation, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.11 Real Footage Source Folder Approval Review`
+
 ## Folder storage lokal
 
 - `storage/footage`

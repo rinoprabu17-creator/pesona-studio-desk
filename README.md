@@ -164,3 +164,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2j8-real-footage-read-only-intake-dry-run.md`
 - `docs/ops/REAL_FOOTAGE_READ_ONLY_INTAKE_REVIEW.md`
 - `docs/phase-2j9-real-footage-read-only-intake-review.md`
+- `docs/ops/REAL_FOOTAGE_OWNER_APPROVED_SOURCE_FOLDER_GATE.md`
+- `docs/phase-2j10-real-footage-owner-approved-source-folder-gate.md`
