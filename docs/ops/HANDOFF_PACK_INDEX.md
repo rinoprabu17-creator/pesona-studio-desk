@@ -445,6 +445,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_FIXTURE_MANIFEST_FILE_CREATION_DRY_RUN_REVIEW.md`
 - `docs/phase-2j25-real-footage-source-folder-fixture-manifest-file-creation-dry-run-review.md`
 
+### Phase 2J.26
+
+- `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_FIXTURE_MANIFEST_FILE_CREATION_DRY_RUN_APPROVAL_GATE.md`
+- `docs/phase-2j26-real-footage-source-folder-fixture-manifest-file-creation-dry-run-approval-gate.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |

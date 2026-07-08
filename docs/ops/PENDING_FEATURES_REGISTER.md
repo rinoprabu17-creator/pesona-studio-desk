@@ -2096,7 +2096,57 @@ Still pending:
 
 Recommended next phase:
 
-`Phase 2J.25 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Review`
+`Phase 2J.26 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Approval Gate`
+
+## Phase 2J.26 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Approval Gate Status
+
+Phase 2J.26 adds a controlled fixture manifest file creation dry-run approval gate for Phase 2J.25 file creation plan rows:
+
+- Baseline is `93b49fd`, tag `phase-2j25-complete`.
+- Utility: `packages/content-engine/src/source-folder-fixture-manifest-file-creation-dry-run-approval-gate.ts`.
+- Fixture: `packages/content-engine/fixtures/source-folder-fixture-manifest-file-creation-dry-run-approval-gate-smoke.json`.
+- Smoke command: `npm run ai:real-footage-source-fixture-manifest-file-creation-approval:smoke`.
+- The only flow that can be approved is the approved safe repo fixture flow through Phase 2J.12 through 2J.25 for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Approval statuses are `approved_for_future_fixture_manifest_file_creation_dry_run_execution_gate`, `needs_owner_review`, `incomplete_approval`, and `blocked_approval`.
+- `fixture_manifest_file_creation_execution_gate_allowed` means future execution gate eligibility only, not fixture manifest file creation or execution.
+- `fixture_manifest_file_creation_dry_run_allowed` remains inherited future dry-run eligibility only.
+- `fixture_manifest_file_creation_gate_allowed` remains inherited future gate eligibility only.
+- `fixture_manifest_write_allowed` remains inherited future dry-run eligibility only.
+- `metadata_write_allowed`, `manifest_write_allowed`, `fixture_manifest_file_created`, `fixture_manifest_write_performed`, `fixture_manifest_file_creation_performed`, `production_manifest_write_allowed`, `manifest_export_allowed`, and `public_ready` remain `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Fixture manifest file creation dry-run execution gate.
+- Production manifest mutation.
+- Draft manifest file creation.
+- Fixture manifest file creation.
+- Fixture manifest write performed.
+- Fixture manifest file creation performed.
+- Fixture manifest file creation gate execution.
+- Fixture manifest file creation execution gate execution.
+- Production manifest file creation.
+- Manifest export/import/write/save/persist.
+- Real metadata store mutation.
+- Metadata import/write.
+- Real footage folder scanning.
+- File stat/walk against actual storage.
+- Actual SSD access.
+- Google Drive access.
+- Storage/production/backup/render/upload/publish folder access.
+- Media content opening.
+- Media decoding.
+- FFmpeg execution.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log/checklist/closeout mutation.
+- Server/Docker command.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.27 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Gate`
 
 ## Phase 2J.25 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Review Status
 
