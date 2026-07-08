@@ -1,0 +1,76 @@
+{
+  "fixture_version": "source-folder-draft-manifest-approval-gate-smoke-v1",
+  "mode": "controlled_fixture_draft_manifest_approval_gate",
+  "source_draft_manifest_review_fixture": "packages/content-engine/fixtures/source-folder-draft-manifest-review-smoke.json",
+  "source_metadata_enrichment_approval_gate_fixture": "packages/content-engine/fixtures/source-folder-metadata-enrichment-approval-gate-smoke.json",
+  "source_metadata_enrichment_fixture": "packages/content-engine/fixtures/source-folder-metadata-enrichment-review-smoke.json",
+  "source_listing_review_fixture": "packages/content-engine/fixtures/source-folder-listing-review-smoke.json",
+  "source_listing_gate_fixture": "packages/content-engine/fixtures/source-folder-listing-approval-gate-smoke.json",
+  "approval_records": [
+    {
+      "manifest_item_id": "sr_vertical_product_closeup_maroon_sd_001-preview-10",
+      "approval_record_found": true,
+      "owner_approved": true,
+      "approved_by": "owner",
+      "approved_at": "2026-07-08T10:00:00+07:00",
+      "approval_scope": "future_draft_manifest_creation_only",
+      "requested_actions": []
+    },
+    {
+      "manifest_item_id": "sr_vertical_product_closeup_maroon_sd_001-preview-10",
+      "approval_record_found": false,
+      "owner_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "approval_scope": null,
+      "requested_actions": []
+    },
+    {
+      "manifest_item_id": "sr_vertical_product_closeup_maroon_sd_001-preview-10",
+      "approval_record_found": true,
+      "owner_approved": true,
+      "approved_by": null,
+      "approved_at": "2026-07-08T10:05:00+07:00",
+      "approval_scope": null,
+      "requested_actions": []
+    },
+    {
+      "manifest_item_id": "sr_vertical_privacy_blurry_placeholder_unrelated_009-preview-9",
+      "approval_record_found": true,
+      "owner_approved": true,
+      "approved_by": "owner",
+      "approved_at": "2026-07-08T10:10:00+07:00",
+      "approval_scope": "future_draft_manifest_creation_only",
+      "requested_actions": []
+    },
+    {
+      "manifest_item_id": "sr_vertical_penamaan_process_orange_sd_008-preview-7",
+      "approval_record_found": true,
+      "owner_approved": true,
+      "approved_by": "owner",
+      "approved_at": "2026-07-08T10:15:00+07:00",
+      "approval_scope": "future_draft_manifest_creation_only",
+      "requested_actions": []
+    },
+    {
+      "manifest_item_id": "sr_vertical_penamaan_process_orange_sd_008-preview-8",
+      "approval_record_found": true,
+      "owner_approved": true,
+      "approved_by": "owner",
+      "approved_at": "2026-07-08T10:20:00+07:00",
+      "approval_scope": "future_draft_manifest_creation_only",
+      "requested_actions": [
+        "metadata_write_requested",
+        "metadata_import_requested",
+        "manifest_write_requested",
+        "manifest_import_requested",
+        "manifest_export_requested",
+        "render_requested",
+        "upload_requested",
+        "publish_requested",
+        "publish_package_requested"
+      ]
+    }
+  ],
+  "notes": "Phase 2J.17 approves manifest preview rows only for a future draft-manifest creation review phase. The fixture intentionally repeats one manifest_preview_ok item with approved, missing-owner, and incomplete approval records to exercise all approval statuses without creating any manifest. Real-looking storage, Google Drive, backup, render, upload, publish, production, manifest, and metadata store paths remain blocked metadata strings in referenced fixtures or safety docs. No production manifest, draft manifest file, manifest import/export/write, metadata import/write, or metadata store mutation is performed."
+}

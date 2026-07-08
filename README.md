@@ -178,3 +178,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2j15-real-footage-source-folder-metadata-enrichment-approval-gate.md`
 - `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_DRAFT_MANIFEST_REVIEW.md`
 - `docs/phase-2j16-real-footage-source-folder-draft-manifest-review.md`
+- `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_DRAFT_MANIFEST_APPROVAL_GATE.md`
+- `docs/phase-2j17-real-footage-source-folder-draft-manifest-approval-gate.md`

@@ -1806,3 +1806,64 @@ Recommended next phase:
 `Phase 2J.17 Real Footage Source Folder Draft Manifest Approval Gate`
 
 This should gate the in-memory draft manifest preview before any future draft manifest creation can be considered. It is not production manifest write, not draft manifest file creation, not manifest export/import/write, not real metadata store mutation, not metadata import/write, not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
+
+## Phase 2J.17 Real Footage Source Folder Draft Manifest Approval Gate Status
+
+Phase 2J.17 adds a controlled draft manifest approval gate for in-memory manifest preview items from Phase 2J.16:
+
+- Current baseline is `e1b10e6`, tag `phase-2j16-complete`.
+- Draft manifest approval gate utility is `packages/content-engine/src/source-folder-draft-manifest-approval-gate.ts`.
+- Draft manifest approval gate fixture is `packages/content-engine/fixtures/source-folder-draft-manifest-approval-gate-smoke.json`.
+- Draft manifest review dependency is `packages/content-engine/src/source-folder-draft-manifest-review.ts`.
+- Smoke command is `npm run ai:real-footage-source-draft-manifest-approval:smoke`.
+- The only flow that can be draft-manifest-approval-gated in this phase is the approved safe repo fixture flow through Phase 2J.12, 2J.13, 2J.14, 2J.15, and 2J.16 for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied upstream listing/review/enrichment/approval/draft-manifest-review cases produce zero draft manifest approval items and are not upgraded.
+- Draft manifest approval statuses are `approved_for_future_manifest_creation`, `needs_owner_review`, `incomplete_approval`, and `blocked_approval`.
+- Approval means future draft-manifest creation review eligibility only, not draft manifest file creation.
+- `metadata_write_allowed` remains `false`.
+- `manifest_write_allowed` remains `false`.
+- `manifest_file_created` remains `false`.
+- `manifest_export_allowed` remains `false`.
+- The gate does not write production manifests, create draft manifest files, import/export/write manifests, mutate real metadata stores, or import/write metadata.
+- Real-looking paths remain metadata strings only and are not accessed.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Real source folder draft manifest creation dry-run gate.
+- Production manifest mutation.
+- Draft manifest file creation.
+- Manifest export/import/write.
+- Real metadata store mutation.
+- Metadata import/write.
+- Real footage folder scanning.
+- File stat/walk against actual storage.
+- Actual SSD access.
+- Google Drive access.
+- Storage folder access.
+- Production media access.
+- Backup/render/upload/publish folder access.
+- Media content opening.
+- Media decoding.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.18 Real Footage Source Folder Draft Manifest Creation Dry-Run Gate`
+
+This should remain dry-run/config-only and must not create, write, import, export, or persist a draft manifest until owner approval explicitly authorizes that later behavior.
