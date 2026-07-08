@@ -885,6 +885,42 @@ Recommended next phase:
 
 `Phase 2J.18 Real Footage Source Folder Draft Manifest Creation Dry-Run Gate`
 
+## Phase 2J.18 Real Footage Source Folder Draft Manifest Creation Dry-Run Gate
+
+Phase 2J.18 menambahkan gate untuk menentukan apakah approved-for-future-manifest items dari Phase 2J.17 boleh masuk ke future draft-manifest creation dry-run review phase. Gate ini tetap tidak membuat draft manifest file, tidak melakukan manifest export/import/write/save/persist, tidak write production manifest, dan tidak mutasi real metadata store.
+
+Command:
+
+```powershell
+npm run ai:real-footage-source-draft-manifest-creation-gate:smoke
+```
+
+Status:
+
+- Baseline: `2ddffca`, tag `phase-2j17-complete`.
+- Draft manifest creation dry-run gate utility: `packages/content-engine/src/source-folder-draft-manifest-creation-dry-run-gate.ts`.
+- Smoke fixture: `packages/content-engine/fixtures/source-folder-draft-manifest-creation-dry-run-gate-smoke.json`.
+- Draft manifest approval dependency: `packages/content-engine/src/source-folder-draft-manifest-approval-gate.ts`.
+- Satu-satunya flow yang boleh direview adalah approved safe repo fixture flow melalui Phase 2J.12 sampai 2J.17 untuk `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied upstream listing/review/enrichment/approval/draft-manifest-review/draft-manifest-approval cases tidak menghasilkan creation gate items.
+- Creation gate status: `eligible_for_creation_dry_run`, `needs_owner_review`, `incomplete_creation_gate`, atau `blocked_creation_gate`.
+- `creation_dry_run_allowed` boleh true hanya untuk later dry-run review eligibility, bukan manifest creation.
+- `metadata_write_allowed` tetap `false`.
+- `manifest_write_allowed` tetap `false`.
+- `manifest_file_created` tetap `false`.
+- `manifest_export_allowed` tetap `false`.
+- Tidak ada write ke production manifests, draft manifests, real metadata stores, manifest import/export/write/save/persist, atau metadata import/write.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file stat/walk terhadap actual storage, bukan actual SSD access, bukan Google Drive access, bukan storage/production/backup/render/upload/publish folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan production metadata mutation, bukan manifest write/import/export/save/persist, bukan draft manifest file creation, bukan evidence log/checklist/closeout mutation, bukan migration, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.19 Real Footage Source Folder Draft Manifest Creation Dry-Run Review`
+
 ## Folder storage lokal
 
 - `storage/footage`
