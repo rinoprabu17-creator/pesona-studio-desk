@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2J.21.
+This index links the ops documents created across Phase 2G.3 through Phase 2J.22.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -425,6 +425,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_FIXTURE_MANIFEST_WRITE_GATE.md`
 - `docs/phase-2j21-real-footage-source-folder-fixture-manifest-write-gate.md`
 
+### Phase 2J.22
+
+- `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_FIXTURE_MANIFEST_WRITE_DRY_RUN_REVIEW.md`
+- `docs/phase-2j22-real-footage-source-folder-fixture-manifest-write-dry-run-review.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -597,6 +602,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating Phase 2J.19 draft manifest creation dry-run review as production manifest write, draft manifest file creation, fixture manifest file creation, manifest export/import/write/save/persist, real metadata store mutation, metadata import/write, real storage/media folder scanning, file stat/walk against actual storage, actual SSD access, Google Drive access, storage folder access, production media access, backup/render/upload/publish folder access, media content opening, media decoding, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval. Phase 2J.19 only simulates in-memory dry-run preview review rows from the safe fixture flow.
 - Treating Phase 2J.20 draft manifest creation dry-run approval gate as production manifest write, draft manifest file creation, fixture manifest file creation, manifest export/import/write/save/persist, real metadata store mutation, metadata import/write, real storage/media folder scanning, file stat/walk against actual storage, actual SSD access, Google Drive access, storage folder access, production media access, backup/render/upload/publish folder access, media content opening, media decoding, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval. Phase 2J.20 only approves future fixture manifest-write gate review eligibility and does not create a manifest.
 - Treating Phase 2J.21 fixture manifest write gate as production manifest write, draft manifest file creation, fixture manifest file creation, production manifest file creation, manifest export/import/write/save/persist, real metadata store mutation, metadata import/write, real storage/media folder scanning, file stat/walk against actual storage, actual SSD access, Google Drive access, storage folder access, production media access, backup/render/upload/publish folder access, media content opening, media decoding, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval. Phase 2J.21 only gates future fixture manifest write dry-run eligibility and does not create a manifest.
+- Treating Phase 2J.22 fixture manifest write dry-run review as production manifest write, draft manifest file creation, fixture manifest file creation, fixture manifest write performed, production manifest file creation, manifest export/import/write/save/persist, real metadata store mutation, metadata import/write, real storage/media folder scanning, file stat/walk against actual storage, actual SSD access, Google Drive access, storage folder access, production media access, backup/render/upload/publish folder access, media content opening, media decoding, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval. Phase 2J.22 only builds in-memory write-plan review rows and does not create a manifest.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.

@@ -2116,3 +2116,70 @@ Recommended next phase:
 `Phase 2J.22 Real Footage Source Folder Fixture Manifest Write Dry-Run Review`
 
 This should remain fixture-only and must not create, write, import, export, save, or persist any manifest file until owner approval explicitly authorizes that later behavior.
+
+## Phase 2J.22 Real Footage Source Folder Fixture Manifest Write Dry-Run Review Status
+
+Phase 2J.22 adds a controlled fixture manifest write dry-run review for Phase 2J.21 eligible rows:
+
+- Current baseline is `8de1c75`, tag `phase-2j21-complete`.
+- Fixture manifest write dry-run review utility is `packages/content-engine/src/source-folder-fixture-manifest-write-dry-run-review.ts`.
+- Fixture manifest write dry-run review fixture is `packages/content-engine/fixtures/source-folder-fixture-manifest-write-dry-run-review-smoke.json`.
+- Fixture manifest write gate dependency is `packages/content-engine/src/source-folder-fixture-manifest-write-gate.ts`.
+- Smoke command is `npm run ai:real-footage-source-fixture-manifest-write-review:smoke`.
+- The only flow that can be reviewed in this phase is the approved safe repo fixture flow through Phase 2J.12 through 2J.21 for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied upstream listing/review/enrichment/approval/draft-manifest-review/draft-manifest-approval/creation-gate/creation-review/creation-approval/write-gate cases are not upgraded.
+- Write plan statuses are `write_plan_ok`, `needs_owner_review`, `incomplete_write_plan`, and `blocked_write_plan`.
+- `fixture_manifest_write_allowed` means inherited future dry-run eligibility only, not fixture manifest file creation.
+- `fixture_manifest_write_performed` remains `false`.
+- `fixture_manifest_file_created` remains `false`.
+- `metadata_write_allowed` remains `false`.
+- `manifest_write_allowed` remains `false`.
+- `production_manifest_write_allowed` remains `false`.
+- `manifest_export_allowed` remains `false`.
+- The review does not write production manifests, create draft manifest files, create fixture manifest files, perform fixture manifest writes, import/export/write/save/persist manifests, mutate real metadata stores, or import/write metadata.
+- Target fixture manifest paths are future-planning strings only and are not created or written.
+- Real-looking paths remain blocked metadata strings only and are not accessed.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Future fixture manifest write dry-run approval gate.
+- Production manifest mutation.
+- Draft manifest file creation.
+- Fixture manifest file creation.
+- Fixture manifest write performed.
+- Production manifest file creation.
+- Manifest export/import/write/save/persist.
+- Real metadata store mutation.
+- Metadata import/write.
+- Real footage folder scanning.
+- File stat/walk against actual storage.
+- Actual SSD access.
+- Google Drive access.
+- Storage folder access.
+- Production media access.
+- Backup/render/upload/publish folder access.
+- Media content opening.
+- Media decoding.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.23 Real Footage Source Folder Fixture Manifest Write Dry-Run Approval Gate`
+
+This should remain fixture-only and must not create, write, import, export, save, or persist any manifest file until owner approval explicitly authorizes that later behavior.
