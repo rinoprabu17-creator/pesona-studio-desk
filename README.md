@@ -168,3 +168,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2j10-real-footage-owner-approved-source-folder-gate.md`
 - `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_APPROVAL_REVIEW.md`
 - `docs/phase-2j11-real-footage-source-folder-approval-review.md`
+- `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_READ_ONLY_LISTING_APPROVAL_GATE.md`
+- `docs/phase-2j12-real-footage-source-folder-read-only-listing-approval-gate.md`

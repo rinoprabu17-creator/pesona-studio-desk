@@ -689,6 +689,36 @@ Recommended next phase:
 
 `Phase 2J.12 Real Footage Source Folder Read-Only Listing Approval Gate`
 
+## Phase 2J.12 Real Footage Source Folder Read-Only Listing Approval Gate
+
+Phase 2J.12 menambahkan approval gate untuk controlled read-only listing. Listing hanya boleh terjadi jika Phase 2J.10 source gate menghasilkan `owner_approved_dry_run`, Phase 2J.11 approval review menghasilkan `approval_review_ok`, source root adalah safe repo fixture, dan tidak ada risky action.
+
+Command:
+
+```powershell
+npm run ai:real-footage-source-listing-gate:smoke
+```
+
+Status:
+
+- Baseline: `b2f0c73`, tag `phase-2j11-complete`.
+- Listing gate utility: `packages/content-engine/src/source-folder-listing-approval-gate.ts`.
+- Smoke fixture: `packages/content-engine/fixtures/source-folder-listing-approval-gate-smoke.json`.
+- Safe listing dependency: `packages/content-engine/src/read-only-intake.ts`.
+- Satu-satunya source yang boleh dilisting adalah safe repo fixture `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied cases tidak melakukan filesystem listing/stat.
+- Real-looking source path di fixture hanya metadata string dan tidak diakses.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file stat/walk terhadap actual storage, bukan actual SSD access, bukan Google Drive access, bukan storage/production/backup/render/upload/publish folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan evidence log/checklist/closeout mutation, bukan migration, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.13 Real Footage Source Folder Listing Review`
+
 ## Folder storage lokal
 
 - `storage/footage`
