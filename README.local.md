@@ -719,6 +719,37 @@ Recommended next phase:
 
 `Phase 2J.13 Real Footage Source Folder Listing Review`
 
+## Phase 2J.13 Real Footage Source Folder Listing Review
+
+Phase 2J.13 menambahkan review layer untuk controlled safe fixture listing dari Phase 2J.12. Review hanya memakai output listing yang sudah allowed/performed dari safe repo fixture, lalu menilai filename signal untuk metadata enrichment secara konservatif.
+
+Command:
+
+```powershell
+npm run ai:real-footage-source-listing-review:smoke
+```
+
+Status:
+
+- Baseline: `68f1364`, tag `phase-2j12-complete`.
+- Listing review utility: `packages/content-engine/src/source-folder-listing-review.ts`.
+- Smoke fixture: `packages/content-engine/fixtures/source-folder-listing-review-smoke.json`.
+- Gate dependency: `packages/content-engine/src/source-folder-listing-approval-gate.ts`.
+- Satu-satunya listing yang boleh direview adalah safe repo fixture `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied listing gate cases tidak menghasilkan entry review.
+- Review status: `listing_review_ok`, `needs_manual_metadata`, `blocked_entry`, atau `low_confidence`.
+- Review tidak mengklaim visual quality, true duration, codec compatibility, render readiness, atau public readiness.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file stat/walk terhadap actual storage, bukan actual SSD access, bukan Google Drive access, bukan storage/production/backup/render/upload/publish folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan evidence log/checklist/closeout mutation, bukan migration, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.14 Real Footage Source Folder Metadata Enrichment Review`
+
 ## Folder storage lokal
 
 - `storage/footage`

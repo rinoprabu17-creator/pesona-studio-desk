@@ -1,0 +1,6 @@
+{
+  "fixture_version": "source-folder-listing-review-smoke-v1",
+  "mode": "controlled_fixture_listing_review",
+  "source_listing_gate_fixture": "packages/content-engine/fixtures/source-folder-listing-approval-gate-smoke.json",
+  "notes": "Phase 2J.13 reviews only the approved safe repo fixture listing produced by Phase 2J.12. Real-looking storage, Google Drive, backup, render, upload, and publish paths remain blocked metadata in the referenced listing gate fixture."
+}

@@ -1583,3 +1583,54 @@ Recommended next phase:
 `Phase 2J.13 Real Footage Source Folder Listing Review`
 
 This should review the controlled safe fixture listing output before any real source folder listing is considered. It is not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
+
+## Phase 2J.13 Real Footage Source Folder Listing Review Status
+
+Phase 2J.13 adds a controlled review layer for the approved safe fixture listing from Phase 2J.12:
+
+- Current baseline is `68f1364`, tag `phase-2j12-complete`.
+- Listing review utility is `packages/content-engine/src/source-folder-listing-review.ts`.
+- Listing review fixture is `packages/content-engine/fixtures/source-folder-listing-review-smoke.json`.
+- Listing gate dependency is `packages/content-engine/src/source-folder-listing-approval-gate.ts`.
+- Smoke command is `npm run ai:real-footage-source-listing-review:smoke`.
+- The only listing that can be reviewed in this phase is the approved safe repo fixture listing for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied Phase 2J.12 listing gate cases are not reviewed and are not upgraded.
+- Entry statuses are `listing_review_ok`, `needs_manual_metadata`, `blocked_entry`, and `low_confidence`.
+- The review does not claim visual quality, true duration, codec compatibility, render readiness, or public readiness.
+- Real-looking paths remain metadata strings only and are not accessed.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Real source folder metadata enrichment review.
+- Real footage folder scanning.
+- File stat/walk against actual storage.
+- Actual SSD access.
+- Google Drive access.
+- Storage folder access.
+- Production media access.
+- Backup/render/upload/publish folder access.
+- Media content opening.
+- Media decoding.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.14 Real Footage Source Folder Metadata Enrichment Review`
+
+This should review metadata enrichment requirements for accepted safe fixture listing entries before any real source folder use is considered. It is not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
