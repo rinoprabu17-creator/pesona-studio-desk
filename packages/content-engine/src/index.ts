@@ -23,3 +23,4 @@ export * from "./source-folder-draft-manifest-approval-gate.ts";
 export * from "./source-folder-draft-manifest-creation-dry-run-gate.ts";
 export * from "./source-folder-draft-manifest-creation-dry-run-review.ts";
 export * from "./source-folder-draft-manifest-creation-dry-run-approval-gate.ts";
+export * from "./source-folder-fixture-manifest-write-gate.ts";

@@ -1,0 +1,83 @@
+{
+  "fixture_version": "source-folder-fixture-manifest-write-gate-smoke-v1",
+  "mode": "controlled_fixture_manifest_write_gate",
+  "source_creation_approval_gate_fixture": "packages/content-engine/fixtures/source-folder-draft-manifest-creation-dry-run-approval-gate-smoke.json",
+  "source_creation_review_fixture": "packages/content-engine/fixtures/source-folder-draft-manifest-creation-dry-run-review-smoke.json",
+  "source_creation_gate_fixture": "packages/content-engine/fixtures/source-folder-draft-manifest-creation-dry-run-gate-smoke.json",
+  "source_draft_manifest_approval_gate_fixture": "packages/content-engine/fixtures/source-folder-draft-manifest-approval-gate-smoke.json",
+  "source_draft_manifest_review_fixture": "packages/content-engine/fixtures/source-folder-draft-manifest-review-smoke.json",
+  "source_metadata_enrichment_approval_gate_fixture": "packages/content-engine/fixtures/source-folder-metadata-enrichment-approval-gate-smoke.json",
+  "source_metadata_enrichment_fixture": "packages/content-engine/fixtures/source-folder-metadata-enrichment-review-smoke.json",
+  "source_listing_review_fixture": "packages/content-engine/fixtures/source-folder-listing-review-smoke.json",
+  "source_listing_gate_fixture": "packages/content-engine/fixtures/source-folder-listing-approval-gate-smoke.json",
+  "approval_records": [
+    {
+      "manifest_item_id": "sr_vertical_product_closeup_maroon_sd_001-preview-10",
+      "approval_record_found": true,
+      "owner_approved": true,
+      "approved_by": "owner",
+      "approved_at": "2026-07-08T12:10:00+07:00",
+      "approval_scope": "future_fixture_manifest_write_dry_run_review_only",
+      "requested_actions": []
+    },
+    {
+      "manifest_item_id": "sr_vertical_product_closeup_maroon_sd_001-preview-10",
+      "approval_record_found": false,
+      "owner_approved": false,
+      "approved_by": null,
+      "approved_at": null,
+      "approval_scope": null,
+      "requested_actions": []
+    },
+    {
+      "manifest_item_id": "sr_vertical_product_closeup_maroon_sd_001-preview-10",
+      "approval_record_found": true,
+      "owner_approved": true,
+      "approved_by": null,
+      "approved_at": "2026-07-08T12:15:00+07:00",
+      "approval_scope": null,
+      "requested_actions": []
+    },
+    {
+      "manifest_item_id": "sr_vertical_penamaan_process_orange_sd_008-preview-7",
+      "approval_record_found": true,
+      "owner_approved": true,
+      "approved_by": "owner",
+      "approved_at": "2026-07-08T12:20:00+07:00",
+      "approval_scope": "future_fixture_manifest_write_dry_run_review_only",
+      "requested_actions": []
+    },
+    {
+      "manifest_item_id": "sr_vertical_privacy_blurry_placeholder_unrelated_009-preview-9",
+      "approval_record_found": true,
+      "owner_approved": true,
+      "approved_by": "owner",
+      "approved_at": "2026-07-08T12:25:00+07:00",
+      "approval_scope": "future_fixture_manifest_write_dry_run_review_only",
+      "requested_actions": []
+    },
+    {
+      "manifest_item_id": "sr_vertical_penamaan_process_orange_sd_008-preview-8",
+      "approval_record_found": true,
+      "owner_approved": true,
+      "approved_by": "owner",
+      "approved_at": "2026-07-08T12:30:00+07:00",
+      "approval_scope": "future_fixture_manifest_write_dry_run_review_only",
+      "requested_actions": [
+        "metadata_write_requested",
+        "metadata_import_requested",
+        "manifest_write_requested",
+        "manifest_import_requested",
+        "manifest_export_requested",
+        "fixture_manifest_file_create_requested",
+        "draft_manifest_file_create_requested",
+        "production_manifest_write_requested",
+        "render_requested",
+        "upload_requested",
+        "publish_requested",
+        "publish_package_requested"
+      ]
+    }
+  ],
+  "notes": "Phase 2J.21 consumes Phase 2J.20 fixture-only creation dry-run approval output and gates only future fixture manifest write dry-run eligibility. It includes approved, missing-owner, incomplete, duplicate-ID, blocked upstream, denied-action, and production-manifest-write request cases. No fixture manifest file, draft manifest file, production manifest file, manifest import/export/write, metadata import/write, or metadata store mutation is performed."
+}
