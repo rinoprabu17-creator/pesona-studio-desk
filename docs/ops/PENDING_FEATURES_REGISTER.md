@@ -1688,3 +1688,61 @@ Recommended next phase:
 `Phase 2J.15 Real Footage Source Folder Metadata Enrichment Approval Gate`
 
 This should gate any future use of suggested metadata rows before real source metadata enrichment is considered. It is not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
+
+## Phase 2J.15 Real Footage Source Folder Metadata Enrichment Approval Gate Status
+
+Phase 2J.15 adds a controlled approval gate for suggested metadata rows from Phase 2J.14:
+
+- Current baseline is `7bc6679`, tag `phase-2j14-complete`.
+- Metadata enrichment approval gate utility is `packages/content-engine/src/source-folder-metadata-enrichment-approval-gate.ts`.
+- Metadata enrichment approval gate fixture is `packages/content-engine/fixtures/source-folder-metadata-enrichment-approval-gate-smoke.json`.
+- Metadata enrichment dependency is `packages/content-engine/src/source-folder-metadata-enrichment-review.ts`.
+- Smoke command is `npm run ai:real-footage-source-metadata-enrichment-approval:smoke`.
+- The only flow that can be approval-gated in this phase is the approved safe repo fixture listing/review/enrichment for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied listing/review/enrichment cases produce zero approval items and are not upgraded.
+- Approval statuses are `approved_for_draft_manifest`, `needs_owner_review`, `blocked_approval`, and `incomplete_approval`.
+- Approval is limited to future draft-manifest review only and does not create a draft manifest.
+- `metadata_write_allowed` remains `false`.
+- `manifest_write_allowed` remains `false`.
+- The gate does not write production manifests, mutate real metadata stores, or import metadata.
+- Real-looking paths remain metadata strings only and are not accessed.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Real source folder draft manifest review.
+- Production manifest mutation.
+- Real metadata store mutation.
+- Metadata import.
+- Draft manifest creation.
+- Real footage folder scanning.
+- File stat/walk against actual storage.
+- Actual SSD access.
+- Google Drive access.
+- Storage folder access.
+- Production media access.
+- Backup/render/upload/publish folder access.
+- Media content opening.
+- Media decoding.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.16 Real Footage Source Folder Draft Manifest Review`
+
+This should review approved fixture metadata suggestions before any future draft manifest can be created. It is not production manifest write, not real metadata store mutation, not metadata import, not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.

@@ -783,6 +783,39 @@ Recommended next phase:
 
 `Phase 2J.15 Real Footage Source Folder Metadata Enrichment Approval Gate`
 
+## Phase 2J.15 Real Footage Source Folder Metadata Enrichment Approval Gate
+
+Phase 2J.15 menambahkan approval gate untuk suggested metadata rows dari Phase 2J.14. Gate ini hanya dapat mengizinkan suggestion tertentu maju ke future draft-manifest review; phase ini tidak menulis metadata, tidak import metadata, dan tidak membuat manifest.
+
+Command:
+
+```powershell
+npm run ai:real-footage-source-metadata-enrichment-approval:smoke
+```
+
+Status:
+
+- Baseline: `7bc6679`, tag `phase-2j14-complete`.
+- Approval gate utility: `packages/content-engine/src/source-folder-metadata-enrichment-approval-gate.ts`.
+- Smoke fixture: `packages/content-engine/fixtures/source-folder-metadata-enrichment-approval-gate-smoke.json`.
+- Metadata enrichment dependency: `packages/content-engine/src/source-folder-metadata-enrichment-review.ts`.
+- Satu-satunya flow yang boleh direview adalah approved safe repo fixture listing/review/enrichment untuk `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied listing/review/enrichment cases tidak menghasilkan approval items.
+- Approval status: `approved_for_draft_manifest`, `needs_owner_review`, `blocked_approval`, atau `incomplete_approval`.
+- `metadata_write_allowed` tetap `false`.
+- `manifest_write_allowed` tetap `false`.
+- Tidak ada write ke production manifests, real metadata stores, metadata import, atau draft manifest creation.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file stat/walk terhadap actual storage, bukan actual SSD access, bukan Google Drive access, bukan storage/production/backup/render/upload/publish folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan production metadata mutation, bukan manifest write, bukan evidence log/checklist/closeout mutation, bukan migration, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.16 Real Footage Source Folder Draft Manifest Review`
+
 ## Folder storage lokal
 
 - `storage/footage`
