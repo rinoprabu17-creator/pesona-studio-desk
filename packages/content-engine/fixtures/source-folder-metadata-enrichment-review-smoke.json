@@ -1,0 +1,7 @@
+{
+  "fixture_version": "source-folder-metadata-enrichment-review-smoke-v1",
+  "mode": "controlled_fixture_metadata_enrichment_review",
+  "source_listing_review_fixture": "packages/content-engine/fixtures/source-folder-listing-review-smoke.json",
+  "source_listing_gate_fixture": "packages/content-engine/fixtures/source-folder-listing-approval-gate-smoke.json",
+  "notes": "Phase 2J.14 produces suggested metadata rows only from the approved safe repo fixture listing/review flow. Real-looking storage, Google Drive, backup, render, upload, and publish paths remain blocked metadata in referenced fixtures or safety documentation."
+}

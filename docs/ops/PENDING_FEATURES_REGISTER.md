@@ -1634,3 +1634,57 @@ Recommended next phase:
 `Phase 2J.14 Real Footage Source Folder Metadata Enrichment Review`
 
 This should review metadata enrichment requirements for accepted safe fixture listing entries before any real source folder use is considered. It is not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
+
+## Phase 2J.14 Real Footage Source Folder Metadata Enrichment Review Status
+
+Phase 2J.14 adds a controlled metadata enrichment review layer for the approved safe fixture listing/review flow:
+
+- Current baseline is `826ed61`, tag `phase-2j13-complete`.
+- Metadata enrichment utility is `packages/content-engine/src/source-folder-metadata-enrichment-review.ts`.
+- Metadata enrichment fixture is `packages/content-engine/fixtures/source-folder-metadata-enrichment-review-smoke.json`.
+- Listing review dependency is `packages/content-engine/src/source-folder-listing-review.ts`.
+- Smoke command is `npm run ai:real-footage-source-metadata-enrichment:smoke`.
+- The only flow that can be enriched in this phase is the approved safe repo fixture listing/review for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied listing/review cases are not enriched and are not upgraded.
+- Enrichment statuses are `enrichment_ready`, `needs_manual_metadata`, `blocked_enrichment`, and `low_confidence`.
+- Suggested metadata rows are fixture-only review output and are not production manifest writes.
+- The review does not claim visual quality, true duration, codec compatibility, actual content, render readiness, or public readiness.
+- Real-looking paths remain metadata strings only and are not accessed.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Real source folder metadata enrichment approval gate.
+- Real footage folder scanning.
+- File stat/walk against actual storage.
+- Actual SSD access.
+- Google Drive access.
+- Storage folder access.
+- Production media access.
+- Backup/render/upload/publish folder access.
+- Production manifest mutation.
+- Real metadata store mutation.
+- Media content opening.
+- Media decoding.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.15 Real Footage Source Folder Metadata Enrichment Approval Gate`
+
+This should gate any future use of suggested metadata rows before real source metadata enrichment is considered. It is not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.

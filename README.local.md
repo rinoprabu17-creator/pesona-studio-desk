@@ -750,6 +750,39 @@ Recommended next phase:
 
 `Phase 2J.14 Real Footage Source Folder Metadata Enrichment Review`
 
+## Phase 2J.14 Real Footage Source Folder Metadata Enrichment Review
+
+Phase 2J.14 menambahkan review layer untuk metadata enrichment dari controlled safe fixture listing/review Phase 2J.12 dan 2J.13. Output phase ini hanya suggested metadata rows untuk review owner, bukan production manifest write.
+
+Command:
+
+```powershell
+npm run ai:real-footage-source-metadata-enrichment:smoke
+```
+
+Status:
+
+- Baseline: `826ed61`, tag `phase-2j13-complete`.
+- Metadata enrichment utility: `packages/content-engine/src/source-folder-metadata-enrichment-review.ts`.
+- Smoke fixture: `packages/content-engine/fixtures/source-folder-metadata-enrichment-review-smoke.json`.
+- Listing review dependency: `packages/content-engine/src/source-folder-listing-review.ts`.
+- Satu-satunya flow yang boleh dienrich adalah approved safe repo fixture listing/review untuk `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied listing/review cases tidak menghasilkan enrichment candidates.
+- Enrichment status: `enrichment_ready`, `needs_manual_metadata`, `blocked_enrichment`, atau `low_confidence`.
+- `duration_sec` tetap null/unknown kecuali ada metadata eksplisit di fixture.
+- Review tidak mengklaim visual quality, true duration, codec compatibility, actual content, render readiness, atau public readiness.
+- Tidak ada write ke production manifests atau real metadata stores.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file stat/walk terhadap actual storage, bukan actual SSD access, bukan Google Drive access, bukan storage/production/backup/render/upload/publish folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan production metadata mutation, bukan evidence log/checklist/closeout mutation, bukan migration, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.15 Real Footage Source Folder Metadata Enrichment Approval Gate`
+
 ## Folder storage lokal
 
 - `storage/footage`
