@@ -1,0 +1,64 @@
+{
+  "fixture_version": "source-folder-draft-manifest-review-smoke-v1",
+  "mode": "controlled_fixture_draft_manifest_review",
+  "source_metadata_enrichment_approval_gate_fixture": "packages/content-engine/fixtures/source-folder-metadata-enrichment-approval-gate-smoke.json",
+  "source_metadata_enrichment_fixture": "packages/content-engine/fixtures/source-folder-metadata-enrichment-review-smoke.json",
+  "source_listing_review_fixture": "packages/content-engine/fixtures/source-folder-listing-review-smoke.json",
+  "source_listing_gate_fixture": "packages/content-engine/fixtures/source-folder-listing-approval-gate-smoke.json",
+  "manifest_review_overrides": [
+    {
+      "suggested_footage_id": "sr_vertical_product_closeup_maroon_sd_001",
+      "force_missing_fields": [],
+      "requires_owner_cleanup": false,
+      "duplicate_preview_item": false,
+      "requested_actions": []
+    },
+    {
+      "suggested_footage_id": "map_ijazah_vertical_product_closeup_green_ma_004",
+      "force_missing_fields": [],
+      "requires_owner_cleanup": true,
+      "duplicate_preview_item": false,
+      "requested_actions": []
+    },
+    {
+      "suggested_footage_id": "sr_vertical_foil_poly_navy_smp_002",
+      "force_missing_fields": [
+        "visual_type"
+      ],
+      "requires_owner_cleanup": false,
+      "duplicate_preview_item": false,
+      "requested_actions": []
+    },
+    {
+      "suggested_footage_id": "sr_vertical_privacy_blurry_placeholder_unrelated_009",
+      "force_missing_fields": [],
+      "requires_owner_cleanup": false,
+      "duplicate_preview_item": false,
+      "requested_actions": []
+    },
+    {
+      "suggested_footage_id": "sr_vertical_penamaan_process_orange_sd_008",
+      "force_missing_fields": [],
+      "requires_owner_cleanup": false,
+      "duplicate_preview_item": true,
+      "requested_actions": [
+        "metadata_write_requested",
+        "metadata_import_requested",
+        "manifest_write_requested",
+        "manifest_export_requested",
+        "render_requested",
+        "upload_requested",
+        "publish_requested",
+        "publish_package_requested"
+      ]
+    },
+    {
+      "suggested_footage_id": "map_ijazah_horizontal_cover_assembly_gray_ma_007",
+      "force_missing_fields": [],
+      "requires_owner_cleanup": true,
+      "duplicate_preview_item": false,
+      "requested_actions": []
+    }
+  ],
+  "notes": "Phase 2J.16 assembles only an in-memory draft manifest preview from the approved safe fixture flow. Real-looking storage, Google Drive, backup, render, upload, publish, and production paths remain blocked metadata strings in referenced fixtures or safety docs. No production manifest, draft manifest file, metadata import, export, or metadata store mutation is performed."
+}

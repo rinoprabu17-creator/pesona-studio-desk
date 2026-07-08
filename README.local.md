@@ -816,6 +816,40 @@ Recommended next phase:
 
 `Phase 2J.16 Real Footage Source Folder Draft Manifest Review`
 
+## Phase 2J.16 Real Footage Source Folder Draft Manifest Review
+
+Phase 2J.16 menambahkan review layer untuk approved-for-draft-manifest suggestions dari Phase 2J.15. Output phase ini hanya in-memory draft manifest preview untuk review owner, bukan draft manifest file creation, manifest export/import/write, production manifest write, atau real metadata store mutation.
+
+Command:
+
+```powershell
+npm run ai:real-footage-source-draft-manifest-review:smoke
+```
+
+Status:
+
+- Baseline: `3f20fe3`, tag `phase-2j15-complete`.
+- Draft manifest review utility: `packages/content-engine/src/source-folder-draft-manifest-review.ts`.
+- Smoke fixture: `packages/content-engine/fixtures/source-folder-draft-manifest-review-smoke.json`.
+- Metadata enrichment approval dependency: `packages/content-engine/src/source-folder-metadata-enrichment-approval-gate.ts`.
+- Satu-satunya flow yang boleh direview adalah approved safe repo fixture flow melalui Phase 2J.12, 2J.13, 2J.14, dan 2J.15 untuk `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied upstream listing/review/enrichment/approval cases tidak menghasilkan manifest preview items.
+- Manifest review status: `manifest_preview_ok`, `needs_owner_review`, `blocked_manifest`, atau `incomplete_manifest`.
+- `metadata_write_allowed` tetap `false`.
+- `manifest_write_allowed` tetap `false`.
+- `manifest_file_created` tetap `false`.
+- Tidak ada write ke production manifests, draft manifests, real metadata stores, manifest import/export, atau metadata import/write.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file stat/walk terhadap actual storage, bukan actual SSD access, bukan Google Drive access, bukan storage/production/backup/render/upload/publish folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan production metadata mutation, bukan manifest write/import/export, bukan draft manifest file creation, bukan evidence log/checklist/closeout mutation, bukan migration, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.17 Real Footage Source Folder Draft Manifest Approval Gate`
+
 ## Folder storage lokal
 
 - `storage/footage`

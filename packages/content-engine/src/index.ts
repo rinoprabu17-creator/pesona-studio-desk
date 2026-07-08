@@ -18,3 +18,4 @@ export * from "./source-folder-listing-approval-gate.ts";
 export * from "./source-folder-listing-review.ts";
 export * from "./source-folder-metadata-enrichment-review.ts";
 export * from "./source-folder-metadata-enrichment-approval-gate.ts";
+export * from "./source-folder-draft-manifest-review.ts";

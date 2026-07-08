@@ -1746,3 +1746,63 @@ Recommended next phase:
 `Phase 2J.16 Real Footage Source Folder Draft Manifest Review`
 
 This should review approved fixture metadata suggestions before any future draft manifest can be created. It is not production manifest write, not real metadata store mutation, not metadata import, not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
+
+## Phase 2J.16 Real Footage Source Folder Draft Manifest Review Status
+
+Phase 2J.16 adds a controlled draft manifest review layer for approved-for-draft-manifest suggestions from Phase 2J.15:
+
+- Current baseline is `3f20fe3`, tag `phase-2j15-complete`.
+- Draft manifest review utility is `packages/content-engine/src/source-folder-draft-manifest-review.ts`.
+- Draft manifest review fixture is `packages/content-engine/fixtures/source-folder-draft-manifest-review-smoke.json`.
+- Metadata enrichment approval dependency is `packages/content-engine/src/source-folder-metadata-enrichment-approval-gate.ts`.
+- Smoke command is `npm run ai:real-footage-source-draft-manifest-review:smoke`.
+- The only flow that can be draft-manifest-reviewed in this phase is the approved safe repo fixture flow through Phase 2J.12, 2J.13, 2J.14, and 2J.15 for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied upstream listing/review/enrichment/approval cases produce zero manifest preview items and are not upgraded.
+- Manifest review statuses are `manifest_preview_ok`, `needs_owner_review`, `blocked_manifest`, and `incomplete_manifest`.
+- Manifest preview output is in-memory only and is not a draft manifest file.
+- `metadata_write_allowed` remains `false`.
+- `manifest_write_allowed` remains `false`.
+- `manifest_file_created` remains `false`.
+- The review does not write production manifests, create draft manifest files, import/export/write manifests, mutate real metadata stores, or import/write metadata.
+- Real-looking paths remain metadata strings only and are not accessed.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Real source folder draft manifest approval gate.
+- Production manifest mutation.
+- Draft manifest file creation.
+- Manifest export/import/write.
+- Real metadata store mutation.
+- Metadata import/write.
+- Real footage folder scanning.
+- File stat/walk against actual storage.
+- Actual SSD access.
+- Google Drive access.
+- Storage folder access.
+- Production media access.
+- Backup/render/upload/publish folder access.
+- Media content opening.
+- Media decoding.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.17 Real Footage Source Folder Draft Manifest Approval Gate`
+
+This should gate the in-memory draft manifest preview before any future draft manifest creation can be considered. It is not production manifest write, not draft manifest file creation, not manifest export/import/write, not real metadata store mutation, not metadata import/write, not FFmpeg execution, not rendered video creation, not upload, not publishing, not publish package creation, not manual publish evidence log creation, not manual publish checklist mutation, not closeout, not public-ready approval, not cutover, not deployment, not production backup by Codex, not restore, not restore dry-run, not storage copy, not Docker Compose up/down on server, not container mutation, not scheduler/publisher/social API activation, not OpenAI live runtime by default, not migration work, not `scripts/prepare-test-db.mjs` change, and not worker expansion.
