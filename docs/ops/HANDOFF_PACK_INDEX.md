@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2J.10.
+This index links the ops documents created across Phase 2G.3 through Phase 2J.11.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -370,6 +370,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - `docs/ops/REAL_FOOTAGE_OWNER_APPROVED_SOURCE_FOLDER_GATE.md`
 - `docs/phase-2j10-real-footage-owner-approved-source-folder-gate.md`
 
+### Phase 2J.11
+
+- `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_APPROVAL_REVIEW.md`
+- `docs/phase-2j11-real-footage-source-folder-approval-review.md`
+
 ## Audience Mapping
 
 | Audience | Primary Docs |
@@ -469,6 +474,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Real footage read-only intake dry-run.
 - Real footage read-only intake review.
 - Real footage owner-approved source folder gate.
+- Real footage source folder approval review.
 
 ## Still Intentionally Pending
 
@@ -521,6 +527,7 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 - Treating Phase 2J.8 real footage read-only intake dry-run as real storage/media folder scanning, media content opening, media decoding, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval. Phase 2J.8 only allows controlled directory listing/stat on the safe repo fixture path.
 - Treating Phase 2J.9 real footage read-only intake review as real storage/media folder scanning, media content opening, media decoding, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval. Phase 2J.9 only reviews candidate rows generated from the safe Phase 2J.8 fixture intake.
 - Treating Phase 2J.10 owner-approved source folder gate as real storage/media folder scanning, actual SSD access, Google Drive access, storage folder access, production media access, backup/upload folder access, media content opening, media decoding, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval. Phase 2J.10 only validates owner approval and source path strings from a safe repo fixture.
+- Treating Phase 2J.11 source folder approval review as real storage/media folder scanning, file stat/walk against actual storage, actual SSD access, Google Drive access, storage folder access, production media access, backup/render/upload/publish folder access, media content opening, media decoding, FFmpeg execution, render execution, upload, publishing, public-ready approval, publish package creation, storage media mutation, manual publish evidence log creation, manual publish checklist completion, closeout creation, deployment, production backup, restore, restore dry-run, public exposure, storage copy from Codex, scheduler/publisher/social API activation, OpenAI live runtime activation, worker expansion, or cutover approval. Phase 2J.11 only audits approval records and Phase 2J.10 gate outcomes from a safe config fixture.
 - Public internet exposure.
 - Cloudflare Tunnel or reverse proxy decision.
 - Auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, and worker daemon changes.

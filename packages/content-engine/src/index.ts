@@ -13,3 +13,4 @@ export * from "./intake-dry-run-gate.ts";
 export * from "./read-only-intake.ts";
 export * from "./read-only-intake-review.ts";
 export * from "./source-folder-gate.ts";
+export * from "./source-folder-approval-review.ts";
