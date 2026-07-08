@@ -1928,3 +1928,127 @@ Recommended next phase:
 `Phase 2J.19 Real Footage Source Folder Draft Manifest Creation Dry-Run Review`
 
 This should review the dry-run gate result without creating, writing, importing, exporting, saving, or persisting any draft manifest file.
+
+## Phase 2J.19 Real Footage Source Folder Draft Manifest Creation Dry-Run Review Status
+
+Phase 2J.19 adds a controlled in-memory draft manifest creation dry-run review for Phase 2J.18 eligible rows:
+
+- Current baseline is `bfc6eea`, tag `phase-2j18-complete`.
+- Draft manifest creation dry-run review utility is `packages/content-engine/src/source-folder-draft-manifest-creation-dry-run-review.ts`.
+- Draft manifest creation dry-run review fixture is `packages/content-engine/fixtures/source-folder-draft-manifest-creation-dry-run-review-smoke.json`.
+- Draft manifest creation dry-run gate dependency is `packages/content-engine/src/source-folder-draft-manifest-creation-dry-run-gate.ts`.
+- Smoke command is `npm run ai:real-footage-source-draft-manifest-creation-review:smoke`.
+- The only flow that can be reviewed in this phase is the approved safe repo fixture flow through Phase 2J.12 through 2J.18 for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied upstream listing/review/enrichment/approval/draft-manifest-review/draft-manifest-approval/creation-gate cases produce zero dry-run preview items and are not upgraded.
+- Dry-run review statuses are `dry_run_preview_ok`, `needs_owner_review`, `incomplete_dry_run`, and `blocked_dry_run`.
+- `creation_dry_run_performed` means in-memory review simulation only, not draft or fixture manifest file creation.
+- `metadata_write_allowed` remains `false`.
+- `manifest_write_allowed` remains `false`.
+- `manifest_file_created` remains `false`.
+- `manifest_export_allowed` remains `false`.
+- The review does not write production manifests, create draft manifest files, create fixture manifest files, import/export/write/save/persist manifests, mutate real metadata stores, or import/write metadata.
+- Real-looking paths remain metadata strings only and are not accessed.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Real source folder draft manifest creation dry-run approval gate.
+- Production manifest mutation.
+- Draft manifest file creation.
+- Fixture manifest file creation.
+- Manifest export/import/write/save/persist.
+- Real metadata store mutation.
+- Metadata import/write.
+- Real footage folder scanning.
+- File stat/walk against actual storage.
+- Actual SSD access.
+- Google Drive access.
+- Storage folder access.
+- Production media access.
+- Backup/render/upload/publish folder access.
+- Media content opening.
+- Media decoding.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.20 Real Footage Source Folder Draft Manifest Creation Dry-Run Approval Gate`
+
+This should approve only future fixture manifest-write gate eligibility and must not create, write, import, export, save, or persist any manifest file.
+
+## Phase 2J.20 Real Footage Source Folder Draft Manifest Creation Dry-Run Approval Gate Status
+
+Phase 2J.20 adds a controlled approval gate for Phase 2J.19 in-memory creation dry-run review rows:
+
+- Current baseline is `bfc6eea`, tag `phase-2j18-complete`.
+- Draft manifest creation dry-run approval gate utility is `packages/content-engine/src/source-folder-draft-manifest-creation-dry-run-approval-gate.ts`.
+- Draft manifest creation dry-run approval gate fixture is `packages/content-engine/fixtures/source-folder-draft-manifest-creation-dry-run-approval-gate-smoke.json`.
+- Draft manifest creation dry-run review dependency is `packages/content-engine/src/source-folder-draft-manifest-creation-dry-run-review.ts`.
+- Smoke command is `npm run ai:real-footage-source-draft-manifest-creation-approval:smoke`.
+- The only flow that can be approval-gated in this phase is the approved safe repo fixture flow through Phase 2J.12 through 2J.19 for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied upstream listing/review/enrichment/approval/draft-manifest-review/draft-manifest-approval/creation-gate/creation-review cases produce zero approval items and are not upgraded.
+- Approval statuses are `approved_for_future_fixture_manifest_write_gate`, `needs_owner_review`, `incomplete_approval`, and `blocked_approval`.
+- `fixture_manifest_write_gate_allowed` means future gate eligibility only, not fixture or draft manifest file creation.
+- `metadata_write_allowed` remains `false`.
+- `manifest_write_allowed` remains `false`.
+- `manifest_file_created` remains `false`.
+- `manifest_export_allowed` remains `false`.
+- The gate does not write production manifests, create draft manifest files, create fixture manifest files, import/export/write/save/persist manifests, mutate real metadata stores, or import/write metadata.
+- Real-looking paths remain metadata strings only and are not accessed.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Future fixture manifest-write gate review.
+- Production manifest mutation.
+- Draft manifest file creation.
+- Fixture manifest file creation.
+- Manifest export/import/write/save/persist.
+- Real metadata store mutation.
+- Metadata import/write.
+- Real footage folder scanning.
+- File stat/walk against actual storage.
+- Actual SSD access.
+- Google Drive access.
+- Storage folder access.
+- Production media access.
+- Backup/render/upload/publish folder access.
+- Media content opening.
+- Media decoding.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.21 Real Footage Source Folder Fixture Manifest Write Gate`
+
+This should remain fixture-only and must not create, write, import, export, save, or persist any manifest file until owner approval explicitly authorizes that later behavior.

@@ -1,0 +1,12 @@
+{
+  "fixture_version": "source-folder-draft-manifest-creation-dry-run-review-smoke-v1",
+  "mode": "controlled_fixture_draft_manifest_creation_dry_run_review",
+  "source_creation_gate_fixture": "packages/content-engine/fixtures/source-folder-draft-manifest-creation-dry-run-gate-smoke.json",
+  "source_draft_manifest_approval_gate_fixture": "packages/content-engine/fixtures/source-folder-draft-manifest-approval-gate-smoke.json",
+  "source_draft_manifest_review_fixture": "packages/content-engine/fixtures/source-folder-draft-manifest-review-smoke.json",
+  "source_metadata_enrichment_approval_gate_fixture": "packages/content-engine/fixtures/source-folder-metadata-enrichment-approval-gate-smoke.json",
+  "source_metadata_enrichment_fixture": "packages/content-engine/fixtures/source-folder-metadata-enrichment-review-smoke.json",
+  "source_listing_review_fixture": "packages/content-engine/fixtures/source-folder-listing-review-smoke.json",
+  "source_listing_gate_fixture": "packages/content-engine/fixtures/source-folder-listing-approval-gate-smoke.json",
+  "notes": "Phase 2J.19 consumes Phase 2J.18 creation dry-run gate output and reviews in-memory preview rows only. Eligible rows can become dry_run_preview_ok, while missing-owner, incomplete, duplicate-ID, blocked upstream, risky, and denied-action rows stay blocked or in review. No production manifest, fixture manifest file, draft manifest file, manifest import/export/write, metadata import/write, or metadata store mutation is performed."
+}

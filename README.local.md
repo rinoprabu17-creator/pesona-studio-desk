@@ -921,6 +921,78 @@ Recommended next phase:
 
 `Phase 2J.19 Real Footage Source Folder Draft Manifest Creation Dry-Run Review`
 
+## Phase 2J.19 Real Footage Source Folder Draft Manifest Creation Dry-Run Review
+
+Phase 2J.19 menambahkan in-memory review layer untuk `eligible_for_creation_dry_run` items dari Phase 2J.18. Review ini hanya mensimulasikan dry-run preview di memori, bukan draft manifest file creation, fixture manifest file creation, manifest export/import/write/save/persist, production manifest write, atau real metadata store mutation.
+
+Command:
+
+```powershell
+npm run ai:real-footage-source-draft-manifest-creation-review:smoke
+```
+
+Status:
+
+- Baseline: `bfc6eea`, tag `phase-2j18-complete`.
+- Draft manifest creation dry-run review utility: `packages/content-engine/src/source-folder-draft-manifest-creation-dry-run-review.ts`.
+- Smoke fixture: `packages/content-engine/fixtures/source-folder-draft-manifest-creation-dry-run-review-smoke.json`.
+- Draft manifest creation dry-run gate dependency: `packages/content-engine/src/source-folder-draft-manifest-creation-dry-run-gate.ts`.
+- Satu-satunya flow yang boleh direview adalah approved safe repo fixture flow melalui Phase 2J.12 sampai 2J.18 untuk `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied upstream listing/review/enrichment/approval/draft-manifest-review/draft-manifest-approval/creation-gate cases tidak menghasilkan dry-run preview items.
+- Dry-run review status: `dry_run_preview_ok`, `needs_owner_review`, `incomplete_dry_run`, atau `blocked_dry_run`.
+- `creation_dry_run_performed` berarti in-memory simulation only, bukan manifest creation.
+- `metadata_write_allowed` tetap `false`.
+- `manifest_write_allowed` tetap `false`.
+- `manifest_file_created` tetap `false`.
+- `manifest_export_allowed` tetap `false`.
+- Tidak ada write ke production manifests, draft manifests, fixture manifests, real metadata stores, manifest import/export/write/save/persist, atau metadata import/write.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file stat/walk terhadap actual storage, bukan actual SSD access, bukan Google Drive access, bukan storage/production/backup/render/upload/publish folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan production metadata mutation, bukan manifest write/import/export/save/persist, bukan draft/fixture manifest file creation, bukan evidence log/checklist/closeout mutation, bukan migration, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.20 Real Footage Source Folder Draft Manifest Creation Dry-Run Approval Gate`
+
+## Phase 2J.20 Real Footage Source Folder Draft Manifest Creation Dry-Run Approval Gate
+
+Phase 2J.20 menambahkan approval gate untuk in-memory creation dry-run review rows dari Phase 2J.19. Approval phase ini hanya berarti item boleh dipertimbangkan pada future fixture manifest-write gate review, bukan draft manifest file creation, fixture manifest file creation, manifest export/import/write, production manifest write, atau real metadata store mutation.
+
+Command:
+
+```powershell
+npm run ai:real-footage-source-draft-manifest-creation-approval:smoke
+```
+
+Status:
+
+- Baseline: `bfc6eea`, tag `phase-2j18-complete`.
+- Draft manifest creation dry-run approval gate utility: `packages/content-engine/src/source-folder-draft-manifest-creation-dry-run-approval-gate.ts`.
+- Smoke fixture: `packages/content-engine/fixtures/source-folder-draft-manifest-creation-dry-run-approval-gate-smoke.json`.
+- Draft manifest creation dry-run review dependency: `packages/content-engine/src/source-folder-draft-manifest-creation-dry-run-review.ts`.
+- Satu-satunya flow yang boleh direview adalah approved safe repo fixture flow melalui Phase 2J.12 sampai 2J.19 untuk `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Denied upstream listing/review/enrichment/approval/draft-manifest-review/draft-manifest-approval/creation-gate/creation-review cases tidak menghasilkan approval items.
+- Approval status: `approved_for_future_fixture_manifest_write_gate`, `needs_owner_review`, `incomplete_approval`, atau `blocked_approval`.
+- `fixture_manifest_write_gate_allowed` berarti future gate eligibility only, bukan manifest creation.
+- `metadata_write_allowed` tetap `false`.
+- `manifest_write_allowed` tetap `false`.
+- `manifest_file_created` tetap `false`.
+- `manifest_export_allowed` tetap `false`.
+- Tidak ada write ke production manifests, draft manifests, fixture manifests, real metadata stores, manifest import/export/write/save/persist, atau metadata import/write.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file stat/walk terhadap actual storage, bukan actual SSD access, bukan Google Drive access, bukan storage/production/backup/render/upload/publish folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan production metadata mutation, bukan manifest write/import/export/save/persist, bukan draft/fixture manifest file creation, bukan evidence log/checklist/closeout mutation, bukan migration, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.21 Real Footage Source Folder Fixture Manifest Write Gate`
+
 ## Folder storage lokal
 
 - `storage/footage`
