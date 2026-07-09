@@ -2464,6 +2464,78 @@ Recommended next phase:
 
 This should remain fixture-only and must not create, write, import, export, save, persist, or execute any manifest file until owner approval explicitly authorizes that later behavior.
 
+## Phase 2J.30 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Gate Review Status
+
+Phase 2J.30 adds a controlled fixture manifest file creation dry-run execution gate review for Phase 2J.29 approval-gate rows:
+
+- Current baseline is `b2c5dff`, tag `phase-2j29-complete`.
+- Fixture manifest file creation dry-run execution gate review utility is `packages/content-engine/src/source-folder-fixture-manifest-file-creation-dry-run-execution-gate-review.ts`.
+- Fixture manifest file creation dry-run execution gate review fixture is `packages/content-engine/fixtures/source-folder-fixture-manifest-file-creation-dry-run-execution-gate-review-smoke.json`.
+- Fixture manifest file creation dry-run execution review approval gate dependency is `packages/content-engine/src/source-folder-fixture-manifest-file-creation-dry-run-execution-review-approval-gate.ts`.
+- Smoke command is `npm run ai:real-footage-source-fixture-manifest-file-creation-execution-gate-review:smoke`.
+- The only flow that can be reviewed in this phase is the safe repo fixture flow through Phase 2J.12 through 2J.29 for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Only `approved_for_future_fixture_manifest_file_creation_dry_run_execution_gate` rows from Phase 2J.29 may become `execution_gate_review_ok`.
+- Denied upstream listing/review/enrichment/approval/draft-manifest-review/draft-manifest-approval/creation-gate/creation-review/creation-approval/write-gate/write-plan/file-creation-approval/file-creation-gate/file-creation-plan/file-creation-approval-gate/execution-gate/execution-review/execution-review-approval cases are not upgraded.
+- Review statuses are `execution_gate_review_ok`, `needs_owner_review`, `incomplete_execution_gate_review`, and `blocked_execution_gate_review`.
+- `in_memory_execution_gate_review_preview` means in-memory review evidence only, not persisted execution output.
+- `fixture_manifest_execution_gate_review_persisted` remains `false`.
+- `fixture_manifest_execution_review_persisted` remains `false`.
+- `fixture_manifest_file_creation_execution_performed` remains `false`.
+- `fixture_manifest_file_creation_performed` remains `false`.
+- `fixture_manifest_write_performed` remains `false`.
+- `fixture_manifest_file_created` remains `false`.
+- `metadata_write_allowed` remains `false`.
+- `manifest_write_allowed` remains `false`.
+- `production_manifest_write_allowed` remains `false`.
+- `manifest_export_allowed` remains `false`.
+- The review does not write production manifests, create draft manifest files, create fixture manifest files, perform fixture manifest writes, execute fixture manifest file creation, execute fixture manifest file creation gates, persist execution review output, persist execution gate review output, import/export/write/save/persist manifests, mutate real metadata stores, or import/write metadata.
+- Real-looking paths remain metadata strings only and are not accessed.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Future fixture manifest file creation dry-run execution gate review approval.
+- Production manifest mutation.
+- Draft manifest file creation.
+- Fixture manifest file creation.
+- Fixture manifest write performed.
+- Fixture manifest file creation execution performed.
+- Fixture manifest execution review persistence.
+- Fixture manifest execution gate review persistence.
+- Production manifest file creation.
+- Manifest export/import/write/save/persist.
+- Real metadata store mutation.
+- Metadata import/write.
+- Real footage folder scanning.
+- File stat/walk against actual storage.
+- Actual SSD access.
+- Google Drive access.
+- Storage folder access.
+- Production media access.
+- Backup/render/upload/publish folder access.
+- Media content opening.
+- Media decoding.
+- OCR/CV.
+- Actual render from selected footage.
+- FFmpeg execution.
+- Public-ready review from real rendered video.
+- Upload.
+- Publishing.
+- Publish package creation.
+- Evidence log creation.
+- Manual publish checklist mutation.
+- Closeout.
+- Scheduler/social API/publisher.
+- Public exposure.
+- Cutover.
+
+Recommended next phase:
+
+`Phase 2J.31 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Gate Review Approval Gate`
+
 ## Phase 2J.28 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Review Status
 
 Phase 2J.28 adds a controlled fixture manifest file creation dry-run execution review for Phase 2J.27 eligible rows:
