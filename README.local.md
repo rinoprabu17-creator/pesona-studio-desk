@@ -1440,6 +1440,39 @@ Recommended next phase:
 
 `Phase 2J.32 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Gate Approval Review`
 
+## Phase 2J.32 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Gate Approval Review
+
+Phase 2J.32 menambahkan in-memory approval review layer untuk rows `approved_for_future_fixture_manifest_file_creation_dry_run_execution_gate_approval_review` dari Phase 2J.31. Review ini hanya membuat in-memory execution gate approval review preview untuk future owner approval, bukan gate execution, fixture manifest file creation, fixture manifest write performed, fixture manifest file creation performed, fixture manifest file creation gate execution, fixture manifest file creation execution gate execution, fixture manifest file creation execution performed, fixture manifest execution review persisted, fixture manifest execution gate review persisted, fixture manifest execution gate review approval persisted, fixture manifest execution gate approval review persisted, draft manifest file creation, production manifest write, manifest export/import/write/save/persist, atau real metadata store mutation.
+
+- Baseline lokal adalah `0a6353a`, tag `phase-2j31-complete`.
+- Utility: `packages/content-engine/src/source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review.ts`.
+- Fixture: `packages/content-engine/fixtures/source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-smoke.json`.
+- Dependency: `packages/content-engine/src/source-folder-fixture-manifest-file-creation-dry-run-execution-gate-review-approval-gate.ts`.
+- Smoke command: `npm run ai:real-footage-source-fixture-manifest-file-creation-execution-gate-approval-review:smoke`.
+- Satu-satunya flow yang boleh direview adalah approved safe repo fixture flow melalui Phase 2J.12 sampai 2J.31 untuk `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Hanya rows `approved_for_future_fixture_manifest_file_creation_dry_run_execution_gate_approval_review` dari Phase 2J.31 yang boleh menjadi `execution_gate_approval_review_ok`.
+- `in_memory_execution_gate_approval_review_preview` hanya object/string in-memory dan tidak dipersist.
+- `fixture_manifest_execution_gate_approval_review_persisted` tetap `false`.
+- `fixture_manifest_execution_gate_review_approval_persisted` tetap `false`.
+- `fixture_manifest_execution_gate_review_persisted` tetap `false`.
+- `fixture_manifest_execution_review_persisted` tetap `false`.
+- `fixture_manifest_file_creation_execution_performed` tetap `false`.
+- `fixture_manifest_file_creation_performed` tetap `false`.
+- `fixture_manifest_write_performed` tetap `false`.
+- `fixture_manifest_file_created` tetap `false`.
+- `metadata_write_allowed` tetap `false`.
+- `manifest_write_allowed` tetap `false`.
+- `production_manifest_write_allowed` tetap `false`.
+- `manifest_export_allowed` tetap `false`.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file stat/walk terhadap actual storage, bukan actual SSD access, bukan Google Drive access, bukan storage/production/backup/render/upload/publish folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan production metadata mutation, bukan manifest write/import/export/save/persist, bukan draft/fixture/production manifest file creation, bukan fixture manifest write performed, bukan fixture manifest file creation performed, bukan fixture manifest file creation gate execution, bukan fixture manifest file creation execution gate execution, bukan fixture manifest file creation execution performed, bukan fixture manifest execution review persisted, bukan fixture manifest execution gate review persisted, bukan fixture manifest execution gate review approval persisted, bukan fixture manifest execution gate approval review persisted, bukan evidence log/checklist/closeout mutation, bukan migration, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.33 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Gate Approval Review Approval Gate`
+
 ## Folder storage lokal
 
 - `storage/footage`

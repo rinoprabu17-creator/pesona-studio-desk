@@ -34,3 +34,4 @@ export * from "./source-folder-fixture-manifest-file-creation-dry-run-execution-
 export * from "./source-folder-fixture-manifest-file-creation-dry-run-execution-review-approval-gate.ts";
 export * from "./source-folder-fixture-manifest-file-creation-dry-run-execution-gate-review.ts";
 export * from "./source-folder-fixture-manifest-file-creation-dry-run-execution-gate-review-approval-gate.ts";
+export * from "./source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review.ts";
