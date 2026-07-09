@@ -2513,6 +2513,57 @@ Still pending:
 - File stat/walk against actual storage.
 - Actual SSD access.
 - Google Drive access.
+
+## Phase 2J.31 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Gate Review Approval Gate Status
+
+Phase 2J.31 adds a controlled fixture manifest file creation dry-run execution gate review approval gate for Phase 2J.30 in-memory execution gate review rows:
+
+- Current baseline is `80d3348`, tag `phase-2j30-complete`.
+- Fixture manifest file creation dry-run execution gate review approval gate utility is `packages/content-engine/src/source-folder-fixture-manifest-file-creation-dry-run-execution-gate-review-approval-gate.ts`.
+- Fixture manifest file creation dry-run execution gate review approval fixture is `packages/content-engine/fixtures/source-folder-fixture-manifest-file-creation-dry-run-execution-gate-review-approval-gate-smoke.json`.
+- Fixture manifest file creation dry-run execution gate review dependency is `packages/content-engine/src/source-folder-fixture-manifest-file-creation-dry-run-execution-gate-review.ts`.
+- Smoke command is `npm run ai:real-footage-source-fixture-manifest-file-creation-execution-gate-review-approval:smoke`.
+- The only flow that can be approval-gated in this phase is the safe repo fixture flow through Phase 2J.12 through 2J.30 for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Only `execution_gate_review_ok` rows from Phase 2J.30 may become `approved_for_future_fixture_manifest_file_creation_dry_run_execution_gate_approval_review`.
+- Denied upstream cases are not upgraded.
+- Approval statuses are `approved_for_future_fixture_manifest_file_creation_dry_run_execution_gate_approval_review`, `needs_owner_review`, `incomplete_approval`, and `blocked_approval`.
+- `fixture_manifest_execution_gate_review_approval_persisted` remains `false`.
+- `fixture_manifest_execution_gate_review_persisted` remains `false`.
+- `fixture_manifest_execution_review_persisted` remains `false`.
+- `fixture_manifest_file_creation_execution_performed` remains `false`.
+- `fixture_manifest_file_creation_performed` remains `false`.
+- `fixture_manifest_write_performed` remains `false`.
+- `fixture_manifest_file_created` remains `false`.
+- `metadata_write_allowed` remains `false`.
+- `manifest_write_allowed` remains `false`.
+- `production_manifest_write_allowed` remains `false`.
+- `manifest_export_allowed` remains `false`.
+- The approval gate does not execute a gate, write production manifests, create draft manifest files, create fixture manifest files, perform fixture manifest writes, execute fixture manifest file creation, execute fixture manifest file creation gates, persist execution review output, persist execution gate review output, persist execution gate review approval output, import/export/write/save/persist manifests, mutate real metadata stores, or import/write metadata.
+- Real-looking paths remain metadata strings only and are not accessed.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Future fixture manifest file creation dry-run execution gate approval review.
+- Production manifest mutation.
+- Draft manifest file creation.
+- Fixture manifest file creation.
+- Fixture manifest write performed.
+- Fixture manifest file creation execution performed.
+- Fixture manifest execution review persistence.
+- Fixture manifest execution gate review persistence.
+- Fixture manifest execution gate review approval persistence.
+- Production manifest file creation.
+- Manifest export/import/write/save/persist.
+- Real metadata store mutation.
+- Metadata import/write.
+- Real footage folder scanning.
+- File stat/walk against actual storage.
+- Actual SSD access.
+- Google Drive access.
 - Storage folder access.
 - Production media access.
 - Backup/render/upload/publish folder access.
