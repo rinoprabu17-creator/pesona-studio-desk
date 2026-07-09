@@ -1314,6 +1314,49 @@ Recommended next phase:
 
 `Phase 2J.29 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Review Approval Gate`
 
+## Phase 2J.29 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Review Approval Gate
+
+Phase 2J.29 menambahkan approval gate untuk in-memory execution review rows dari Phase 2J.28. Approval ini hanya menentukan eligibility untuk future fixture-manifest file creation dry-run execution gate review, bukan fixture manifest file creation, fixture manifest write performed, fixture manifest file creation performed, fixture manifest file creation gate execution, fixture manifest file creation execution gate execution, fixture manifest file creation execution performed, fixture manifest execution review persisted, draft manifest file creation, production manifest write, manifest export/import/write/save/persist, atau real metadata store mutation.
+
+Command:
+
+```powershell
+npm run ai:real-footage-source-fixture-manifest-file-creation-execution-review-approval:smoke
+```
+
+Status:
+
+- Baseline: `0d71caf`, tag `phase-2j28-complete`.
+- Fixture manifest file creation dry-run execution review approval gate utility: `packages/content-engine/src/source-folder-fixture-manifest-file-creation-dry-run-execution-review-approval-gate.ts`.
+- Smoke fixture: `packages/content-engine/fixtures/source-folder-fixture-manifest-file-creation-dry-run-execution-review-approval-gate-smoke.json`.
+- Fixture manifest file creation dry-run execution review dependency: `packages/content-engine/src/source-folder-fixture-manifest-file-creation-dry-run-execution-review.ts`.
+- Satu-satunya flow yang boleh digate adalah safe repo fixture flow melalui Phase 2J.12 sampai 2J.28 untuk `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Hanya rows `execution_review_ok` dari Phase 2J.28 dengan explicit owner approval dan approval scope future execution-gate review yang dapat menjadi `approved_for_future_fixture_manifest_file_creation_dry_run_execution_gate`.
+- Denied upstream listing/review/enrichment/approval/draft-manifest-review/draft-manifest-approval/creation-gate/creation-review/creation-approval/write-gate/write-plan/file-creation-approval/file-creation-gate/file-creation-plan/file-creation-approval-gate/execution-gate/execution-review cases tidak di-upgrade.
+- Approval status: `approved_for_future_fixture_manifest_file_creation_dry_run_execution_gate`, `needs_owner_review`, `incomplete_approval`, atau `blocked_approval`.
+- `fixture_manifest_file_creation_dry_run_execution_gate_allowed` berarti future gate review eligibility saja.
+- `fixture_manifest_execution_review_persisted` tetap `false`.
+- `fixture_manifest_file_creation_execution_performed` tetap `false`.
+- `fixture_manifest_file_creation_performed` tetap `false`.
+- `fixture_manifest_write_performed` tetap `false`.
+- `fixture_manifest_file_created` tetap `false`.
+- `metadata_write_allowed` tetap `false`.
+- `manifest_write_allowed` tetap `false`.
+- `production_manifest_write_allowed` tetap `false`.
+- `manifest_export_allowed` tetap `false`.
+- Tidak ada write ke production manifests, draft manifests, fixture manifests, real metadata stores, manifest import/export/write/save/persist, atau metadata import/write.
+- Target fixture manifest path hanya string planning untuk future phase dan tidak dibuat.
+- Fake provider tetap default.
+- OpenAI/live AI tidak dibutuhkan.
+- `public_ready` tetap `false`.
+- Publish track tetap blocked.
+
+Phase ini bukan real media folder scan, bukan file stat/walk terhadap actual storage, bukan actual SSD access, bukan Google Drive access, bukan storage/production/backup/render/upload/publish folder access, bukan file content open, bukan media decoding, bukan FFmpeg, bukan render, bukan upload, bukan publishing, bukan publish package creation, bukan production metadata mutation, bukan manifest write/import/export/save/persist, bukan draft/fixture/production manifest file creation, bukan fixture manifest write performed, bukan fixture manifest file creation performed, bukan fixture manifest file creation gate execution, bukan fixture manifest file creation execution gate execution, bukan fixture manifest file creation execution performed, bukan fixture manifest execution review persisted, bukan evidence log/checklist/closeout mutation, bukan migration, bukan server/Docker command, dan bukan cutover.
+
+Recommended next phase:
+
+`Phase 2J.30 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Gate Review`
+
 ## Folder storage lokal
 
 - `storage/footage`
