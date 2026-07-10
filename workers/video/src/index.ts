@@ -1,33 +1,28 @@
-export {};
+import { closeDatabase } from "../../../apps/web/src/db.ts";
+import { processOneOperationalVideoJob } from "../../../apps/web/src/operational-mvp-service.ts";
 
-type WorkerConfig = {
-  name: string;
-  queueName: string;
-  storageDir: string;
-  redisUrl: string;
-  databaseUrl: string;
-  intervalMs: number;
-};
-
-const config: WorkerConfig = {
+const config = {
   name: "video-worker",
-  queueName: "video-render",
+  queueName: "ops:video-render",
   storageDir: process.env.APP_STORAGE_DIR || "/app/storage",
   redisUrl: process.env.REDIS_URL || "redis://redis:6379",
   databaseUrl: process.env.DATABASE_URL || "postgresql://pesona:pesona_dev_password@postgres:5432/pesona_studio",
-  intervalMs: Number(process.env.VIDEO_WORKER_POLL_INTERVAL_MS || "15000")
+  intervalMs: Number(process.env.VIDEO_WORKER_POLL_INTERVAL_MS || "5000"),
+  once: process.env.VIDEO_WORKER_ONCE === "true"
 };
 
 function log(event: string, details: Record<string, unknown> = {}): void {
-  console.log(
-    JSON.stringify({
-      level: "info",
-      service: config.name,
-      event,
-      queue: config.queueName,
-      ...details
-    })
-  );
+  console.log(JSON.stringify({ level: "info", service: config.name, event, queue: config.queueName, ...details }));
+}
+
+async function processJob(): Promise<void> {
+  const result = await processOneOperationalVideoJob();
+  log("poll", result);
+  if (config.once) {
+    clearInterval(heartbeat);
+    await closeDatabase();
+    process.exit(result.processed && result.status === "failed" ? 1 : 0);
+  }
 }
 
 log("started", {
@@ -37,16 +32,17 @@ log("started", {
 });
 
 const heartbeat = setInterval(() => {
-  log("heartbeat", {
-    message: "Placeholder aktif. Render video belum diimplementasikan."
-  });
+  processJob().catch((error) => log("job_error", { error: error instanceof Error ? error.message : String(error) }));
 }, config.intervalMs);
 
-function shutdown(signal: string): void {
+await processJob();
+
+async function shutdown(signal: string): Promise<void> {
   log("shutdown", { signal });
   clearInterval(heartbeat);
+  await closeDatabase();
   process.exit(0);
 }
 
-process.on("SIGINT", () => shutdown("SIGINT"));
-process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));

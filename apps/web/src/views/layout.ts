@@ -14,6 +14,7 @@ export const navSections: NavSection[] = [
   {
     label: "Overview",
     items: [
+      { href: "/operational", label: "Dashboard Operasional" },
       { href: "/operational-readiness", label: "Operational Readiness" }
     ]
   },

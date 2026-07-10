@@ -10,7 +10,9 @@ RUN apk add --no-cache ffmpeg
 COPY package.json package-lock.json ./
 RUN npm ci
 
+COPY configs ./configs
 COPY packages/campaign-planner ./packages/campaign-planner
+COPY packages/content-engine ./packages/content-engine
 COPY apps/web ./apps/web
 
 EXPOSE 3000

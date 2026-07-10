@@ -15,6 +15,7 @@ RUN npm ci --omit=dev
 COPY configs ./configs
 COPY packages/campaign-planner ./packages/campaign-planner
 COPY packages/content-engine ./packages/content-engine
+COPY apps/web ./apps/web
 COPY scripts/real-footage-mvp-render.mjs ./scripts/real-footage-mvp-render.mjs
 COPY workers/video ./workers/video
 

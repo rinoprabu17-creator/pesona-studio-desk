@@ -1,7 +1,6 @@
 import { createServer } from "node:http";
-import { existsSync } from "node:fs";
+import { createReadStream, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { checkDatabase } from "./db.ts";
 import { getPathname, getRequestUrl } from "./http/request.ts";
 import type { RequestLike } from "./http/request.ts";
 import { handleApiError, sendError, sendHtml, sendJson } from "./http/response.ts";
@@ -26,6 +25,8 @@ import { handleManualPublishReportApiRoute } from "./routes/manual-publish-repor
 import { handleManualPublishReportPageGet } from "./routes/manual-publish-report-page-routes.ts";
 import { handleOperationalReadinessApiRoute } from "./routes/operational-readiness-api-routes.ts";
 import { handleOperationalReadinessPageGet } from "./routes/operational-readiness-page-routes.ts";
+import { handleOperationalMvpApiRoute, handleOperationalMvpPageGet, handleOperationalMvpPagePost } from "./routes/operational-mvp-routes.ts";
+import { checkOperationalHealth } from "./operational-mvp-service.ts";
 import { handleContentCalendarApiRoute } from "./routes/content-calendar-api-routes.ts";
 import { handleContentCalendarPageGet } from "./routes/content-calendar-page-routes.ts";
 import { handleContentItemApiRoute } from "./routes/content-item-api-routes.ts";
@@ -41,9 +42,40 @@ import { escapeHtml, renderLayout } from "./views/layout.ts";
 const appName = process.env.APP_NAME || "Pesona Studio Desk";
 const port = Number(process.env.APP_PORT || process.env.PORT || "3000");
 const storageDir = process.env.APP_STORAGE_DIR || join(process.cwd(), "storage");
+const adminUser = process.env.PSD_ADMIN_USER || "admin";
+const adminPassword = process.env.PSD_ADMIN_PASSWORD || "dev_admin_password";
 
 function isApiPath(pathname: string): boolean {
   return pathname === "/health" || pathname.startsWith("/api/");
+}
+
+function isAuthorized(request: RequestLike): boolean {
+  if (process.env.PSD_ADMIN_AUTH_DISABLED === "true") return true;
+  const header = request.headers.authorization;
+  const value = Array.isArray(header) ? header[0] : header;
+  if (!value?.startsWith("Basic ")) return false;
+  return Buffer.from(value.slice("Basic ".length), "base64").toString("utf8") === `${adminUser}:${adminPassword}`;
+}
+
+function requestAuth(response: ResponseLike): void {
+  response.writeHead(401, {
+    "WWW-Authenticate": 'Basic realm="Pesona Studio Desk"',
+    "Content-Type": "text/plain; charset=utf-8",
+    "Cache-Control": "no-store"
+  });
+  response.end("Autentikasi admin diperlukan.");
+}
+
+function serveStorageFile(response: ResponseLike, pathname: string): boolean {
+  if (!pathname.startsWith("/storage/")) return false;
+  const relativePath = pathname.slice(1);
+  if (relativePath.includes("..") || relativePath.includes("\\")) return false;
+  const absolutePath = join(process.cwd(), relativePath);
+  if (!absolutePath.startsWith(join(process.cwd(), "storage")) || !existsSync(absolutePath) || !statSync(absolutePath).isFile()) return false;
+  const contentType = absolutePath.endsWith(".mp4") ? "video/mp4" : absolutePath.endsWith(".png") ? "image/png" : "application/octet-stream";
+  response.writeHead(200, { "Content-Type": contentType, "Cache-Control": "no-store" });
+  createReadStream(absolutePath).pipe(response as any);
+  return true;
 }
 
 const server = createServer(async (request: RequestLike, response: ResponseLike) => {
@@ -52,20 +84,32 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
 
   try {
     if (pathname === "/health") {
+      const operationalHealth = await checkOperationalHealth();
       sendJson(response, 200, {
         ok: true,
         data: {
-          status: "ok",
+          status: operationalHealth.status,
           app: appName,
-          storageReady: existsSync(storageDir),
-          databaseReady: await checkDatabase()
+          storageReady: operationalHealth.storageReady,
+          databaseReady: operationalHealth.databaseReady,
+          redisReady: operationalHealth.redisReady
         }
       });
       return;
     }
 
+    if (!isAuthorized(request)) {
+      requestAuth(response);
+      return;
+    }
+
+    if (serveStorageFile(response, pathname)) {
+      return;
+    }
+
     if (pathname.startsWith("/api/")) {
       const handled =
+        (await handleOperationalMvpApiRoute(request, response, pathname, url)) ||
         (await handleLibraryApiRoute(request, response, pathname)) ||
         (await handleCampaignApiRoute(request, response, pathname)) ||
         (await handleCampaignPlanImportApiRoute(request, response, pathname)) ||
@@ -89,6 +133,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
 
     if (request.method === "POST") {
       const handled =
+        (await handleOperationalMvpPagePost(request, response, pathname)) ||
         (await handleLibraryPagePost(request, response, pathname)) ||
         (await handleCampaignPagePost(request, response, pathname)) ||
         (await handleCampaignPlanImportPagePost(request, response, pathname)) ||
@@ -108,6 +153,7 @@ const server = createServer(async (request: RequestLike, response: ResponseLike)
     }
 
     const handled =
+      (await handleOperationalMvpPageGet(response, pathname, url)) ||
       (await handleLibraryPageGet(response, pathname, url)) ||
       (await handleCampaignPageGet(response, pathname, url)) ||
       (await handleCampaignPlanImportPageGet(response, pathname, url)) ||
