@@ -20,6 +20,16 @@ services:
     secrets:
       - openai_api_key
 
+  video-worker:
+    environment:
+      REAL_FOOTAGE_CONTENT_DIRECTOR_PROVIDER: openai
+      REAL_FOOTAGE_INPUT_DIR: storage/footage/psd-real-footage-input
+      REAL_FOOTAGE_RENDER_OUTPUT_DIR: storage/draft-videos/real-footage-mvp
+      OPENAI_MODEL: ${OPENAI_MODEL:?OPENAI_MODEL wajib diset untuk OpenAI override}
+      OPENAI_API_KEY_FILE: /run/secrets/openai_api_key
+    secrets:
+      - openai_api_key
+
 secrets:
   openai_api_key:
     file: ./secrets/openai_api_key.txt

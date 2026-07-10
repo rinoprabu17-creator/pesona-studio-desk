@@ -38,3 +38,5 @@ export * from "./source-folder-fixture-manifest-file-creation-dry-run-execution-
 export * from "./source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-approval-gate.ts";
 export * from "./source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-follow-up-review.ts";
 export * from "./source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-follow-up-review-approval-gate.ts";
+export * from "./real-footage-mvp-proof.ts";
+export * from "./real-footage-mvp-render.ts";
