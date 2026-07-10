@@ -270,6 +270,18 @@ test("video worker Docker image includes local campaign planner dependency for r
   assert.doesNotMatch(dockerignore, /(^|\n)packages\/campaign-planner(\n|$)/);
 });
 
+test("video worker Docker image provides expected DejaVu font path", () => {
+  const dockerfile = readFileSync("workers/video/Dockerfile", "utf8");
+
+  assert.match(dockerfile, /apk add --no-cache ffmpeg font-dejavu/);
+  assert.match(dockerfile, /test -f \/usr\/share\/fonts\/dejavu\/DejaVuSans-Bold\.ttf/);
+  assert.match(dockerfile, /mkdir -p \/usr\/share\/fonts\/truetype\/dejavu/);
+  assert.match(
+    dockerfile,
+    /ln -sf \/usr\/share\/fonts\/dejavu\/DejaVuSans-Bold\.ttf \/usr\/share\/fonts\/truetype\/dejavu\/DejaVuSans-Bold\.ttf/
+  );
+});
+
 test("real footage AI frame extraction limits analysis thumbnails to 512 without source mutation", () => {
   const args = buildFrameExtractionFfmpegArgs({
     sourcePath: "/input/source.mp4",

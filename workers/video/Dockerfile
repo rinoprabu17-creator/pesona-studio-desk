@@ -4,7 +4,10 @@ WORKDIR /app
 
 ENV NODE_ENV=development
 
-RUN apk add --no-cache ffmpeg font-dejavu
+RUN apk add --no-cache ffmpeg font-dejavu \
+  && test -f /usr/share/fonts/dejavu/DejaVuSans-Bold.ttf \
+  && mkdir -p /usr/share/fonts/truetype/dejavu \
+  && ln -sf /usr/share/fonts/dejavu/DejaVuSans-Bold.ttf /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
