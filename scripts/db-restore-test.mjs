@@ -70,9 +70,15 @@ try {
        FROM information_schema.tables
        WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
     );
-    const migrationResult = await verifyClient.query(`SELECT COUNT(*)::int AS migration_count FROM schema_migrations`);
+    const migrationTrackingResult = await verifyClient.query(`SELECT to_regclass('public.schema_migrations') AS regclass`);
+    const migrationTracking = migrationTrackingResult.rows[0]?.regclass ? "tracked" : "legacy_absent";
+    const migrationResult = migrationTracking === "tracked"
+      ? await verifyClient.query(`SELECT COUNT(*)::int AS migration_count FROM schema_migrations`)
+      : { rows: [{ migration_count: 0 }] };
     if (Number(tableResult.rows[0].table_count) < 1) throw new Error("restore_test_has_no_public_tables");
-    if (Number(migrationResult.rows[0].migration_count) < 1) throw new Error("restore_test_has_no_schema_migrations");
+    if (migrationTracking === "tracked" && Number(migrationResult.rows[0].migration_count) < 1) {
+      throw new Error("restore_test_has_no_schema_migrations");
+    }
 
     console.log(JSON.stringify({
       status: "restore_test_passed",
@@ -80,6 +86,7 @@ try {
       temporary_database: tempDatabaseName,
       listed_entries: listResult.stdout.split("\n").filter(Boolean).length,
       table_count: Number(tableResult.rows[0].table_count),
+      migration_tracking: migrationTracking,
       migration_count: Number(migrationResult.rows[0].migration_count),
       production_database_mutated: false,
       temporary_database_dropped: true

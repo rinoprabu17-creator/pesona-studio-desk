@@ -14,6 +14,7 @@ COPY configs ./configs
 COPY migrations ./migrations
 COPY scripts/env.mjs ./scripts/env.mjs
 COPY scripts/migrate.mjs ./scripts/migrate.mjs
+COPY scripts/migration-legacy-adoption.mjs ./scripts/migration-legacy-adoption.mjs
 COPY scripts/db-backup-helpers.mjs ./scripts/db-backup-helpers.mjs
 COPY scripts/db-backup.mjs ./scripts/db-backup.mjs
 COPY scripts/db-restore-test.mjs ./scripts/db-restore-test.mjs

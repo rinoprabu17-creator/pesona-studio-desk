@@ -3,6 +3,14 @@ import { readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import pg from "pg";
 import { loadLocalEnv } from "./env.mjs";
+import {
+  adoptLegacyBaseline,
+  extractLegacyRequirements,
+  parseMigrationFileName,
+  publicSchemaObjectCount,
+  schemaMigrationsExists,
+  verifyLegacySchema
+} from "./migration-legacy-adoption.mjs";
 
 loadLocalEnv();
 
@@ -19,40 +27,48 @@ function checksum(contents) {
   return createHash("sha256").update(contents).digest("hex");
 }
 
-function parseMigrationFile(fileName) {
-  const match = fileName.match(/^(\d+)_(.+)\.sql$/);
-  if (!match) {
-    throw new Error(`Nama migration tidak valid: ${fileName}`);
-  }
-
-  return {
-    version: match[1],
-    name: match[2],
-    fileName
-  };
-}
-
 await client.connect();
 
 try {
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-      version text PRIMARY KEY,
-      name text NOT NULL,
-      checksum text NOT NULL,
-      applied_at timestamptz NOT NULL DEFAULT now()
-    )
-  `);
-
-  const files = readdirSync(migrationsDir)
+  const migrationFiles = readdirSync(migrationsDir)
     .filter((fileName) => fileName.endsWith(".sql"))
-    .sort();
+    .sort()
+    .map((fileName) => {
+      const migration = parseMigrationFileName(fileName);
+      const sql = readFileSync(join(migrationsDir, fileName), "utf8");
+      return { ...migration, sql };
+    });
+  const checksums = new Map(migrationFiles.map((file) => [file.fileName, checksum(file.sql)]));
 
-  for (const fileName of files) {
-    const migration = parseMigrationFile(fileName);
-    const path = join(migrationsDir, fileName);
-    const sql = readFileSync(path, "utf8");
-    const sqlChecksum = checksum(sql);
+  const hasMigrationTracking = await schemaMigrationsExists(client);
+  if (!hasMigrationTracking) {
+    const objectCount = await publicSchemaObjectCount(client);
+    if (objectCount === 0) {
+      await client.query(`
+        CREATE TABLE schema_migrations (
+          version text PRIMARY KEY,
+          name text NOT NULL,
+          checksum text NOT NULL,
+          applied_at timestamptz NOT NULL DEFAULT now()
+        )
+      `);
+      console.log("[db:migrate] initialized schema_migrations for empty database.");
+    } else {
+      const requirements = extractLegacyRequirements(migrationFiles);
+      const verification = await verifyLegacySchema(client, requirements);
+      if (!verification.ok) {
+        throw new Error(`legacy_schema_verification_failed: ${verification.missing.join(", ")}`);
+      }
+      await adoptLegacyBaseline(client, migrationFiles, checksums);
+      console.log(
+        `[db:migrate] adopted legacy baseline 001-018 ` +
+          `(tables=${verification.table_count}, columns=${verification.column_count}, constraints=${verification.constraint_count}, indexes=${verification.index_count}).`
+      );
+    }
+  }
+
+  for (const migration of migrationFiles) {
+    const sqlChecksum = checksums.get(migration.fileName);
     const existing = await client.query(
       "SELECT checksum FROM schema_migrations WHERE version = $1",
       [migration.version]
@@ -61,24 +77,24 @@ try {
     if (existing.rows[0]) {
       if (existing.rows[0].checksum !== sqlChecksum) {
         throw new Error(
-          `Checksum mismatch untuk migration ${fileName}. File migration yang sudah diterapkan tidak boleh diubah.`
+          `Checksum mismatch untuk migration ${migration.fileName}. File migration yang sudah diterapkan tidak boleh diubah.`
         );
       }
 
-      console.log(`[db:migrate] skip ${fileName}`);
+      console.log(`[db:migrate] skip ${migration.fileName}`);
       continue;
     }
 
     await client.query("BEGIN");
     try {
-      await client.query(sql);
+      await client.query(migration.sql);
       await client.query(
         `INSERT INTO schema_migrations (version, name, checksum)
          VALUES ($1, $2, $3)`,
         [migration.version, migration.name, sqlChecksum]
       );
       await client.query("COMMIT");
-      console.log(`[db:migrate] applied ${fileName}`);
+      console.log(`[db:migrate] applied ${migration.fileName}`);
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;

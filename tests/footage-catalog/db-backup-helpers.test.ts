@@ -43,6 +43,7 @@ test("web-app Dockerfile includes PostgreSQL client and backup runtime files", (
   const dockerfile = readFileSync(join(process.cwd(), "apps/web/Dockerfile"), "utf8");
   assert.match(dockerfile, /postgresql16-client/);
   assert.match(dockerfile, /COPY migrations \.\/migrations/);
+  assert.match(dockerfile, /COPY scripts\/migration-legacy-adoption\.mjs/);
   assert.match(dockerfile, /COPY scripts\/db-backup\.mjs/);
   assert.match(dockerfile, /COPY scripts\/db-restore-test\.mjs/);
 });
