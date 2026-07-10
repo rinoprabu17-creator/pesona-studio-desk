@@ -2805,6 +2805,45 @@ Recommended next phase:
 
 `Phase 2J.35 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Gate Approval Review Follow-up Review Approval Gate`
 
+## Phase 2J.35 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Gate Approval Review Follow-up Review Approval Gate Status
+
+Phase 2J.35 adds a controlled in-memory fixture manifest file creation dry-run execution gate approval review follow-up review approval gate for Phase 2J.34 follow-up review rows:
+
+- Current baseline is `82d014b`, tag `phase-2j34-complete`.
+- Fixture manifest file creation dry-run execution gate approval review follow-up review approval gate utility is `packages/content-engine/src/source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-follow-up-review-approval-gate.ts`.
+- Fixture manifest file creation dry-run execution gate approval review follow-up review approval gate fixture is `packages/content-engine/fixtures/source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-follow-up-review-approval-gate-smoke.json`.
+- Fixture manifest file creation dry-run execution gate approval review follow-up review dependency is `packages/content-engine/src/source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-follow-up-review.ts`.
+- Smoke command is `npm run ai:real-footage-source-fixture-manifest-file-creation-execution-gate-approval-review-follow-up-review-approval:smoke`.
+- The only flow that can be approved in this phase is the safe repo fixture flow through Phase 2J.12 through 2J.34 for `packages/content-engine/fixtures/read-only-intake-sample/`.
+- Only `execution_gate_approval_review_follow_up_review_ok` rows from Phase 2J.34 may become `approved_for_future_fixture_manifest_file_creation_dry_run_execution_gate_approval_review_follow_up_review_approval`.
+- Denied upstream, duplicate-ID, incomplete, risky, unsafe, and write/import/export/render/upload/publish cases are not upgraded.
+- Approval statuses are `approved_for_future_fixture_manifest_file_creation_dry_run_execution_gate_approval_review_follow_up_review_approval`, `needs_owner_review`, `incomplete_approval`, and `blocked_approval`.
+- `fixture_manifest_execution_gate_approval_review_follow_up_review_approval_persisted` remains `false`.
+- `fixture_manifest_execution_gate_approval_review_follow_up_review_persisted` remains `false`.
+- `fixture_manifest_execution_gate_approval_review_approval_persisted` remains `false`.
+- `fixture_manifest_execution_gate_approval_review_persisted` remains `false`.
+- `fixture_manifest_execution_gate_review_approval_persisted` remains `false`.
+- `fixture_manifest_execution_gate_review_persisted` remains `false`.
+- `fixture_manifest_execution_review_persisted` remains `false`.
+- `fixture_manifest_file_creation_execution_performed` remains `false`.
+- `fixture_manifest_file_creation_performed` remains `false`.
+- `fixture_manifest_write_performed` remains `false`.
+- `fixture_manifest_file_created` remains `false`.
+- `metadata_write_allowed` remains `false`.
+- `manifest_write_allowed` remains `false`.
+- `production_manifest_write_allowed` remains `false`.
+- `manifest_export_allowed` remains `false`.
+- The approval gate does not execute a gate, write production manifests, create draft manifest files, create fixture manifest files, perform fixture manifest writes, execute fixture manifest file creation, execute fixture manifest file creation gates, persist execution review output, persist execution gate review output, persist execution gate review approval output, persist execution gate approval review output, persist execution gate approval review approval output, persist follow-up review output, persist follow-up review approval output, import/export/write/save/persist manifests, mutate real metadata stores, or import/write metadata.
+- Real-looking paths remain metadata strings only and are not accessed.
+- Fake provider remains default.
+- OpenAI/live AI is not required.
+- `public_ready` remains `false`.
+- Publish track remains blocked.
+
+Still pending:
+
+- Future owner-approved fixture-only continuation.
+
 ## Phase 2J.28 Real Footage Source Folder Fixture Manifest File Creation Dry-Run Execution Review Status
 
 Phase 2J.28 adds a controlled fixture manifest file creation dry-run execution review for Phase 2J.27 eligible rows:

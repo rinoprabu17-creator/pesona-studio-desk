@@ -1,6 +1,6 @@
 # Handoff Pack Index
 
-This index links the ops documents created across Phase 2G.3 through Phase 2J.34.
+This index links the ops documents created across Phase 2G.3 through Phase 2J.35.
 
 The pack remains manual and local-first. There is no auto-publisher, scheduler, social API, OpenAI runtime automation, upload automation, queue expansion, or worker daemon change in this handoff pack.
 
@@ -489,6 +489,11 @@ The pack remains manual and local-first. There is no auto-publisher, scheduler, 
 
 - `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_FIXTURE_MANIFEST_FILE_CREATION_DRY_RUN_EXECUTION_GATE_APPROVAL_REVIEW_FOLLOW_UP_REVIEW.md`
 - `docs/phase-2j34-real-footage-source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-follow-up-review.md`
+
+### Phase 2J.35
+
+- `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_FIXTURE_MANIFEST_FILE_CREATION_DRY_RUN_EXECUTION_GATE_APPROVAL_REVIEW_FOLLOW_UP_REVIEW_APPROVAL_GATE.md`
+- `docs/phase-2j35-real-footage-source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-follow-up-review-approval-gate.md`
 
 ## Audience Mapping
 

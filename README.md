@@ -214,3 +214,5 @@ Dokumen operasional server lokal tersedia di `docs/ops/`:
 - `docs/phase-2j33-real-footage-source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-approval-gate.md`
 - `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_FIXTURE_MANIFEST_FILE_CREATION_DRY_RUN_EXECUTION_GATE_APPROVAL_REVIEW_FOLLOW_UP_REVIEW.md`
 - `docs/phase-2j34-real-footage-source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-follow-up-review.md`
+- `docs/ops/REAL_FOOTAGE_SOURCE_FOLDER_FIXTURE_MANIFEST_FILE_CREATION_DRY_RUN_EXECUTION_GATE_APPROVAL_REVIEW_FOLLOW_UP_REVIEW_APPROVAL_GATE.md`
+- `docs/phase-2j35-real-footage-source-folder-fixture-manifest-file-creation-dry-run-execution-gate-approval-review-follow-up-review-approval-gate.md`
