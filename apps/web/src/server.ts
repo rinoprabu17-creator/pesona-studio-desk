@@ -200,7 +200,9 @@ server.listen(port, "0.0.0.0", () => {
       service: "web-app",
       message: "Pesona Studio Desk web started",
       port,
-      storageDir
+      storageDir,
+      admin_user_configured: Boolean(process.env.PSD_ADMIN_USER),
+      admin_password_configured: Boolean(process.env.PSD_ADMIN_PASSWORD)
     })
   );
 });

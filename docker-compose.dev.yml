@@ -64,6 +64,9 @@ services:
       APP_STORAGE_DIR: /app/storage
       DATABASE_URL: ${DATABASE_URL:-postgresql://pesona:pesona_dev_password@postgres:5432/pesona_studio}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      PSD_ADMIN_USER: ${PSD_ADMIN_USER:?PSD_ADMIN_USER is required for web-app admin auth}
+      PSD_ADMIN_PASSWORD: ${PSD_ADMIN_PASSWORD:?PSD_ADMIN_PASSWORD is required for web-app admin auth}
+      OPERATIONAL_FOOTAGE_SOURCE_DIR: ${OPERATIONAL_FOOTAGE_SOURCE_DIR:-/app/storage/footage}
       CAMPAIGN_PLANNER_PROVIDER: ${CAMPAIGN_PLANNER_PROVIDER:-fake}
       CAMPAIGN_PLANNER_OPENAI_ENABLED: ${CAMPAIGN_PLANNER_OPENAI_ENABLED:-false}
       CAMPAIGN_PLANNER_PROMPT_VERSION: ${CAMPAIGN_PLANNER_PROMPT_VERSION:-campaign-planner-v1}
@@ -111,6 +114,7 @@ services:
       APP_STORAGE_DIR: /app/storage
       DATABASE_URL: ${DATABASE_URL:-postgresql://pesona:pesona_dev_password@postgres:5432/pesona_studio}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      OPERATIONAL_FOOTAGE_SOURCE_DIR: ${OPERATIONAL_FOOTAGE_SOURCE_DIR:-/app/storage/footage}
       VIDEO_WORKER_POLL_INTERVAL_MS: ${VIDEO_WORKER_POLL_INTERVAL_MS:-15000}
     volumes:
       - ./storage:/app/storage
