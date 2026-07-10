@@ -20,3 +20,4 @@ storage/mockups/*
 !storage/mockups/.gitkeep
 storage/brand-assets/*
 !storage/brand-assets/.gitkeep
+storage/backups/*
