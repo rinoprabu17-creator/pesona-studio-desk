@@ -24,7 +24,7 @@ const result = spawnSync("pg_dump", ["--format=custom", "--no-owner", "--no-acl"
 if (result.status !== 0) {
   console.error(JSON.stringify({
     status: "failed",
-    error: result.stderr || `pg_dump_exit_${result.status}`
+    error: result.error?.message || result.stderr || `pg_dump_exit_${result.status}`
   }, null, 2));
   process.exit(result.status || 1);
 }

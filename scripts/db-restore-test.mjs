@@ -18,7 +18,7 @@ const result = spawnSync("pg_restore", ["--list", backupFile], {
 if (result.status !== 0) {
   console.error(JSON.stringify({
     status: "failed",
-    error: result.stderr || `pg_restore_exit_${result.status}`
+    error: result.error?.message || result.stderr || `pg_restore_exit_${result.status}`
   }, null, 2));
   process.exit(result.status || 1);
 }
