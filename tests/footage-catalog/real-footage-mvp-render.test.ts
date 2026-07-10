@@ -193,6 +193,15 @@ test("real footage OpenAI compose override wires only required worker secrets", 
   assert.match(compose, /openai_api_key:\s*\n\s*file:\s*\.\/secrets\/openai_api_key\.txt/);
 });
 
+test("video worker Docker image includes local campaign planner dependency for renderer", () => {
+  const dockerfile = readFileSync("workers/video/Dockerfile", "utf8");
+  const dockerignore = readFileSync(".dockerignore", "utf8");
+
+  assert.match(dockerfile, /COPY packages\/campaign-planner \.\/packages\/campaign-planner/);
+  assert.match(dockerfile, /COPY packages\/content-engine \.\/packages\/content-engine/);
+  assert.doesNotMatch(dockerignore, /(^|\n)packages\/campaign-planner(\n|$)/);
+});
+
 test("real footage FFmpeg args render vertical H.264 AAC MP4 with overlays", () => {
   const args = buildRealFootageFfmpegArgs([
     {
