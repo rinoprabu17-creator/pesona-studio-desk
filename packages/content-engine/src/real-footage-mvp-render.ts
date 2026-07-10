@@ -16,6 +16,8 @@ const DIRECTOR_PROMPT_VERSION = "real-footage-mvp-content-director-v1";
 const VIDEO_EXTENSIONS = new Set([".mp4", ".mov", ".m4v", ".avi", ".mkv"]);
 const MAX_FRAMES_PER_VIDEO = 3;
 const MAX_FRAMES_PER_REQUEST = 12;
+const AI_FRAME_DETAIL = "low";
+const AI_FRAME_MAX_DIMENSION = 512;
 
 export const RealFootageDirectorSceneSchema = z.object({
   scene_number: z.number().int().min(1).max(3),
@@ -95,6 +97,9 @@ export type RealFootageMvpRenderResult = {
   discovered_video_count: number;
   valid_video_count: number;
   extracted_frame_count: number;
+  ai_frame_detail: "low";
+  ai_frame_max_dimension: 512;
+  ai_frame_total_bytes: number;
   rendered_scene_count: number;
   content_director_output: RealFootageContentDirectorOutput;
   source_manifest: RealFootageVideoInput[];
@@ -288,6 +293,9 @@ export async function runRealFootageMvpRender(input: {
     discovered_video_count: manifest.length,
     valid_video_count: validVideos.length,
     extracted_frame_count: frames.length,
+    ai_frame_detail: AI_FRAME_DETAIL,
+    ai_frame_max_dimension: AI_FRAME_MAX_DIMENSION,
+    ai_frame_total_bytes: frames.reduce((total, frame) => total + frame.size_bytes, 0),
     rendered_scene_count: scenes.length,
     content_director_output: directorOutput,
     source_manifest: manifest,
@@ -382,6 +390,42 @@ export function buildRealFootageFfmpegArgs(
     outputAbsolutePath
   );
   return args;
+}
+
+export function buildFrameExtractionFfmpegArgs(input: {
+  sourcePath: string;
+  outputFramePath: string;
+  second: number;
+}): string[] {
+  return [
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-y",
+    "-ss",
+    String(input.second),
+    "-i",
+    input.sourcePath,
+    "-frames:v",
+    "1",
+    "-vf",
+    buildAiFrameScaleFilter(),
+    "-q:v",
+    "6",
+    input.outputFramePath
+  ];
+}
+
+export function buildAiFrameScaleFilter(): string {
+  return `scale='if(gt(iw,ih),min(${AI_FRAME_MAX_DIMENSION},iw),-2)':'if(gt(iw,ih),-2,min(${AI_FRAME_MAX_DIMENSION},ih))'`;
+}
+
+export function buildResponsesApiImageInput(imageUrl: string): { type: "input_image"; image_url: string; detail: "low" } {
+  return {
+    type: "input_image",
+    image_url: imageUrl,
+    detail: AI_FRAME_DETAIL
+  };
 }
 
 export function buildMockContentDirectorOutput(videos: RealFootageVideoInput[]): RealFootageContentDirectorOutput {
@@ -563,10 +607,7 @@ async function buildContentDirectorPrompt(input: {
   const imageContent = [];
   for (const frame of input.frames.slice(0, MAX_FRAMES_PER_REQUEST)) {
     const frameBytes = await readFile(frame.frame_path);
-    imageContent.push({
-      type: "input_image",
-      image_url: `data:image/jpeg;base64,${frameBytes.toString("base64")}`
-    });
+    imageContent.push(buildResponsesApiImageInput(`data:image/jpeg;base64,${frameBytes.toString("base64")}`));
   }
   return {
     instructions: [
@@ -753,23 +794,11 @@ async function extractRepresentativeFrames(input: {
     for (const second of representativeSeconds(probe.duration_seconds).slice(0, MAX_FRAMES_PER_VIDEO)) {
       if (frames.length >= MAX_FRAMES_PER_REQUEST) break;
       const framePath = join(frameRoot, `${hashPath(video.display_path)}-${String(frames.length + 1).padStart(2, "0")}.jpg`);
-      const result = await runCommand(input.ffmpegPath, [
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-y",
-        "-ss",
-        String(second),
-        "-i",
-        video.absolute_path,
-        "-frames:v",
-        "1",
-        "-vf",
-        "scale=320:-2",
-        "-q:v",
-        "4",
-        framePath
-      ], 60_000);
+      const result = await runCommand(input.ffmpegPath, buildFrameExtractionFfmpegArgs({
+        sourcePath: video.absolute_path,
+        outputFramePath: framePath,
+        second
+      }), 60_000);
       if (result.exitCode !== 0) {
         throw new Error(`frame_extraction_failed: ${video.display_path}: ${truncate(result.stderr) || `exit_${result.exitCode}`}`);
       }

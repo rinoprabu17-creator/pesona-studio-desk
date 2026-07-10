@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 import {
+  buildAiFrameScaleFilter,
+  buildFrameExtractionFfmpegArgs,
   buildMockContentDirectorOutput,
   buildRealFootageFfmpegArgs,
+  buildResponsesApiImageInput,
   checkClaims,
   RealFootageContentDirectorOutputSchema,
   resolveContentDirectorProvider,
@@ -120,6 +125,61 @@ test("real footage content director repair retry succeeds once after claim failu
   assert.match(JSON.stringify(requests[1]), /mockup_must_not_offer_revision/);
 });
 
+test("real footage content director sends low-detail bounded image payload only", async () => {
+  const frameDir = mkdtempSync(join(tmpdir(), "psd-ai-frames-"));
+  const frames = Array.from({ length: 13 }, (_, index) => {
+    const framePath = join(frameDir, `frame-${index}.jpg`);
+    writeFileSync(framePath, Buffer.from([0xff, 0xd8, 0xff, 0xd9]));
+    return {
+      clip_path: videos[index % videos.length].display_path,
+      frame_path: framePath,
+      second: index,
+      size_bytes: 4
+    };
+  });
+  const requests: Record<string, any>[] = [];
+  const client = {
+    responses: {
+      async parse(request: Record<string, any>) {
+        requests.push(request);
+        return {
+          status: "completed",
+          output_parsed: buildMockContentDirectorOutput(videos)
+        };
+      }
+    }
+  };
+
+  await withOpenAIEnv(() => runContentDirector({
+    videos,
+    probes: videos.map((video) => ({
+      clip_path: video.display_path,
+      valid_video: true,
+      codec_name: "h264",
+      audio_codec_name: "aac",
+      has_audio: true,
+      width: 1080,
+      height: 1920,
+      pix_fmt: "yuv420p",
+      duration_seconds: 10,
+      size_bytes: video.size_bytes,
+      error: null
+    })),
+    frames,
+    knowledgeBase: {},
+    client
+  }));
+
+  const content = requests[0].input[0].content;
+  const images = content.filter((item: any) => item.type === "input_image");
+  const text = content.find((item: any) => item.type === "input_text")?.text || "";
+  assert.equal(images.length, 12);
+  assert.equal(images.every((item: any) => item.detail === "low"), true);
+  assert.match(text, /"max_frames_per_video": 3/);
+  assert.match(text, /"max_frames_per_request": 12/);
+  assert.match(text, /"frames_are_resized_local_jpegs": true/);
+});
+
 test("real footage content director repair retry fails clearly after second claim failure", async () => {
   const bad = {
     ...buildMockContentDirectorOutput(videos),
@@ -158,6 +218,14 @@ test("real footage content director repair retry fails clearly after second clai
     })),
     /content_director_claim_repair_failed: mockup_must_not_offer_revision/
   );
+});
+
+test("real footage AI image helpers use Responses API low detail", () => {
+  assert.deepEqual(buildResponsesApiImageInput("data:image/jpeg;base64,abc"), {
+    type: "input_image",
+    image_url: "data:image/jpeg;base64,abc",
+    detail: "low"
+  });
 });
 
 test("real footage openai provider request does not fallback to mock without key and model", () => {
@@ -200,6 +268,25 @@ test("video worker Docker image includes local campaign planner dependency for r
   assert.match(dockerfile, /COPY packages\/campaign-planner \.\/packages\/campaign-planner/);
   assert.match(dockerfile, /COPY packages\/content-engine \.\/packages\/content-engine/);
   assert.doesNotMatch(dockerignore, /(^|\n)packages\/campaign-planner(\n|$)/);
+});
+
+test("real footage AI frame extraction limits analysis thumbnails to 512 without source mutation", () => {
+  const args = buildFrameExtractionFfmpegArgs({
+    sourcePath: "/input/source.mp4",
+    outputFramePath: "/tmp/frame.jpg",
+    second: 2
+  });
+  const joined = args.join(" ");
+
+  assert.equal(buildAiFrameScaleFilter(), "scale='if(gt(iw,ih),min(512,iw),-2)':'if(gt(iw,ih),-2,min(512,ih))'");
+  assert.match(joined, /-frames:v 1/);
+  assert.match(joined, /min\(512,iw\)/);
+  assert.match(joined, /min\(512,ih\)/);
+  assert.match(joined, /-q:v 6/);
+  assert.equal(args[args.indexOf("-i") + 1], "/input/source.mp4");
+  assert.equal(args.at(-1), "/tmp/frame.jpg");
+  assert.equal(joined.includes("unlink"), false);
+  assert.equal(joined.includes("rename"), false);
 });
 
 test("real footage FFmpeg args render vertical H.264 AAC MP4 with overlays", () => {
